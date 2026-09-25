@@ -1,0 +1,25 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+TestResults/
+
+## MSIX packaging
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+*.pfx
+
+## Rider / VS Code
+.idea/
+.vscode/
+
+## Bundled LibreOffice (tools/fetch-libreoffice.ps1)
+third_party/
+dist/
