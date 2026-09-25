@@ -1,0 +1,111 @@
+# Builds Condec on a Windows runner, runs every test (including the Windows-only ones), packs the
+# signed MSIX with the bundled LibreOffice, and publishes a GitHub release for tags named v*.
+# A manual run (workflow_dispatch) does everything except the release and keeps the package as an artifact.
+name: Rilis
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check the tag against the package version
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          $manifestVersion = ([xml](Get-Content src/Condec/Package.appxmanifest -Raw)).Package.Identity.Version
+          $tagVersion = $env:GITHUB_REF_NAME -replace '^v', '' -replace '-.*$', ''
+          if (-not $manifestVersion.StartsWith("$tagVersion.")) {
+            throw "Tag $env:GITHUB_REF_NAME does not match the manifest version $manifestVersion."
+          }
+
+      # The trimmed LibreOffice is about 560 MB and takes minutes to download and extract; it only
+      # changes when the fetch or trim script does.
+      - name: Restore LibreOffice from cache
+        id: libreoffice
+        uses: actions/cache@v4
+        with:
+          path: third_party/libreoffice
+          key: libreoffice-${{ hashFiles('tools/fetch-libreoffice.ps1', 'tools/trim-libreoffice.ps1') }}
+
+      - name: Fetch LibreOffice
+        if: steps.libreoffice.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: tools/fetch-libreoffice.ps1
+
+      - name: Test
+        shell: pwsh
+        run: dotnet test --solution Condec.sln --configuration Release
+
+      # A persistent certificate keeps the same publisher identity across releases, so testers import
+      # it once. Without the secrets, pack-test-msix.ps1 makes a fresh certificate for this run.
+      - name: Import the signing certificate
+        if: env.PFX_BASE64 != ''
+        shell: pwsh
+        env:
+          PFX_BASE64: ${{ secrets.CONDEC_SIGNING_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.CONDEC_SIGNING_PFX_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'condec-signing.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_BASE64))
+          $password = ConvertTo-SecureString $env:PFX_PASSWORD -AsPlainText -Force
+          $certificate = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          Remove-Item $pfx
+          $certificate.FriendlyName = 'Condec test signing'
+          Write-Host "Imported $($certificate.Subject), valid until $($certificate.NotAfter)"
+
+      - name: Pack and sign the MSIX
+        shell: pwsh
+        run: tools/pack-test-msix.ps1 -Configuration Release
+
+      - name: Name the files after the release
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content src/Condec/Package.appxmanifest -Raw)).Package.Identity.Version
+          $label = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { "v$version-dev.$env:GITHUB_RUN_NUMBER" }
+          Move-Item "dist/Condec_${version}_x64_uji.msix" "dist/Condec_${label}_x64.msix"
+          Move-Item dist/Condec-uji.cer dist/Condec.cer
+          Get-ChildItem dist -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)" } |
+            Set-Content dist/SHA256SUMS.txt -Encoding ascii
+          Get-Content dist/SHA256SUMS.txt
+          "LABEL=$label" >> $env:GITHUB_ENV
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Condec-${{ env.LABEL }}
+          path: dist/
+          if-no-files-found: error
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $arguments = @('release', 'create', $tag, '--title', "Condec $tag", '--verify-tag')
+          $notes = "docs/releases/$tag.md"
+          if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
+          if ($tag -match '-') { $arguments += '--prerelease' }
+          gh @arguments (Get-ChildItem dist -File | ForEach-Object FullName)

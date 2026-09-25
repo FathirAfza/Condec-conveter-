@@ -52,6 +52,17 @@ LibreOffice dibawa di dalam paket Condec x64, jadi tidak perlu memasang aplikasi
 - LibreOffice yang dibawa dijalankan dalam mode headless dengan pengecekan update dimatikan.
 - Keterbatasan verifikasi: pembacaan ulang file untuk verifikasi chunk bisa dilayani cache sistem operasi, jadi verifikasi ini menangkap kesalahan tulis di sisi aplikasi, bukan kerusakan media penyimpanan.
 
+## Unduh dan pasang
+
+Paket MSIX ada di halaman [Releases](../../releases). Versi pra-rilis ditandatangani sertifikat uji, jadi sekali saja sertifikat `Condec.cer` perlu diimpor dari PowerShell administrator:
+
+```powershell
+Import-Certificate -FilePath .\Condec.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+Add-AppxPackage -Path .\Condec_<versi>_x64.msix
+```
+
+Prasyarat: Windows 10 1809 atau lebih baru, 64-bit, dan Windows App Runtime 2.5 (App Installer biasanya mengunduhnya sendiri). Rilis dibuat oleh workflow `.github/workflows/release.yml` di runner Windows setiap kali tag `v*` dipush: build, semua test, unduh dan pangkas LibreOffice, pack, tanda tangan, lalu unggah `.msix`, `.cer`, dan `SHA256SUMS.txt`.
+
 ## Cara build
 
 Prasyarat di Windows 10 1809 atau lebih baru:
