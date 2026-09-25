@@ -1,0 +1,209 @@
+<!--
+  Markup mentah hasil bongkar Condec.html (bundel desain). Bukan halaman yang bisa dirender sendiri:
+  {{...}} adalah binding, <sc-if>/<sc-for> adalah kondisi/perulangan, dan class Component di bawah
+  berisi logika state mockup. Layar 5-6 (PDF ke DXF/DWG). Prop "jenis": vektor | scan.
+  Warna hex di sini HANYA referensi visual. Di XAML semua warna wajib lewat ThemeResource (lihat docs/HANDOFF.md).
+-->
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="utf-8">
+<title>Condec — PDF ke CAD</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1120px; height: 780px; box-sizing: border-box; display: flex; flex-direction: column; background: #F3F3F3; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1B1B1B; font-size: 14px; line-height: 20px">
+
+<div style="height: 32px; flex-shrink: 0; display: flex; align-items: center">
+<div style="display: flex; align-items: center; gap: 16px; padding-left: 16px; flex-grow: 1">
+<svg width="16" height="16" sc-camel-view-box="0 0 16 16" aria-hidden="true"><rect x="0.5" y="0.5" width="15" height="15" rx="3.5" fill="#005FB8"></rect><path d="M4.5 6h7l-2-2M11.5 10h-7l2 2" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="font-size: 12px; line-height: 16px">Condec</span>
+</div>
+<div style="display: flex">
+<button aria-label="Minimalkan" style="width: 46px; height: 32px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="10" height="10" sc-camel-view-box="0 0 10 10" aria-hidden="true"><path d="M0 5.5h10" stroke="#1B1B1B" stroke-width="1"></path></svg></button>
+<button aria-label="Maksimalkan" style="width: 46px; height: 32px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="10" height="10" sc-camel-view-box="0 0 10 10" aria-hidden="true"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="none" stroke="#1B1B1B" stroke-width="1"></rect></svg></button>
+<button aria-label="Tutup" style="width: 46px; height: 32px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="10" height="10" sc-camel-view-box="0 0 10 10" aria-hidden="true"><path d="M0.5 0.5l9 9M9.5 0.5l-9 9" stroke="#1B1B1B" stroke-width="1"></path></svg></button>
+</div>
+</div>
+
+<div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 24px 40px 32px; box-sizing: border-box">
+
+<div style="width: 880px; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0">
+<h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600">Konversi file</h1>
+<p style="margin: 0; color: #616161">Pilih file, tentukan format tujuan, lalu simpan.</p>
+</div>
+
+<div style="width: 880px; box-sizing: border-box; flex-shrink: 0; background: #FBFBFB; border: 1px solid #E5E5E5; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; align-items: center; gap: 16px">
+<div style="flex: 1 1 0; height: 120px; box-sizing: border-box; border: 1px solid #E5E5E5; border-radius: 8px; background: #F9F9F9; padding: 20px 24px; display: flex; align-items: center; gap: 16px">
+<svg width="40" height="40" sc-camel-view-box="0 0 40 40" aria-hidden="true"><path d="M10 3.5h14.5l7 7V36a.5.5 0 0 1-.5.5H10a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z" fill="#FFFFFF" stroke="#8A8A8A"></path><path d="M24.5 3.5v7h7" fill="none" stroke="#8A8A8A"></path><rect x="5" y="19" width="20" height="12" rx="2" fill="#C42B1C"></rect><path d="M9 23h12M9 27h8" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"></path></svg>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; line-height: 16px; color: #616161">File sumber</span>
+<span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{fileName}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #616161">{{fileMeta}}</span>
+</div>
+<button style="height: 32px; padding: 0 12px; background: transparent; border: 0; border-radius: 4px; font-family: inherit; font-size: 14px; color: #005FB8; cursor: pointer">Ganti</button>
+</div>
+
+<svg width="24" height="24" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="flex-shrink: 0"><path d="M4 12h15M13.5 6.5L19 12l-5.5 5.5" fill="none" stroke="#616161" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+
+<div style="flex: 1 1 0; height: 120px; box-sizing: border-box; border: 1px solid #E5E5E5; border-radius: 8px; background: #F9F9F9; padding: 20px 24px; display: flex; flex-direction: column; justify-content: center; gap: 8px">
+<label for="cad-format">Ubah ke format</label>
+<button id="cad-format" aria-haspopup="listbox" aria-expanded="{{false}}" style="height: 32px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; background: #FBFBFB; border: 1px solid #E5E5E5; border-bottom-color: #CCCCCC; border-radius: 4px; font-family: inherit; font-size: 14px; color: #1B1B1B; cursor: pointer">
+<span>DXF (gambar CAD)</span>
+<svg width="12" height="12" sc-camel-view-box="0 0 12 12" aria-hidden="true"><path d="M2 4.5l4 4 4-4" fill="none" stroke="#1B1B1B" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</div>
+
+<sc-if value="{{isVektor}}" hint-placeholder-val="{{true}}">
+<div role="status" style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: #DFF6DD; border: 1px solid #E5E5E5; border-radius: 4px">
+<svg width="16" height="16" sc-camel-view-box="0 0 16 16" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="8" cy="8" r="8" fill="#0F7B0F"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.4" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-wrap: wrap; column-gap: 12px">
+<span style="font-weight: 600">PDF vektor terdeteksi</span>
+<span>Garis, busur, dan teks akan diubah menjadi objek CAD.</span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{isScan}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #FFF4CE; border: 1px solid #E5E5E5; border-radius: 4px">
+<svg width="16" height="16" sc-camel-view-box="0 0 16 16" aria-hidden="true" style="flex-shrink: 0; align-self: flex-start; margin-top: 2px"><circle cx="8" cy="8" r="8" fill="#9D5D00"></circle><path d="M8 4v5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"></path><circle cx="8" cy="11.5" r="1" fill="#FFFFFF"></circle></svg>
+<div style="flex-grow: 1; display: flex; flex-direction: column">
+<span style="font-weight: 600">PDF hasil scan terdeteksi</span>
+<span>Isinya gambar piksel, bukan garis. Hasil DXF berupa jejak garis perkiraan dan tidak presisi untuk ukuran.</span>
+</div>
+<button style="height: 32px; padding: 0 12px; box-sizing: border-box; flex-shrink: 0; background: #FBFBFB; border: 1px solid #E5E5E5; border-bottom-color: #CCCCCC; border-radius: 4px; font-family: inherit; font-size: 14px; color: #1B1B1B; cursor: pointer">Pilih file lain</button>
+</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<label for="cad-satuan">Satuan gambar</label>
+<button id="cad-satuan" aria-haspopup="listbox" style="height: 32px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; background: #FBFBFB; border: 1px solid #E5E5E5; border-bottom-color: #CCCCCC; border-radius: 4px; font-family: inherit; font-size: 14px; color: #1B1B1B; cursor: pointer"><span>Milimeter (mm)</span><svg width="12" height="12" sc-camel-view-box="0 0 12 12" aria-hidden="true"><path d="M2 4.5l4 4 4-4" fill="none" stroke="#1B1B1B" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<label for="cad-skala">Skala gambar</label>
+<button id="cad-skala" aria-haspopup="listbox" style="height: 32px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; background: #FBFBFB; border: 1px solid #E5E5E5; border-bottom-color: #CCCCCC; border-radius: 4px; font-family: inherit; font-size: 14px; color: #1B1B1B; cursor: pointer"><span>1 : 100</span><svg width="12" height="12" sc-camel-view-box="0 0 12 12" aria-hidden="true"><path d="M2 4.5l4 4 4-4" fill="none" stroke="#1B1B1B" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<label for="cad-halaman">Halaman</label>
+<button id="cad-halaman" aria-haspopup="listbox" style="height: 32px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; background: #FBFBFB; border: 1px solid #E5E5E5; border-bottom-color: #CCCCCC; border-radius: 4px; font-family: inherit; font-size: 14px; color: #1B1B1B; cursor: pointer"><span>{{pageLabel}}</span><svg width="12" height="12" sc-camel-view-box="0 0 12 12" aria-hidden="true"><path d="M2 4.5l4 4 4-4" fill="none" stroke="#1B1B1B" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+</div>
+
+<div style="display: flex; gap: 32px">
+<sc-for list="{{toggles}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 12px">
+<sc-if value="{{t.enabled}}" hint-placeholder-val="{{true}}">
+<button role="switch" aria-checked="{{t.on}}" aria-label="{{t.label}}" sc-camel-on-click="{{t.flip}}" style="position: relative; width: 40px; height: 20px; flex-shrink: 0; padding: 0; box-sizing: border-box; border-radius: 10px; border: 1px solid {{t.trackBorder}}; background: {{t.trackFill}}; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; top: 3px; left: {{t.knobLeft}}; width: 12px; height: 12px; border-radius: 6px; background: {{t.knobFill}}"></span>
+</button>
+</sc-if>
+<sc-if value="{{t.disabled}}" hint-placeholder-val="{{false}}">
+<button role="switch" aria-checked="{{false}}" aria-label="{{t.label}}" disabled="{{true}}" style="position: relative; width: 40px; height: 20px; flex-shrink: 0; padding: 0; box-sizing: border-box; border-radius: 10px; border: 1px solid #C5C5C5; background: transparent">
+<span aria-hidden="true" style="position: absolute; top: 3px; left: 4px; width: 12px; height: 12px; border-radius: 6px; background: #C5C5C5"></span>
+</button>
+</sc-if>
+<div style="display: flex; flex-direction: column">
+<span style="color: {{t.textColor}}">{{t.label}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #616161">{{t.note}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: #616161">
+<svg width="16" height="16" sc-camel-view-box="0 0 16 16" aria-hidden="true"><path d="M8 1.5l5 2v4c0 3.1-2.1 5.5-5 7-2.9-1.5-5-3.9-5-7v-4z" fill="none" stroke="#616161" stroke-width="1.1" stroke-linejoin="round"></path><path d="M5.8 8l1.6 1.6L10.4 6.6" fill="none" stroke="#616161" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Diproses sepenuhnya di perangkat ini. Tidak ada file yang diunggah.</span>
+</div>
+<button style="height: 32px; padding: 0 16px; box-sizing: border-box; background: #005FB8; border: 1px solid #005FB8; border-bottom-color: #003E7A; border-radius: 4px; font-family: inherit; font-size: 14px; color: #FFFFFF; cursor: pointer">{{convertLabel}}</button>
+</div>
+
+</div>
+
+<div style="width: 880px; flex-grow: 1; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; background: #FBFBFB; border: 1px solid #E5E5E5; border-radius: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px 24px; flex-shrink: 0">
+<h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600">Riwayat</h2>
+<button style="height: 32px; padding: 0 12px; background: transparent; border: 0; border-radius: 4px; font-family: inherit; font-size: 14px; color: #005FB8; cursor: pointer">Hapus riwayat</button>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto; flex-grow: 1; min-height: 0; display: flex; flex-direction: column">
+<sc-for list="{{history}}" as="h" hint-placeholder-count="3">
+<li style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 4px; flex-shrink: 0">
+<div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 4px; background: #F3F3F3; display: flex; align-items: center; justify-content: center">
+<svg width="16" height="16" sc-camel-view-box="0 0 16 16" aria-hidden="true"><path d="M4 1.5h5l3.5 3.5v9a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5V2a.5.5 0 0 1 .5-.5z" fill="none" stroke="#616161" stroke-width="1.1"></path><path d="M9 1.5V5h3.5" fill="none" stroke="#616161" stroke-width="1.1"></path></svg>
+</div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{h.name}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #616161">{{h.conv}} · {{h.when}}</span>
+</div>
+<span style="display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: #0F7B0F">
+<svg width="12" height="12" sc-camel-view-box="0 0 12 12" aria-hidden="true"><path d="M2.5 6.2l2.2 2.2 4.8-4.8" fill="none" stroke="#0F7B0F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+Terverifikasi
+</span>
+<button aria-label="Tampilkan di folder" style="width: 32px; height: 32px; flex-shrink: 0; padding: 0; background: transparent; border: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="16" height="16" sc-camel-view-box="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5A1.5 1.5 0 0 1 3 3h3l1.5 1.5H13A1.5 1.5 0 0 1 14.5 6v6A1.5 1.5 0 0 1 13 13.5H3A1.5 1.5 0 0 1 1.5 12z" fill="none" stroke="#1B1B1B" stroke-width="1.1" stroke-linejoin="round"></path></svg>
+</button>
+</li>
+</sc-for>
+</ul>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;jenis&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;vektor&quot;,&quot;scan&quot;],&quot;default&quot;:&quot;vektor&quot;,&quot;section&quot;:&quot;Tampilan&quot;},&quot;$preview&quot;:{&quot;width&quot;:1120,&quot;height&quot;:780}}">
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const jenis = this.props.jenis ?? 'vektor';
+    const scan = jenis === 'scan';
+    const keepText = s.keepText ?? true;
+    const joinLines = s.joinLines ?? true;
+
+    const mk = (label, note, on, enabled, key) => ({
+      label: label,
+      note: note,
+      on: on,
+      enabled: enabled,
+      disabled: !enabled,
+      textColor: enabled ? '#1B1B1B' : '#A0A0A0',
+      trackFill: on ? '#005FB8' : 'transparent',
+      trackBorder: on ? '#005FB8' : '#8A8A8A',
+      knobFill: on ? '#FFFFFF' : '#5E5E5E',
+      knobLeft: on ? '23px' : '3px',
+      flip: () => this.setState({ [key]: !on })
+    });
+
+    const toggles = [
+      scan
+        ? mk('Pertahankan teks sebagai teks', 'Tidak tersedia untuk PDF hasil scan', false, false, 'keepText')
+        : mk('Pertahankan teks sebagai teks', 'Disimpan sebagai entitas TEXT, bukan garis', keepText, true, 'keepText'),
+      mk('Gabungkan garis bersambung', 'Menjadi satu polyline', joinLines, true, 'joinLines')
+    ];
+
+    return {
+      isVektor: !scan,
+      isScan: scan,
+      fileName: scan ? 'scan-denah.pdf' : 'denah-rumah.pdf',
+      fileMeta: scan ? 'Dokumen PDF · 1 halaman · 4,8 MB' : 'Dokumen PDF · 3 halaman · 1,1 MB',
+      pageLabel: scan ? 'Halaman 1 dari 1' : 'Halaman 1 dari 3',
+      convertLabel: scan ? 'Tetap konversi…' : 'Konversi dan simpan…',
+      toggles: toggles,
+      history: [
+        { name: 'tugas-biologi.pptx', conv: 'PPTX → PDF', when: 'Kemarin, 19.40' },
+        { name: 'foto-praktikum.heic', conv: 'HEIC → JPG', when: '22 Sep, 15.12' },
+        { name: 'rekaman-diskusi.m4a', conv: 'M4A → MP3', when: '20 Sep, 08.47' }
+      ]
+    };
+  }
+}
+</script>
+
+
+</body></html>

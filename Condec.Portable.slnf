@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "Condec.sln",
+    "projects": [
+      "src\\Condec.Core\\Condec.Core.csproj",
+      "tests\\Condec.Tests\\Condec.Tests.csproj"
+    ]
+  }
+}

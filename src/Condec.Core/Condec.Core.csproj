@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- net10.0: portable core (pipeline, verification, history, CAD conversion), tested on any OS.
+       Windows target: adds the converters that call WinRT APIs, from Platform/Windows. -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;$(CondecWindowsTargetFramework)</TargetFrameworks>
+    <RootNamespace>Condec.Core</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <SupportedOSPlatformVersion>$(CondecWindowsMinVersion)</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
+    <Compile Remove="Platform\Windows\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="ACadSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Condec.Tests" />
+  </ItemGroup>
+
+</Project>

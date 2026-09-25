@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Condec (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Condec (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
