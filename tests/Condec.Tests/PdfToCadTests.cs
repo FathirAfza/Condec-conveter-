@@ -210,6 +210,60 @@ public sealed class PdfToCadTests : IDisposable
     }
 
     [Fact]
+    public void TriangulatedFill_BecomesOneOutline()
+    {
+        // Solid fills arrive as triangles sharing an edge; drawn one by one they put a diagonal across the shape.
+        var entities = Read("0 g 10 10 m 90 10 l 90 60 l h 10 10 m 90 60 l 10 60 l h f\n");
+
+        var outline = Assert.Single(entities);
+        var polyline = Assert.IsType<LwPolyline>(outline);
+        Assert.True(polyline.IsClosed);
+        Assert.Equal(4, polyline.Vertices.Count);
+    }
+
+    [Fact]
+    public void FillStrokedInItsOwnColour_IsASolidShape()
+    {
+        var entities = Read("0 g 0 G 10 10 m 90 10 l 90 60 l h 10 10 m 90 60 l 10 60 l h b\n");
+
+        var polyline = Assert.IsType<LwPolyline>(Assert.Single(entities));
+        Assert.Equal(4, polyline.Vertices.Count);
+    }
+
+    [Fact]
+    public void WhitePaint_IsInvisibleOnPaper()
+    {
+        var entities = Read("1 g 1 G 10 10 m 90 10 l 90 60 l h 10 10 m 90 60 l 10 60 l h b\n1 G 5 5 190 90 re S\n0 G 20 20 m 40 20 l S\n");
+
+        var line = Assert.IsType<Line>(Assert.Single(entities));
+        Assert.Equal(20, line.StartPoint.X, 6);
+    }
+
+    [Fact]
+    public void HiddenTextOverGlyphOutlines_BecomesTextAndTheOutlinesGo()
+    {
+        // The word "II" drawn as two filled bars, with the same word laid over it invisibly for searching.
+        var entities = Read(
+            "0 g 20 20 m 23 20 l 23 28 l 20 28 l h f\n26 20 m 29 20 l 29 28 l 26 28 l h f\n"
+            + "BT /F1 12 Tf 3 Tr 20 20 Td (II) Tj ET\n");
+
+        var text = Assert.IsType<TextEntity>(Assert.Single(entities));
+        Assert.Equal("II", text.Value);
+    }
+
+    [Fact]
+    public void HiddenTextWithNothingUnderIt_IsStillLeftOut() =>
+        Assert.Empty(Read("BT /F1 12 Tf 3 Tr 20 20 Td (OCR) Tj ET\n"));
+
+    [Fact]
+    public void WordsOnOneBaseline_AreOneText_ButTheNextColumnIsNot()
+    {
+        var entities = Read("BT /F1 8 Tf 20 20 Td (NAMA JEMBATAN :) Tj ET\nBT /F1 8 Tf 120 20 Td (KERTAS :) Tj ET\nBT /F1 8 Tf 20 40 Td (NAMA TEAM) Tj ET\n");
+
+        Assert.Equal(["KERTAS :", "NAMA JEMBATAN :", "NAMA TEAM"], entities.OfType<TextEntity>().Select(t => t.Value).Order());
+    }
+
+    [Fact]
     public void Extents_CoverTheDrawing()
     {
         var document = new ACadSharp.CadDocument(PdfToCadConverter.OutputVersion);
@@ -246,6 +300,39 @@ public sealed class PdfToCadTests : IDisposable
         var back = CadFiles.Read(path, extension);
 
         Assert.Equal(["ARC", "CIRCLE", "LINE", "SPLINE", "TEXT"], back.Entities.Select(e => e.ObjectName).Order());
+    }
+}
+
+public sealed class PolygonMergerTests
+{
+    [Fact]
+    public void TrianglesSharingAnEdge_MergeIntoARectangle()
+    {
+        var merged = PolygonMerger.Merge([new XY[] { new(0, 0), new(10, 0), new(10, 5) }, new XY[] { new(0, 0), new(10, 5), new(0, 5) }], 0.01);
+
+        var ring = Assert.Single(merged);
+        Assert.Equal(4, ring.Count);
+        Assert.Contains(new XY(0, 5), ring);
+    }
+
+    [Fact]
+    public void Fan_OfFourTriangles_MergesIntoOneRing_WithoutCollinearCorners()
+    {
+        XY c = new(5, 5);
+        XY[] corners = [new(0, 0), new(10, 0), new(10, 10), new(0, 10)];
+        var fan = Enumerable.Range(0, 4).Select(i => (IReadOnlyList<XY>)new[] { c, corners[i], corners[(i + 1) % 4] }).ToList();
+
+        var merged = PolygonMerger.Merge(fan, 0.01);
+
+        Assert.Equal(4, Assert.Single(merged).Count);
+    }
+
+    [Fact]
+    public void SeparateShapes_StaySeparate()
+    {
+        var merged = PolygonMerger.Merge([new XY[] { new(0, 0), new(10, 0), new(10, 5) }, new XY[] { new(20, 0), new(30, 5), new(20, 5) }], 0.01);
+
+        Assert.Equal(2, merged.Count);
     }
 }
 

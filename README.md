@@ -37,7 +37,9 @@ LibreOffice dibawa di dalam paket Condec x64, jadi tidak perlu memasang aplikasi
 
 ### PDF → DXF/DWG
 
-- Garis menjadi LINE atau LWPOLYLINE (garis bersambung digabung, juga kalau digambar terpisah di PDF). Bézier yang membentuk lingkaran menjadi ARC atau CIRCLE, kurva lain menjadi satu SPLINE per rangkaian. Kata menjadi TEXT, kecuali teks tersembunyi (misalnya lapisan OCR).
+- Garis menjadi LINE atau LWPOLYLINE (garis bersambung digabung, juga kalau digambar terpisah di PDF). Bézier yang membentuk lingkaran menjadi ARC atau CIRCLE, kurva lain menjadi satu SPLINE per rangkaian.
+- Isian padat yang dipecah produser PDF menjadi segitiga digabung kembali menjadi satu outline tertutup, sehingga tidak ada diagonal palsu. Cat putih di atas kertas (latar, penutup) dibuang.
+- Teks menjadi TEXT per baris, bukan per kata. Teks tersembunyi (lapisan OCR) dibuang, kecuali yang menjadi pasangan huruf yang digambar sebagai outline; outline-nya diganti TEXT yang bisa disunting.
 - Geometri di luar halaman dan di luar jendela clipping PDF (viewport) dipotong, sehingga objek yang tidak terlihat di viewer tidak ikut masuk.
 - Warna PDF dipetakan ke indeks warna AutoCAD terdekat.
 - Satuan: 1 point PDF = 1/72 inci, dikali skala yang dipilih. `$INSUNITS` diisi sesuai satuan.

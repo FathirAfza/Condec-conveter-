@@ -13,6 +13,7 @@ using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 using UglyToad.PdfPig.Graphics;
+using UglyToad.PdfPig.Graphics.Colors;
 
 namespace Condec.Core.Cad;
 
@@ -151,6 +152,22 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         var clips = PdfClipTracker.Resolve(page, pageBox);
         var builder = new EntityBuilder(transform, options.JoinLines);
 
+        // Invisible text (render mode 3, "neither") is either an OCR layer over a picture, which has no place
+        // in a drawing, or the searchable twin of letters painted as filled outlines. In the second case the
+        // outlines are dropped and the text is kept, since TEXT is what a CAD user can edit.
+        var visibleLines = new List<TextLine>();
+        var hiddenLines = new List<(TextLine Line, Rect Bounds)>();
+        var backedLines = new HashSet<TextLine>();
+        if (options.KeepText)
+        {
+            var visible = page.Letters.Where(letter => !IsInvisible(letter)).ToList();
+            var hidden = page.Letters.Where(IsInvisible).ToList();
+            visibleLines = TextLines.Group(NearestNeighbourWordExtractor.Instance.GetWords(visible));
+            hiddenLines = TextLines.Group(NearestNeighbourWordExtractor.Instance.GetWords(hidden))
+                .Select(line => (line, line.Bounds().Grow(line.First.PointSize * 0.5)))
+                .ToList();
+        }
+
         // Producers often paint a shape twice, once to fill it and once to stroke its outline, and paint the
         // page background as a filled rectangle. Neither belongs in a drawing.
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -159,20 +176,24 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         {
             ct.ThrowIfCancellationRequested();
             var path = page.Paths[i];
-            if (path.IsClipping || !(path.IsStroked || path.IsFilled))
+            if (path.IsClipping || !(path.IsStroked || path.IsFilled) || IsPaperColoured(path))
             {
                 continue;
             }
 
+            // A fill whose outline is stroked in the same colour is just a solid shape.
+            var solid = path.IsFilled && (!path.IsStroked || SameColour(path.FillColor, path.StrokeColor));
             var clip = clips?[i] ?? pageBox;
+            Rect? pathBounds = null;
             if (path.GetBoundingRectangle() is { } bounds)
             {
-                if (!path.IsStroked && bounds.Width * bounds.Height >= BackgroundCoverage * pageArea)
+                pathBounds = ToRect(bounds);
+                if (solid && bounds.Width * bounds.Height >= BackgroundCoverage * pageArea)
                 {
                     continue;
                 }
 
-                if (!clip.Intersects(ToRect(bounds)))
+                if (!clip.Intersects(pathBounds.Value))
                 {
                     continue;
                 }
@@ -183,10 +204,26 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
                 continue;
             }
 
+            if (solid && pathBounds is { } shape && hiddenLines.FirstOrDefault(h => Contains(h.Bounds, shape)) is { Line: not null } backing)
+            {
+                backedLines.Add(backing.Line);
+                continue;
+            }
+
             var color = CadColors.FromPdf(path.IsStroked ? path.StrokeColor : path.FillColor);
-            if (!path.IsStroked && Sliver(path) is { } sliver)
+            if (solid && Sliver(path) is { } sliver)
             {
                 builder.AddSegment(transform.Map(sliver.From.X, sliver.From.Y), transform.Map(sliver.To.X, sliver.To.Y), transform.Map(clip), color);
+                continue;
+            }
+
+            if (solid && path.Count >= 2 && Rings(path) is { } rings)
+            {
+                foreach (var ring in PolygonMerger.Merge(rings, JoinTolerancePoints))
+                {
+                    builder.AddPolygon(ring.Select(p => transform.Map(p.X, p.Y)).ToList(), transform.Map(clip), color);
+                }
+
                 continue;
             }
 
@@ -198,20 +235,85 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
 
         var entities = builder.Finish();
 
-        if (options.KeepText)
+        foreach (var line in visibleLines.Concat(hiddenLines.Select(h => h.Line).Where(backedLines.Contains)))
         {
-            // Invisible text (render mode 3, "neither") carries OCR results over scans and hidden layers.
-            var visible = page.Letters.Where(letter => letter.RenderingMode is not (TextRenderingMode.Neither or TextRenderingMode.NeitherClip)).ToList();
-            foreach (var word in NearestNeighbourWordExtractor.Instance.GetWords(visible))
+            if (pageBox.Intersects(line.Bounds()) && ToText(line, transform) is { } text)
             {
-                if (pageBox.Intersects(ToRect(word.BoundingBox)) && ToText(word, transform) is { } text)
-                {
-                    entities.Add(text);
-                }
+                entities.Add(text);
             }
         }
 
         return entities;
+    }
+
+    private static bool IsInvisible(Letter letter) => letter.RenderingMode is TextRenderingMode.Neither or TextRenderingMode.NeitherClip;
+
+    /// <summary>White paint on white paper: background masks, cell fills and border rectangles a viewer never shows.</summary>
+    internal static bool IsPaperColoured(PdfPath path) =>
+        (!path.IsFilled || IsWhite(path.FillColor)) && (!path.IsStroked || IsWhite(path.StrokeColor));
+
+    private static bool IsWhite(IColor? color)
+    {
+        if (color is null)
+        {
+            return false;
+        }
+
+        var (r, g, b) = color.ToRGBValues();
+        return r >= 0.97 && g >= 0.97 && b >= 0.97;
+    }
+
+    private static bool SameColour(IColor? a, IColor? b)
+    {
+        if (a is null || b is null)
+        {
+            return a is null && b is null;
+        }
+
+        var (r1, g1, b1) = a.ToRGBValues();
+        var (r2, g2, b2) = b.ToRGBValues();
+        return Math.Abs(r1 - r2) < 0.02 && Math.Abs(g1 - g2) < 0.02 && Math.Abs(b1 - b2) < 0.02;
+    }
+
+    private static bool Contains(Rect outer, Rect inner) =>
+        inner.MinX >= outer.MinX && inner.MaxX <= outer.MaxX && inner.MinY >= outer.MinY && inner.MaxY <= outer.MaxY;
+
+    /// <summary>The subpaths as closed polygons, or null when any of them has a curve.</summary>
+    private static List<IReadOnlyList<XY>>? Rings(PdfPath path)
+    {
+        var rings = new List<IReadOnlyList<XY>>();
+        foreach (var subpath in path)
+        {
+            var ring = new List<XY>();
+            foreach (var command in subpath.Commands)
+            {
+                switch (command)
+                {
+                    case PdfSubpath.Move m:
+                        ring.Add(P(m.Location));
+                        break;
+                    case PdfSubpath.Line l:
+                        if (ring.Count == 0)
+                        {
+                            ring.Add(P(l.From));
+                        }
+
+                        ring.Add(P(l.To));
+                        break;
+                    case PdfSubpath.Close:
+                        break;
+                    default:
+                        return null;
+                }
+            }
+
+            if (ring.Count >= 3)
+            {
+                rings.Add(ring);
+            }
+        }
+
+        return rings.Count > 0 ? rings : null;
     }
 
     /// <summary>The axis-aligned extent of a PdfPig rectangle, which may be rotated (rotated text) or inverted.</summary>
@@ -314,30 +416,27 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
 
     private static double PdfDistance(PdfPoint a, PdfPoint b) => Math.Sqrt(((a.X - b.X) * (a.X - b.X)) + ((a.Y - b.Y) * (a.Y - b.Y)));
 
-    private static TextEntity? ToText(Word word, PageTransform transform)
+    private static TextEntity? ToText(TextLine line, PageTransform transform)
     {
-        if (string.IsNullOrWhiteSpace(word.Text) || word.Letters.Count == 0)
+        var text = line.Text;
+        if (string.IsNullOrWhiteSpace(text))
         {
             return null;
         }
 
-        var first = word.Letters[0];
-        var last = word.Letters[^1];
-        var angle = word.Letters.Count > 1
-            ? Math.Atan2(last.StartBaseLine.Y - first.StartBaseLine.Y, last.StartBaseLine.X - first.StartBaseLine.X)
-            : Math.Atan2(first.EndBaseLine.Y - first.StartBaseLine.Y, first.EndBaseLine.X - first.StartBaseLine.X);
+        var first = line.First;
         var insert = transform.Map(first.StartBaseLine.X, first.StartBaseLine.Y);
         var height = first.PointSize * CapHeightRatio * transform.UnitsPerPoint;
-        if (height <= 0 || double.IsNaN(angle))
+        if (height <= 0 || double.IsNaN(line.Angle))
         {
             return null;
         }
 
-        return new TextEntity(word.Text)
+        return new TextEntity(text)
         {
             InsertPoint = new XYZ(insert.X, insert.Y, 0),
             Height = height,
-            Rotation = angle,
+            Rotation = line.Angle,
             Color = CadColors.FromPdf(first.RenderingMode is TextRenderingMode.Stroke or TextRenderingMode.StrokeClip ? first.StrokeColor : first.FillColor),
         };
     }
@@ -386,6 +485,26 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
             if (CadGeometry.ClipSegment(from, to, clip) is { } visible && !Near(visible.From, visible.To))
             {
                 AddRun([visible.From, visible.To], color);
+            }
+        }
+
+        /// <summary>A closed outline. Whole when fully visible; otherwise its visible edges as open runs.</summary>
+        public void AddPolygon(List<XY> ring, Rect clip, Color color)
+        {
+            if (ring.Count < 3)
+            {
+                return;
+            }
+
+            if (joinLines && ring.All(clip.Contains))
+            {
+                _entities.Add(new LwPolyline(ring.Select(p => (IVector)p)) { IsClosed = true, Color = color });
+                return;
+            }
+
+            for (var i = 0; i < ring.Count; i++)
+            {
+                AddSegment(ring[i], ring[(i + 1) % ring.Count], clip, color);
             }
         }
 
