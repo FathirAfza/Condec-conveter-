@@ -54,14 +54,18 @@ LibreOffice dibawa di dalam paket Condec x64, jadi tidak perlu memasang aplikasi
 
 ## Unduh dan pasang
 
-Paket MSIX ada di halaman [Releases](../../releases). Versi pra-rilis ditandatangani sertifikat uji, jadi sekali saja sertifikat `Condec.cer` perlu diimpor dari PowerShell administrator:
+Setiap rilis di halaman [Releases](../../releases) menyediakan dua bentuk.
+
+**Portable (paling cepat untuk dicoba).** Unduh `Condec_<versi>_x64_portable.zip`, ekstrak ke folder mana saja, lalu jalankan `Condec.exe`. Tidak ada yang dipasang. Karena berkasnya belum ditandatangani penerbit tepercaya, SmartScreen mungkin bertanya sekali: pilih "More info" lalu "Run anyway".
+
+**MSIX (terpasang, ada di Start menu).** Versi pra-rilis ditandatangani sertifikat uji, jadi sekali saja sertifikat `Condec.cer` perlu diimpor dari PowerShell administrator:
 
 ```powershell
 Import-Certificate -FilePath .\Condec.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
 Add-AppxPackage -Path .\Condec_<versi>_x64.msix
 ```
 
-Prasyarat: Windows 10 1809 atau lebih baru, 64-bit, dan Windows App Runtime 2.5 (App Installer biasanya mengunduhnya sendiri). Rilis dibuat oleh workflow `.github/workflows/release.yml` di runner Windows setiap kali tag `v*` dipush: build, semua test, unduh dan pangkas LibreOffice, pack, tanda tangan, lalu unggah `.msix`, `.cer`, dan `SHA256SUMS.txt`.
+Prasyarat: Windows 10 1809 atau lebih baru, 64-bit. MSIX juga membutuhkan Windows App Runtime 2.5 (App Installer biasanya mengunduhnya sendiri); versi portable sudah membawanya. Rilis dibuat oleh workflow `.github/workflows/release.yml` di runner Windows setiap kali tag `v*` dipush: build, semua test, unduh dan pangkas LibreOffice, pack dan tanda tangan MSIX, publish portable, lalu unggah `.msix`, `.cer`, `_portable.zip`, dan `SHA256SUMS.txt`.
 
 ## Cara build
 
@@ -78,6 +82,10 @@ tools\fetch-libreoffice.ps1
 
 dotnet build Condec.sln
 dotnet test --solution Condec.sln
+
+# Paket untuk dibagikan: MSIX bertanda tangan uji, dan zip portable dengan Condec.exe.
+tools\pack-test-msix.ps1
+tools\publish-portable.ps1
 
 # MSIX Release x64 yang ditandatangani sertifikat uji, di dist\
 tools\pack-test-msix.ps1

@@ -21,6 +21,14 @@
     <Content Include="Assets\Condec.ico" />
   </ItemGroup>
 
+  <!-- Portable build (tools\publish-portable.ps1 passes WindowsPackageType=None): there is no package to
+       carry the content, so publish copies it next to Condec.exe instead. -->
+  <ItemDefinitionGroup Condition="'$(WindowsPackageType)' == 'None'">
+    <Content>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemDefinitionGroup>
+
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>

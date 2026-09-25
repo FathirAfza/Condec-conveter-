@@ -15,4 +15,8 @@ public static class CondecPaths
     public static string HistoryFile => Path.Combine(AppDataDirectory, "history.json");
 
     public static string JournalDirectory => Path.Combine(AppDataDirectory, "journal");
+
+    /// <summary>LibreOffice's user profile for headless conversions. Plain %LOCALAPPDATA%, not
+    /// <c>ApplicationData.Current</c>, so the portable (unpackaged) build works the same way.</summary>
+    public static string LibreOfficeProfileDirectory => Path.Combine(AppDataDirectory, "libreoffice-profile");
 }
