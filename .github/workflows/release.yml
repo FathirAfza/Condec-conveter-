@@ -103,9 +103,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The tag may come from a plain `git push --tags`, or from a release that was
+          # created in the GitHub UI (which creates the tag and the release together).
+          # Either way the release ends up with the same title, notes, and assets.
           $tag = $env:GITHUB_REF_NAME
-          $arguments = @('release', 'create', $tag, '--title', "Condec $tag", '--verify-tag')
           $notes = "docs/releases/$tag.md"
-          if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
-          if ($tag -match '-') { $arguments += '--prerelease' }
-          gh @arguments (Get-ChildItem dist -File | ForEach-Object FullName)
+          $assets = Get-ChildItem dist -File | ForEach-Object FullName
+          gh release view $tag *> $null
+          $exists = $LASTEXITCODE -eq 0
+          if ($exists) {
+            $arguments = @('release', 'edit', $tag, '--title', "Condec $tag")
+            if (Test-Path $notes) { $arguments += @('--notes-file', $notes) }
+            if ($tag -match '-') { $arguments += '--prerelease' }
+            gh @arguments
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            gh release upload $tag @assets --clobber
+          } else {
+            $arguments = @('release', 'create', $tag, '--title', "Condec $tag", '--verify-tag')
+            if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
+            if ($tag -match '-') { $arguments += '--prerelease' }
+            gh @arguments @assets
+          }
