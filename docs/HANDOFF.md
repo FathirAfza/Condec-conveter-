@@ -1,6 +1,6 @@
 # Handoff: konteks proyek Condec
 
-Ditulis 24 September 2026 di akhir sesi pertama (dikerjakan di server Linux). Sesi berikutnya dilanjutkan di mesin Windows lokal supaya aplikasi WinUI bisa di-build, dijalankan, dan dites.
+Ditulis 24 September 2026 di akhir sesi pertama (dikerjakan di server Linux). Sesi berikutnya dilanjutkan di mesin Windows lokal supaya aplikasi WinUI bisa di-build, dijalankan, dan dites. Diperbarui 25 September 2026 dari sesi cloud (Linux) yang memasukkan sumber ke repo GitHub; batasan sesi cloud ada di `docs/CLOUD-SESSION-PROMPT.md` dan §6.
 
 Baca urut: `docs/SPEC.md` (spesifikasi dan aturan pemilik proyek) → `docs/PLAN.md` (rencana teknis) → dokumen ini.
 
@@ -15,6 +15,7 @@ Baca urut: `docs/SPEC.md` (spesifikasi dan aturan pemilik proyek) → `docs/PLAN
 | 6. PDF → gambar/CAD/dokumen, DWG → PDF | Selesai, menunggu konfirmasi pemilik. Build 0 warning/0 error, test 323/323. Uji UI lewat MSIX lulus. Belum di-commit. |
 | 4 | Belum dimulai (setelah tahap 6, atas permintaan pemilik). |
 | 7 | Belum dimulai. |
+| Repo GitHub | Sumber (tahap 1–3, 5, 6) di-commit apa adanya ke `FathirAfza/Condec-conveter-`, branch `claude/kind-mayer-9uxymj` (25 Sep 2026, sesi cloud). Di Linux: build `Condec.Portable.slnf` 0 warning/0 error, test portabel 139/139. Test Windows belum dijalankan ulang. |
 
 **Tugas berikutnya:** tahap 4 (audio/video), setelah pemilik mengonfirmasi tahap 6. Urutan yang diminta pemilik: 5, 6, lalu 4. Antislop tetap dipakai selama pengerjaan UI.
 
@@ -71,6 +72,7 @@ tests/Condec.Tests/         xunit.v3.mtp-v2, net10.0; 81 test, termasuk OfflineG
 - Dialog picker adalah jendela `#32770` milik jendela Condec, tidak muncul sebagai anak desktop di UIA. Skrip uji: `EnumWindows`, lalu `WM_SETTEXT` ke kotak nama dan `BM_CLICK` ke tombol.
 - Kotak nama file di dialog buka memakai id 1148, di dialog simpan id 1001.
 - `dotnet test` dari Git Bash melaporkan 0 test; dari PowerShell 174 lulus. Jalankan test dari PowerShell.
+  - Penyebab yang sama muncul di Linux (25 Sep 2026): dengan runner Microsoft.Testing.Platform, `dotnet test Condec.Portable.slnf` meneruskan argumen posisi itu mentah ke test host (`Command line arguments: 'Condec.Portable.slnf --server dotnettestcli ...'` di log diagnostik), sehingga "Zero tests ran", exit code 5. Bentuk yang benar: `dotnet test --solution Condec.Portable.slnf` atau `dotnet test --project tests/Condec.Tests/Condec.Tests.csproj`.
 - Root grid halaman: `MaxWidth` saja membuat kolom 880 tidak rata tengah. Lebar diatur dari code-behind (`UpdatePageSize`).
 - PNG 1600×1200 (6,4 MB) ke JPG selesai kurang dari 1 detik, 2 chunk.
 
@@ -189,3 +191,7 @@ Referensi presisi ada di `docs/design/*.html`. Pemetaan warna → ThemeResource 
 - Sesi pertama berjalan di server Linux dengan folder yang di-mount ke Nextcloud. File yang ditulis langsung di disk server tidak terlihat oleh client Nextcloud sampai ada rescan. Itu sebabnya pengerjaan pindah ke mesin lokal.
 - Di Windows, sebaiknya kerjakan proyek di folder lokal yang **tidak** disinkron Nextcloud, supaya `bin/obj` tidak ikut terunggah dan tidak bentrok dengan salinan di server.
 - Prasyarat Windows: .NET 10 SDK dan Windows 10 1809+. Untuk menjalankan atau men-deploy MSIX dari IDE, pakai Visual Studio dengan workload WinUI/Windows App SDK, dan aktifkan Developer Mode.
+- **Sesi cloud Claude Code (Linux, Ubuntu 24.04), 25 Sep 2026.** Repo GitHub `FathirAfza/Condec-conveter-`. Yang bisa dikerjakan hanya `Condec.Core` dan test portabel; aplikasi WinUI, test Windows, MSIX, dan LibreOffice tidak bisa dijalankan. Detail dan prompt pembukanya ada di `docs/CLOUD-SESSION-PROMPT.md`.
+  - .NET 10 SDK dipasang dari repositori Ubuntu (`apt-get install dotnet-sdk-10.0`, versi 10.0.112; `global.json` `rollForward: latestFeature` menerimanya). `builds.dotnet.microsoft.com`, `dot.net`, dan `aka.ms` diblokir proxy kontainer, jadi `dotnet-install.sh` tidak bisa dipakai. `api.nuget.org` dan `packages.microsoft.com` bisa diakses.
+  - Target Windows `Condec.Core` ikut terkompilasi di Linux (reference assembly `Microsoft.Windows.SDK.NET.dll` 10.0.26100.57 ada di cache NuGet), jadi keberadaan API WinRT bisa dicek saat compile. Kodenya tetap tidak bisa dijalankan di sini.
+  - Output build di Linux ada di `~/.cache/condec-artifacts` (`ArtifactsPath` di `Directory.Build.props`), bukan `bin/obj`.

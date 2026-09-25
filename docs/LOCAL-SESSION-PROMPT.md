@@ -1,6 +1,6 @@
 # Prompt untuk sesi Claude Code lokal (Windows)
 
-Salin semua teks di bawah garis ke sesi baru Claude Code yang dibuka di root folder proyek Condec.
+Salin semua teks di bawah garis ke sesi baru Claude Code yang dibuka di root folder proyek Condec. Untuk sesi cloud (Linux), pakai `docs/CLOUD-SESSION-PROMPT.md`; sesi Linux tidak bisa mem-build aplikasi WinUI.
 
 ---
 
