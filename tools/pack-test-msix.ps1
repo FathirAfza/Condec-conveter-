@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Condec contributors
+
 <#
 .SYNOPSIS
     Packs Condec into an MSIX signed with a self-signed test certificate.

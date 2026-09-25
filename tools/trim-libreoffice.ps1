@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Condec contributors
+
 <#
 .SYNOPSIS
     Removes the parts of a LibreOffice folder that Condec's headless conversions don't use.

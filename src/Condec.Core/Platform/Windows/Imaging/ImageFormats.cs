@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Condec contributors
+
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 

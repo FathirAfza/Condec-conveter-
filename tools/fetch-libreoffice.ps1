@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Condec contributors
+
 <#
 .SYNOPSIS
     Puts the LibreOffice copy that ships inside Condec in third_party\libreoffice.

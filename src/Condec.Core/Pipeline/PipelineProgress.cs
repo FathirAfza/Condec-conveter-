@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Condec contributors
+
 namespace Condec.Core.Pipeline;
 
 /// <summary>The four stages, in order. Their share of the overall progress is fixed (see <see cref="PipelineProgress"/>).</summary>

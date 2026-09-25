@@ -14,7 +14,7 @@ Baca urut: `docs/SPEC.md` (spesifikasi dan aturan pemilik proyek) → `docs/PLAN
 | 5. Dokumen via LibreOffice | Selesai, menunggu konfirmasi pemilik. LibreOffice 26.8 dibawa di dalam paket. Build 0 warning/0 error, test 240/240 (termasuk konversi nyata lewat salinan bawaan). Belum di-commit. Dikerjakan sebelum tahap 4 atas permintaan pemilik. |
 | 6. PDF → gambar/CAD/dokumen, DWG → PDF | Selesai, menunggu konfirmasi pemilik. Build 0 warning/0 error, test 323/323. Uji UI lewat MSIX lulus. Belum di-commit. |
 | 4 | Belum dimulai (setelah tahap 6, atas permintaan pemilik). |
-| 7 | Belum dimulai. |
+| 7. README, LICENSE, THIRD-PARTY-NOTICES | **Bagian lisensi selesai** (25 Sep 2026, sesi cloud, atas permintaan pemilik sebelum tahap 4): `LICENSE` (teks GPL-3.0 utuh), `LICENSE-ADDITIONAL-PERMISSION.md` (izin GPLv3 §7 untuk komponen Microsoft), `THIRD-PARTY-NOTICES.md`, header SPDX di semua `.cs` dan `.ps1`, properti `Copyright` di `Directory.Build.props`. Build portabel 0 warning/0 error, test 139/139. **README belum dikerjakan.** |
 | Repo GitHub | Sumber (tahap 1–3, 5, 6) di-commit apa adanya ke `FathirAfza/Condec-conveter-`, branch `claude/kind-mayer-9uxymj` (25 Sep 2026, sesi cloud). Di Linux: build `Condec.Portable.slnf` 0 warning/0 error, test portabel 139/139. Test Windows belum dijalankan ulang. |
 
 **Tugas berikutnya:** tahap 4 (audio/video), setelah pemilik mengonfirmasi tahap 6. Urutan yang diminta pemilik: 5, 6, lalu 4. Antislop tetap dipakai selama pengerjaan UI.
@@ -128,7 +128,8 @@ tests/Condec.Tests/         xunit.v3.mtp-v2, net10.0; 81 test, termasuk OfflineG
 - `PublishTrimmed=False` sampai bisa diuji.
 - Manifest MSIX tanpa capability `internetClient`.
 - Ikon aplikasi dirender dari SVG ikon di mockup (kotak biru membulat + dua panah), tanpa kata "DWG".
-- Masih terbuka (tanyakan di tahap 7): additional permission GPLv3 §7 untuk linking ke Windows App SDK (proprietary).
+- **Keputusan pemilik (25 Sep 2026):** additional permission GPLv3 §7 untuk linking ke Windows App SDK, WebView2, WinRT, .NET runtime, dan komponen Windows lain **ditambahkan** (`LICENSE-ADDITIONAL-PERMISSION.md`). Pemegang hak cipta ditulis sebagai "Condec contributors". Header sumber memakai dua baris komentar SPDX (`GPL-3.0-or-later`) di `.cs` dan `.ps1`; berkas XAML sengaja tidak diberi header karena belum bisa dikompilasi di sesi cloud.
+- **Perlu dicek di sesi Windows berikutnya:** (1) nama persis berkas lisensi LibreOffice di root `third_party\libreoffice` (diasumsikan `license.txt` dan `LICENSE.html`) dan pastikan `trim-libreoffice.ps1` tidak membuangnya; sesuaikan `THIRD-PARTY-NOTICES.md` §1 kalau berbeda; (2) `tools/*.ps1` masih jalan dengan dua baris komentar SPDX di atas blok comment-based help; (3) `Microsoft.Windows.SDK.NET.dll` dan `WinRT.Runtime.dll` memang ada di output paket (klaim di THIRD-PARTY-NOTICES).
 - **Core (tahap 2):**
   - Namespace `Condec.Core.Conversion` (kontrak, registry), `.Pipeline`, `.History`, dan `.Formats`. Core melaporkan progres terstruktur (tahap, fraksi, nomor chunk); teks seperti "Chunk n dari N" dirangkai di UI.
   - File sementara bernama `<nama tujuan lengkap>.condec-tmp`, misalnya `laporan.pdf.condec-tmp`. Kalau nama itu sudah dipakai file lain, dipakai `laporan.pdf.2.condec-tmp`, dan file lama tidak disentuh.

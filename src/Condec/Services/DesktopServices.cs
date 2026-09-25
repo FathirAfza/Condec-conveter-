@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Condec contributors
+
 using System.Diagnostics;
 using Microsoft.UI;
 using Microsoft.Windows.Storage.Pickers;

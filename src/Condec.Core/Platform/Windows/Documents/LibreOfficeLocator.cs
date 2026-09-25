@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Condec contributors
+
 using Microsoft.Win32;
 
 namespace Condec.Core.Documents;

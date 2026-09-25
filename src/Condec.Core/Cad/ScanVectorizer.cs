@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Condec contributors
+
 namespace Condec.Core.Cad;
 
 /// <summary>An 8-bit grayscale raster, rows top to bottom. 0 is black.</summary>
