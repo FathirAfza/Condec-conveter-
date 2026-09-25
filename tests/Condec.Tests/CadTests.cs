@@ -78,22 +78,6 @@ public sealed class CadGeometryTests
         Assert.Null(CadGeometry.FitArc(new XY(x0, y0), new XY(x1, y1), new XY(x2, y2), new XY(x3, y3)));
 
     [Theory]
-    [InlineData(0, 10, 20, 10, 20)]
-    [InlineData(90, 10, 20, 20, 90)]
-    [InlineData(180, 10, 20, 90, 180)]
-    [InlineData(270, 10, 20, 180, 10)]
-    public void PageRotation_FollowsTheViewer(int rotation, double x, double y, double expectedX, double expectedY)
-    {
-        // A 100 × 200 pt page. At 90 the page shows 200 wide and 100 high, turned clockwise.
-        var transform = new PageTransform(0, 0, 100, 200, rotation, 1);
-
-        var mapped = transform.Map(x, y);
-
-        Assert.Equal(expectedX, mapped.X, 6);
-        Assert.Equal(expectedY, mapped.Y, 6);
-    }
-
-    [Theory]
     [InlineData(CadUnit.Millimeters, 1, 25.4 / 72)]
     [InlineData(CadUnit.Centimeters, 1, 2.54 / 72)]
     [InlineData(CadUnit.Meters, 100, 2.54 / 72)]

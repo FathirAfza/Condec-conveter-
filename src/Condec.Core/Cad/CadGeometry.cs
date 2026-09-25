@@ -6,40 +6,74 @@ using CSMath;
 namespace Condec.Core.Cad;
 
 /// <summary>
-/// Maps PDF user space (points, origin at the bottom left of the crop box) to drawing units, turning the
-/// page the way a PDF viewer shows it when the page has a /Rotate entry.
+/// Maps PdfPig page coordinates to drawing units. PdfPig already delivers every point the way a viewer
+/// shows the page: the crop box origin is subtracted and the page's /Rotate is applied, so only the
+/// scale is left to do.
 /// </summary>
-internal readonly record struct PageTransform(double Left, double Bottom, double Width, double Height, int Rotation, double UnitsPerPoint)
+internal readonly record struct PageTransform(double UnitsPerPoint)
 {
-    public XY Map(double x, double y)
+    public XY Map(double x, double y) => new(x * UnitsPerPoint, y * UnitsPerPoint);
+
+    public Rect Map(Rect rect) => new(rect.MinX * UnitsPerPoint, rect.MinY * UnitsPerPoint, rect.MaxX * UnitsPerPoint, rect.MaxY * UnitsPerPoint);
+}
+
+/// <summary>An axis-aligned rectangle; the clip region a path is visible in, or the extent of a shape.</summary>
+internal readonly record struct Rect(double MinX, double MinY, double MaxX, double MaxY)
+{
+    public bool IsEmpty => MaxX < MinX || MaxY < MinY;
+
+    public Rect Intersect(Rect other) =>
+        new(Math.Max(MinX, other.MinX), Math.Max(MinY, other.MinY), Math.Min(MaxX, other.MaxX), Math.Min(MaxY, other.MaxY));
+
+    public bool Contains(XY p) => p.X >= MinX && p.X <= MaxX && p.Y >= MinY && p.Y <= MaxY;
+
+    public bool Intersects(Rect other) => !IsEmpty && !other.IsEmpty
+        && other.MaxX >= MinX && other.MinX <= MaxX && other.MaxY >= MinY && other.MinY <= MaxY;
+
+    /// <summary>The rectangle grown by <paramref name="margin"/> on every side.</summary>
+    public Rect Grow(double margin) => new(MinX - margin, MinY - margin, MaxX + margin, MaxY + margin);
+
+    public static Rect Around(IEnumerable<XY> points)
     {
-        var dx = x - Left;
-        var dy = y - Bottom;
-
-        // /Rotate turns the page clockwise for display. The results are still measured from the
-        // bottom left of the page as shown.
-        var (px, py) = ((((Rotation % 360) + 360) % 360) switch
+        double minX = double.PositiveInfinity, minY = double.PositiveInfinity, maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
+        foreach (var p in points)
         {
-            90 => (dy, Width - dx),
-            180 => (Width - dx, Height - dy),
-            270 => (Height - dy, dx),
-            _ => (dx, dy),
-        });
+            minX = Math.Min(minX, p.X);
+            minY = Math.Min(minY, p.Y);
+            maxX = Math.Max(maxX, p.X);
+            maxY = Math.Max(maxY, p.Y);
+        }
 
-        return new XY(px * UnitsPerPoint, py * UnitsPerPoint);
+        return new Rect(minX, minY, maxX, maxY);
     }
-
-    /// <summary>Clockwise display rotation turns text counter-clockwise in drawing angles.</summary>
-    public double MapAngle(double radians) => radians - (Rotation * Math.PI / 180);
 }
 
 /// <summary>A circular arc in drawing units, counter-clockwise from <see cref="StartAngle"/> to <see cref="EndAngle"/> (radians).</summary>
-internal readonly record struct ArcFit(XY Center, double Radius, double StartAngle, double EndAngle);
+internal readonly record struct ArcFit(XY Center, double Radius, double StartAngle, double EndAngle)
+{
+    /// <summary>The extent of the arc itself, from points sampled along it.</summary>
+    public Rect Bounds()
+    {
+        var (center, radius, start, sweep) = (Center, Radius, StartAngle, CadGeometry.Sweep(this));
+        const int samples = 16;
+        return Rect.Around(Enumerable.Range(0, samples + 1).Select(i =>
+        {
+            var angle = start + (sweep * i / samples);
+            return new XY(center.X + (radius * Math.Cos(angle)), center.Y + (radius * Math.Sin(angle)));
+        }));
+    }
+}
 
 internal static class CadGeometry
 {
     /// <summary>How far, relative to the radius, the Bézier may stray from the circle and still count as an arc.</summary>
     internal const double ArcTolerance = 0.002;
+
+    /// <summary>
+    /// How far, relative to the chord, the control points of a Bézier may leave the chord and still count
+    /// as a straight line. Producers write gentle curves and even straight edges as Béziers.
+    /// </summary>
+    internal const double FlatTolerance = 0.001;
 
     /// <summary>
     /// The circular arc a cubic Bézier draws, when it draws one. PDF producers write circles and arcs as
@@ -73,6 +107,69 @@ internal static class CadGeometry
         var a0 = Math.Atan2(p0.Y - center.Y, p0.X - center.X);
         var a3 = Math.Atan2(p3.Y - center.Y, p3.X - center.X);
         return counterClockwise ? new ArcFit(center, radius, a0, a3) : new ArcFit(center, radius, a3, a0);
+    }
+
+    /// <summary>True when the Bézier is a straight line from its start to its end, within <see cref="FlatTolerance"/>.</summary>
+    public static bool IsFlat(XY p0, XY p1, XY p2, XY p3)
+    {
+        var chord = Distance(p0, p3);
+        if (chord <= 0)
+        {
+            return false;
+        }
+
+        var d = p3 - p0;
+        double Offset(XY p) => Math.Abs(Cross(d, p - p0)) / chord;
+        double Along(XY p) => Dot(d, p - p0) / (chord * chord);
+
+        // Control points on the chord, and between its ends: the curve never leaves or overshoots it.
+        return Offset(p1) <= FlatTolerance * chord && Offset(p2) <= FlatTolerance * chord
+            && Along(p1) is >= -FlatTolerance and <= 1 + FlatTolerance && Along(p2) is >= -FlatTolerance and <= 1 + FlatTolerance;
+    }
+
+    /// <summary>The part of the segment inside <paramref name="clip"/> (Liang–Barsky), or null when none is.</summary>
+    public static (XY From, XY To)? ClipSegment(XY a, XY b, Rect clip)
+    {
+        double t0 = 0, t1 = 1;
+        var dx = b.X - a.X;
+        var dy = b.Y - a.Y;
+
+        bool Edge(double p, double q)
+        {
+            if (p == 0)
+            {
+                return q >= 0;
+            }
+
+            var t = q / p;
+            if (p < 0)
+            {
+                if (t > t1)
+                {
+                    return false;
+                }
+
+                t0 = Math.Max(t0, t);
+            }
+            else
+            {
+                if (t < t0)
+                {
+                    return false;
+                }
+
+                t1 = Math.Min(t1, t);
+            }
+
+            return true;
+        }
+
+        if (!Edge(-dx, a.X - clip.MinX) || !Edge(dx, clip.MaxX - a.X) || !Edge(-dy, a.Y - clip.MinY) || !Edge(dy, clip.MaxY - a.Y))
+        {
+            return null;
+        }
+
+        return (new XY(a.X + (t0 * dx), a.Y + (t0 * dy)), new XY(a.X + (t1 * dx), a.Y + (t1 * dy)));
     }
 
     /// <summary>How far, relative to the radius, arcs of one circle may disagree about its center and radius.</summary>
@@ -153,6 +250,8 @@ internal static class CadGeometry
     public static double Distance(XY a, XY b) => Math.Sqrt(((a.X - b.X) * (a.X - b.X)) + ((a.Y - b.Y) * (a.Y - b.Y)));
 
     private static double Cross(XY a, XY b) => (a.X * b.Y) - (a.Y * b.X);
+
+    private static double Dot(XY a, XY b) => (a.X * b.X) + (a.Y * b.Y);
 
     private static XY? Circumcenter(XY a, XY b, XY c)
     {

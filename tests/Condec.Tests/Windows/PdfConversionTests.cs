@@ -153,7 +153,8 @@ public sealed class PdfConversionTests(PdfSamplesFixture fixture) : IClassFixtur
 
         // No white page background.
         Assert.DoesNotContain(drawing.Entities.OfType<LwPolyline>(), p => Size(p).W > 200);
-        Assert.Contains(drawing.Entities.OfType<LwPolyline>(), p => !p.IsClosed && Size(p) is var s && Near(s.W, 100) && s.H < 0.1);
+        // A lone segment is a LINE; only runs of connected segments become polylines.
+        Assert.Contains(drawing.Entities.OfType<Line>(), l => Near(Math.Abs(l.EndPoint.X - l.StartPoint.X), 100) && Math.Abs(l.EndPoint.Y - l.StartPoint.Y) < 0.1);
         Assert.Contains(drawing.Entities.OfType<TextEntity>(), t => t.Value == "Denah");
     }
 

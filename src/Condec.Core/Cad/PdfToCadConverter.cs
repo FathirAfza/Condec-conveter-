@@ -11,6 +11,8 @@ using Condec.Core.Pdf;
 using CSMath;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
+using UglyToad.PdfPig.Graphics;
 
 namespace Condec.Core.Cad;
 
@@ -19,7 +21,7 @@ public sealed class NothingToConvertException(string message) : Exception(messag
 
 /// <summary>
 /// One PDF page to a DXF or DWG drawing. Vector pages keep their geometry: lines become LINE or LWPOLYLINE,
-/// Béziers that trace a circle become ARC and the rest SPLINE, words become TEXT. Scanned pages are
+/// Béziers that trace a circle become ARC or CIRCLE and the rest SPLINE, words become TEXT. Scanned pages are
 /// rendered and their ink outlines traced into closed LWPOLYLINEs.
 /// </summary>
 public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConverter
@@ -41,6 +43,18 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
 
     /// <summary>Cap height of common fonts relative to the font size; DXF text height is the cap height.</summary>
     internal const double CapHeightRatio = 0.7;
+
+    /// <summary>
+    /// A filled four-sided shape no wider than this (in points) is a line drawn as a sliver, the way some
+    /// producers paint strokes. It becomes one LINE along its middle instead of a thin closed outline.
+    /// </summary>
+    internal const double SliverMaxWidthPoints = 1.5;
+
+    /// <summary>A sliver must be at least this many times longer than it is wide.</summary>
+    internal const double SliverMinAspect = 4;
+
+    /// <summary>Points closer than this, in PDF points, are the same point when joining segments.</summary>
+    internal const double JoinTolerancePoints = 0.01;
 
     public IReadOnlyList<string> GetTargets(string sourceExtension) =>
         FileExtension.Normalize(sourceExtension) == ".pdf" ? [".dxf", ".dwg"] : [];
@@ -86,6 +100,7 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
             throw new NothingToConvertException($"Page {options.PageNumber} has nothing to convert.");
         }
 
+        SetExtents(cad);
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
         ct.ThrowIfCancellationRequested();
         progress.Report(new ConversionProgress(ConversionStage.Encode, 0, $"Menulis {entityCount} objek CAD"));
@@ -113,27 +128,54 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         return buffer.ToArray();
     }
 
+    /// <summary>Drawing extents in the header, so "zoom extents" lands on the drawing right away.</summary>
+    internal static void SetExtents(CadDocument cad)
+    {
+        var box = CSMath.BoundingBox.Null;
+        foreach (var entity in cad.Entities)
+        {
+            box = box.Merge(entity.GetBoundingBox());
+        }
+
+        if (box.Extent == BoundingBoxExtent.Finite)
+        {
+            cad.Header.ModelSpaceExtMin = box.Min;
+            cad.Header.ModelSpaceExtMax = box.Max;
+        }
+    }
+
     internal static List<Entity> ReadVectors(Page page, CadOptions options, CancellationToken ct)
     {
-        var box = page.CropBox.Bounds;
-        var transform = new PageTransform(box.Left, box.Bottom, box.Width, box.Height, page.Rotation.Value, options.UnitsPerPoint);
-        var entities = new List<Entity>();
+        var transform = new PageTransform(options.UnitsPerPoint);
+        var pageBox = new Rect(0, 0, page.Width, page.Height);
+        var clips = PdfClipTracker.Resolve(page, pageBox);
+        var builder = new EntityBuilder(transform, options.JoinLines);
 
         // Producers often paint a shape twice, once to fill it and once to stroke its outline, and paint the
         // page background as a filled rectangle. Neither belongs in a drawing.
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        var pageArea = box.Width * box.Height;
-        foreach (var path in page.Paths)
+        var pageArea = page.Width * page.Height;
+        for (var i = 0; i < page.Paths.Count; i++)
         {
             ct.ThrowIfCancellationRequested();
+            var path = page.Paths[i];
             if (path.IsClipping || !(path.IsStroked || path.IsFilled))
             {
                 continue;
             }
 
-            if (!path.IsStroked && path.GetBoundingRectangle() is { } bounds && bounds.Width * bounds.Height >= BackgroundCoverage * pageArea)
+            var clip = clips?[i] ?? pageBox;
+            if (path.GetBoundingRectangle() is { } bounds)
             {
-                continue;
+                if (!path.IsStroked && bounds.Width * bounds.Height >= BackgroundCoverage * pageArea)
+                {
+                    continue;
+                }
+
+                if (!clip.Intersects(ToRect(bounds)))
+                {
+                    continue;
+                }
             }
 
             if (!seen.Add(Signature(path)))
@@ -141,17 +183,28 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
                 continue;
             }
 
+            var color = CadColors.FromPdf(path.IsStroked ? path.StrokeColor : path.FillColor);
+            if (!path.IsStroked && Sliver(path) is { } sliver)
+            {
+                builder.AddSegment(transform.Map(sliver.From.X, sliver.From.Y), transform.Map(sliver.To.X, sliver.To.Y), transform.Map(clip), color);
+                continue;
+            }
+
             foreach (var subpath in path)
             {
-                AddSubpath(subpath, transform, options.JoinLines, entities);
+                builder.AddSubpath(subpath, transform.Map(clip), color);
             }
         }
 
+        var entities = builder.Finish();
+
         if (options.KeepText)
         {
-            foreach (var word in page.GetWords())
+            // Invisible text (render mode 3, "neither") carries OCR results over scans and hidden layers.
+            var visible = page.Letters.Where(letter => letter.RenderingMode is not (TextRenderingMode.Neither or TextRenderingMode.NeitherClip)).ToList();
+            foreach (var word in NearestNeighbourWordExtractor.Instance.GetWords(visible))
             {
-                if (ToText(word, transform) is { } text)
+                if (pageBox.Intersects(ToRect(word.BoundingBox)) && ToText(word, transform) is { } text)
                 {
                     entities.Add(text);
                 }
@@ -161,8 +214,14 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         return entities;
     }
 
+    /// <summary>The axis-aligned extent of a PdfPig rectangle, which may be rotated (rotated text) or inverted.</summary>
+    internal static Rect ToRect(PdfRectangle rectangle) =>
+        Rect.Around([P(rectangle.BottomLeft), P(rectangle.BottomRight), P(rectangle.TopLeft), P(rectangle.TopRight)]);
+
+    private static XY P(PdfPoint point) => new(point.X, point.Y);
+
     /// <summary>The geometry of a path, rounded to 1/100 pt, to recognize the same shape painted twice.</summary>
-    private static string Signature(UglyToad.PdfPig.Graphics.PdfPath path)
+    private static string Signature(PdfPath path)
     {
         var text = new System.Text.StringBuilder();
         void Add(PdfPoint p) => text.Append(System.Globalization.CultureInfo.InvariantCulture, $"{Math.Round(p.X, 2)},{Math.Round(p.Y, 2)};");
@@ -185,161 +244,76 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         return text.ToString();
     }
 
-    private abstract record Segment;
-
-    private sealed record StraightSegment(XY From, XY To) : Segment;
-
-    private sealed record ArcSegment(ArcFit Arc) : Segment;
-
-    private sealed record SplineSegment(XY P0, XY P1, XY P2, XY P3) : Segment;
-
-    private static void AddSubpath(PdfSubpath subpath, PageTransform transform, bool joinLines, List<Entity> entities)
+    /// <summary>
+    /// The centre line of a filled sliver: one closed subpath with four straight sides forming a long, thin
+    /// parallelogram. Null for any other shape.
+    /// </summary>
+    internal static (PdfPoint From, PdfPoint To)? Sliver(PdfPath path)
     {
-        // Collect the segments first; a Close adds the segment back to the start of the subpath.
-        var segments = new List<Segment>();
-        XY? start = null;
-        XY? current = null;
-        var closed = false;
-        foreach (var command in subpath.Commands)
+        if (path.Count != 1)
+        {
+            return null;
+        }
+
+        var corners = new List<PdfPoint>();
+        foreach (var command in path[0].Commands)
         {
             switch (command)
             {
-                case PdfSubpath.Move move:
-                    start = current = transform.Map(move.Location.X, move.Location.Y);
+                case PdfSubpath.Move m:
+                    corners.Add(m.Location);
                     break;
-                case PdfSubpath.Line line:
-                    var to = transform.Map(line.To.X, line.To.Y);
-                    segments.Add(new StraightSegment(transform.Map(line.From.X, line.From.Y), to));
-                    current = to;
+                case PdfSubpath.Line l when corners.Count == 0:
+                    corners.Add(l.From);
+                    corners.Add(l.To);
                     break;
-                case PdfSubpath.CubicBezierCurve curve:
-                    var p0 = transform.Map(curve.StartPoint.X, curve.StartPoint.Y);
-                    var p1 = transform.Map(curve.FirstControlPoint.X, curve.FirstControlPoint.Y);
-                    var p2 = transform.Map(curve.SecondControlPoint.X, curve.SecondControlPoint.Y);
-                    var p3 = transform.Map(curve.EndPoint.X, curve.EndPoint.Y);
-                    segments.Add(CadGeometry.FitArc(p0, p1, p2, p3) is { } arc ? new ArcSegment(arc) : new SplineSegment(p0, p1, p2, p3));
-                    current = p3;
+                case PdfSubpath.Line l:
+                    corners.Add(l.To);
                     break;
                 case PdfSubpath.Close:
-                    if (start is { } first && current is { } last && !Near(first, last))
-                    {
-                        segments.Add(new StraightSegment(last, first));
-                    }
-
-                    closed = true;
-                    current = start;
                     break;
+                default:
+                    return null;
             }
         }
 
-        segments.RemoveAll(segment => segment is StraightSegment s && Near(s.From, s.To));
-
-        // A circle is drawn as four or more Bézier arcs around one center. Rounded PDF coordinates move each
-        // arc's center a little, so they are compared with a tolerance and written as one CIRCLE.
-        if (closed && segments.Count >= 2 && segments.All(segment => segment is ArcSegment)
-            && CadGeometry.MergeCircle([.. segments.Cast<ArcSegment>().Select(a => a.Arc)]) is { } circle)
+        // The last corner may repeat the first when the path is closed explicitly.
+        if (corners.Count == 5 && PdfDistance(corners[0], corners[4]) < 1e-6)
         {
-            entities.Add(new Circle { Center = new XYZ(circle.Center.X, circle.Center.Y, 0), Radius = circle.Radius });
-            return;
+            corners.RemoveAt(4);
         }
 
-        segments = MergeArcs(segments);
-
-        // A subpath of straight segments only that returns to its start is one closed polyline.
-        if (joinLines && closed && segments.Count >= 3 && segments.All(segment => segment is StraightSegment))
+        if (corners.Count != 4)
         {
-            var corners = segments.Cast<StraightSegment>().Select(s => (IVector)s.From);
-            entities.Add(new LwPolyline(corners) { IsClosed = true });
-            return;
+            return null;
         }
 
-        var run = new List<XY>();
-        void FlushRun()
+        var a = PdfDistance(corners[0], corners[1]);
+        var b = PdfDistance(corners[1], corners[2]);
+        var c = PdfDistance(corners[2], corners[3]);
+        var d = PdfDistance(corners[3], corners[0]);
+        var sideTolerance = 0.05 * Math.Max(Math.Max(a, b), 1e-9);
+        if (Math.Abs(a - c) > sideTolerance || Math.Abs(b - d) > sideTolerance)
         {
-            if (run.Count >= 2)
-            {
-                entities.Add(new LwPolyline(run.Select(p => (IVector)p)));
-            }
-
-            run.Clear();
+            return null;
         }
 
-        foreach (var segment in segments)
+        var (width, length) = a < b ? (a, b) : (b, a);
+        if (width > SliverMaxWidthPoints || length < SliverMinAspect * Math.Max(width, 1e-9))
         {
-            switch (segment)
-            {
-                case StraightSegment s when joinLines:
-                    if (run.Count > 0 && !Near(run[^1], s.From))
-                    {
-                        FlushRun();
-                    }
-
-                    if (run.Count == 0)
-                    {
-                        run.Add(s.From);
-                    }
-
-                    run.Add(s.To);
-                    break;
-                case StraightSegment s:
-                    entities.Add(new Line(new XYZ(s.From.X, s.From.Y, 0), new XYZ(s.To.X, s.To.Y, 0)));
-                    break;
-                case ArcSegment a:
-                    FlushRun();
-                    entities.Add(new Arc
-                    {
-                        Center = new XYZ(a.Arc.Center.X, a.Arc.Center.Y, 0),
-                        Radius = a.Arc.Radius,
-                        StartAngle = a.Arc.StartAngle,
-                        EndAngle = a.Arc.EndAngle,
-                    });
-                    break;
-                case SplineSegment c:
-                    FlushRun();
-                    entities.Add(ToSpline(c.P0, c.P1, c.P2, c.P3));
-                    break;
-            }
+            return null;
         }
 
-        FlushRun();
+        // Join the midpoints of the two short sides.
+        return a < b
+            ? (Mid(corners[0], corners[1]), Mid(corners[2], corners[3]))
+            : (Mid(corners[1], corners[2]), Mid(corners[3], corners[0]));
     }
 
-    /// <summary>Joins neighbouring arcs of the same circle into one arc.</summary>
-    private static List<Segment> MergeArcs(List<Segment> segments)
-    {
-        var merged = new List<Segment>();
-        foreach (var segment in segments)
-        {
-            if (segment is ArcSegment next && merged.Count > 0 && merged[^1] is ArcSegment previous
-                && CadGeometry.JoinArcs(previous.Arc, next.Arc) is { } joined)
-            {
-                merged[^1] = new ArcSegment(joined);
-            }
-            else
-            {
-                merged.Add(segment);
-            }
-        }
+    private static PdfPoint Mid(PdfPoint a, PdfPoint b) => new((a.X + b.X) / 2, (a.Y + b.Y) / 2);
 
-        return merged;
-    }
+    private static double PdfDistance(PdfPoint a, PdfPoint b) => Math.Sqrt(((a.X - b.X) * (a.X - b.X)) + ((a.Y - b.Y) * (a.Y - b.Y)));
 
-    private static Spline ToSpline(XY p0, XY p1, XY p2, XY p3)
-    {
-        var spline = new Spline { Degree = 3 };
-        foreach (var p in (XY[])[p0, p1, p2, p3])
-        {
-            spline.ControlPoints.Add(new XYZ(p.X, p.Y, 0));
-        }
-
-        // A single cubic Bézier is a clamped B-spline with this knot vector.
-        foreach (var knot in (double[])[0, 0, 0, 0, 1, 1, 1, 1])
-        {
-            spline.Knots.Add(knot);
-        }
-
-        return spline;
-    }
     private static TextEntity? ToText(Word word, PageTransform transform)
     {
         if (string.IsNullOrWhiteSpace(word.Text) || word.Letters.Count == 0)
@@ -351,10 +325,10 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         var last = word.Letters[^1];
         var angle = word.Letters.Count > 1
             ? Math.Atan2(last.StartBaseLine.Y - first.StartBaseLine.Y, last.StartBaseLine.X - first.StartBaseLine.X)
-            : 0;
+            : Math.Atan2(first.EndBaseLine.Y - first.StartBaseLine.Y, first.EndBaseLine.X - first.StartBaseLine.X);
         var insert = transform.Map(first.StartBaseLine.X, first.StartBaseLine.Y);
         var height = first.PointSize * CapHeightRatio * transform.UnitsPerPoint;
-        if (height <= 0)
+        if (height <= 0 || double.IsNaN(angle))
         {
             return null;
         }
@@ -363,7 +337,8 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         {
             InsertPoint = new XYZ(insert.X, insert.Y, 0),
             Height = height,
-            Rotation = transform.MapAngle(angle),
+            Rotation = angle,
+            Color = CadColors.FromPdf(first.RenderingMode is TextRenderingMode.Stroke or TextRenderingMode.StrokeClip ? first.StrokeColor : first.FillColor),
         };
     }
 
@@ -387,5 +362,300 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         return entities;
     }
 
-    private static bool Near(XY a, XY b) => CadGeometry.Distance(a, b) < 1e-9;
+    /// <summary>
+    /// Turns subpaths into entities in drawing units. Straight runs are collected first and joined across
+    /// paths at the end, because producers paint connected outlines one segment at a time.
+    /// </summary>
+    private sealed class EntityBuilder(PageTransform transform, bool joinLines)
+    {
+        private readonly List<Entity> _entities = [];
+        private readonly PolylineJoiner _joiner = new(JoinTolerancePoints * transform.UnitsPerPoint);
+        private readonly List<Color> _groups = [];
+        private readonly double _near = JoinTolerancePoints * transform.UnitsPerPoint;
+
+        private abstract record Segment;
+
+        private sealed record StraightSegment(XY From, XY To) : Segment;
+
+        private sealed record ArcSegment(ArcFit Arc) : Segment;
+
+        private sealed record BezierSegment(XY P0, XY P1, XY P2, XY P3) : Segment;
+
+        public void AddSegment(XY from, XY to, Rect clip, Color color)
+        {
+            if (CadGeometry.ClipSegment(from, to, clip) is { } visible && !Near(visible.From, visible.To))
+            {
+                AddRun([visible.From, visible.To], color);
+            }
+        }
+
+        public void AddSubpath(PdfSubpath subpath, Rect clip, Color color)
+        {
+            // Collect the segments first; a Close adds the segment back to the start of the subpath.
+            var segments = new List<Segment>();
+            XY? start = null;
+            XY? current = null;
+            var closed = false;
+            foreach (var command in subpath.Commands)
+            {
+                switch (command)
+                {
+                    case PdfSubpath.Move move:
+                        start = current = transform.Map(move.Location.X, move.Location.Y);
+                        break;
+                    case PdfSubpath.Line line:
+                        var to = transform.Map(line.To.X, line.To.Y);
+                        segments.Add(new StraightSegment(transform.Map(line.From.X, line.From.Y), to));
+                        start ??= segments[^1] is StraightSegment s ? s.From : null;
+                        current = to;
+                        break;
+                    case PdfSubpath.CubicBezierCurve bezier:
+                        var p0 = transform.Map(bezier.StartPoint.X, bezier.StartPoint.Y);
+                        var p1 = transform.Map(bezier.FirstControlPoint.X, bezier.FirstControlPoint.Y);
+                        var p2 = transform.Map(bezier.SecondControlPoint.X, bezier.SecondControlPoint.Y);
+                        var p3 = transform.Map(bezier.EndPoint.X, bezier.EndPoint.Y);
+                        start ??= p0;
+                        segments.Add(
+                            CadGeometry.IsFlat(p0, p1, p2, p3) ? new StraightSegment(p0, p3)
+                            : CadGeometry.FitArc(p0, p1, p2, p3) is { } arc ? new ArcSegment(arc)
+                            : new BezierSegment(p0, p1, p2, p3));
+                        current = p3;
+                        break;
+                    case PdfSubpath.Close:
+                        if (start is { } first && current is { } last && !Near(first, last))
+                        {
+                            segments.Add(new StraightSegment(last, first));
+                        }
+
+                        closed = true;
+                        current = start;
+                        break;
+                }
+            }
+
+            segments.RemoveAll(segment => segment is StraightSegment s && Near(s.From, s.To));
+            if (segments.Count == 0)
+            {
+                return;
+            }
+
+            // A path that ends where it began is closed even without an explicit Close.
+            closed |= start is { } s0 && current is { } c0 && Near(s0, c0);
+
+            // A circle is drawn as four or more Bézier arcs around one center. Rounded PDF coordinates move each
+            // arc's center a little, so they are compared with a tolerance and written as one CIRCLE.
+            if (closed && segments.Count >= 2 && segments.All(segment => segment is ArcSegment)
+                && CadGeometry.MergeCircle([.. segments.Cast<ArcSegment>().Select(a => a.Arc)]) is { } circle)
+            {
+                var bounds = new Rect(circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Center.X + circle.Radius, circle.Center.Y + circle.Radius);
+                if (clip.Intersects(bounds))
+                {
+                    _entities.Add(new Circle { Center = new XYZ(circle.Center.X, circle.Center.Y, 0), Radius = circle.Radius, Color = color });
+                }
+
+                return;
+            }
+
+            segments = MergeArcs(segments);
+
+            // A subpath of straight segments only that returns to its start is one closed polyline, as long
+            // as all of it is visible; a partly clipped outline is cut into open pieces below instead.
+            if (joinLines && closed && segments.Count >= 3 && segments.All(segment => segment is StraightSegment))
+            {
+                var corners = segments.Cast<StraightSegment>().Select(s => s.From).ToList();
+                if (corners.All(clip.Contains))
+                {
+                    _entities.Add(new LwPolyline(corners.Select(p => (IVector)p)) { IsClosed = true, Color = color });
+                    return;
+                }
+            }
+
+            var run = new List<XY>();
+            var curve = new List<BezierSegment>();
+            void FlushRun()
+            {
+                AddRun(run, color);
+                run = [];
+            }
+
+            void FlushCurve()
+            {
+                if (curve.Count > 0)
+                {
+                    var spline = ToSpline(curve);
+                    if (clip.Intersects(Rect.Around(spline.ControlPoints.Select(p => new XY(p.X, p.Y)))))
+                    {
+                        spline.Color = color;
+                        _entities.Add(spline);
+                    }
+                }
+
+                curve.Clear();
+            }
+
+            foreach (var segment in segments)
+            {
+                switch (segment)
+                {
+                    case StraightSegment s:
+                        FlushCurve();
+                        if (CadGeometry.ClipSegment(s.From, s.To, clip) is not { } visible || Near(visible.From, visible.To))
+                        {
+                            FlushRun();
+                            break;
+                        }
+
+                        if (run.Count > 0 && !Near(run[^1], visible.From))
+                        {
+                            FlushRun();
+                        }
+
+                        if (run.Count == 0)
+                        {
+                            run.Add(visible.From);
+                        }
+
+                        run.Add(visible.To);
+                        break;
+                    case ArcSegment a:
+                        FlushRun();
+                        FlushCurve();
+                        if (clip.Intersects(a.Arc.Bounds()))
+                        {
+                            _entities.Add(new Arc
+                            {
+                                Center = new XYZ(a.Arc.Center.X, a.Arc.Center.Y, 0),
+                                Radius = a.Arc.Radius,
+                                StartAngle = a.Arc.StartAngle,
+                                EndAngle = a.Arc.EndAngle,
+                                Color = color,
+                            });
+                        }
+
+                        break;
+                    case BezierSegment c:
+                        FlushRun();
+                        if (curve.Count > 0 && !Near(curve[^1].P3, c.P0))
+                        {
+                            FlushCurve();
+                        }
+
+                        curve.Add(c);
+                        break;
+                }
+            }
+
+            FlushRun();
+            FlushCurve();
+        }
+
+        /// <summary>The entities so far, with straight runs joined into polylines. Two-point runs become LINEs.</summary>
+        public List<Entity> Finish()
+        {
+            foreach (var (points, group, closed) in _joiner.Join())
+            {
+                var color = _groups[group];
+                if (points.Count == 2 && !closed)
+                {
+                    _entities.Add(new Line(new XYZ(points[0].X, points[0].Y, 0), new XYZ(points[1].X, points[1].Y, 0)) { Color = color });
+                }
+                else
+                {
+                    _entities.Add(new LwPolyline(points.Select(p => (IVector)p)) { IsClosed = closed, Color = color });
+                }
+            }
+
+            return _entities;
+        }
+
+        private void AddRun(List<XY> points, Color color)
+        {
+            if (points.Count < 2)
+            {
+                return;
+            }
+
+            if (joinLines)
+            {
+                _joiner.Add(points, GroupOf(color));
+                return;
+            }
+
+            for (var i = 1; i < points.Count; i++)
+            {
+                _entities.Add(new Line(new XYZ(points[i - 1].X, points[i - 1].Y, 0), new XYZ(points[i].X, points[i].Y, 0)) { Color = color });
+            }
+        }
+
+        private int GroupOf(Color color)
+        {
+            var index = _groups.IndexOf(color);
+            if (index < 0)
+            {
+                _groups.Add(color);
+                index = _groups.Count - 1;
+            }
+
+            return index;
+        }
+
+        /// <summary>Joins neighbouring arcs of the same circle into one arc.</summary>
+        private static List<Segment> MergeArcs(List<Segment> segments)
+        {
+            var merged = new List<Segment>();
+            foreach (var segment in segments)
+            {
+                if (segment is ArcSegment next && merged.Count > 0 && merged[^1] is ArcSegment previous
+                    && CadGeometry.JoinArcs(previous.Arc, next.Arc) is { } joined)
+                {
+                    merged[^1] = new ArcSegment(joined);
+                }
+                else
+                {
+                    merged.Add(segment);
+                }
+            }
+
+            return merged;
+        }
+
+        /// <summary>
+        /// One cubic B-spline for a chain of Béziers that follow on from each other. Each Bézier keeps its
+        /// control points; the knots are clamped at the ends and tripled between pieces, which reproduces the
+        /// curve exactly.
+        /// </summary>
+        private static Spline ToSpline(List<BezierSegment> chain)
+        {
+            var spline = new Spline { Degree = 3, Flags = SplineFlags.Planar };
+            spline.ControlPoints.Add(new XYZ(chain[0].P0.X, chain[0].P0.Y, 0));
+            foreach (var piece in chain)
+            {
+                spline.ControlPoints.Add(new XYZ(piece.P1.X, piece.P1.Y, 0));
+                spline.ControlPoints.Add(new XYZ(piece.P2.X, piece.P2.Y, 0));
+                spline.ControlPoints.Add(new XYZ(piece.P3.X, piece.P3.Y, 0));
+            }
+
+            for (var k = 0; k < 4; k++)
+            {
+                spline.Knots.Add(0);
+            }
+
+            for (var i = 1; i < chain.Count; i++)
+            {
+                for (var k = 0; k < 3; k++)
+                {
+                    spline.Knots.Add(i);
+                }
+            }
+
+            for (var k = 0; k < 4; k++)
+            {
+                spline.Knots.Add(chain.Count);
+            }
+
+            return spline;
+        }
+
+        private bool Near(XY a, XY b) => CadGeometry.Distance(a, b) <= _near;
+    }
 }
