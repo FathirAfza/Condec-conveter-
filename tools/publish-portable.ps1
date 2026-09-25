@@ -40,7 +40,7 @@ dotnet publish $project -c $Configuration -r win-x64 -p:Platform=x64 --self-cont
     -p:PublishDir="$publishDir\" -v q -nologo
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
 
-foreach ($required in 'Condec.exe', 'Microsoft.WindowsAppRuntime.dll', 'Microsoft.ui.xaml.dll', 'LibreOffice\program\soffice.exe', 'resources.pri') {
+foreach ($required in 'Condec.exe', 'Microsoft.WindowsAppRuntime.dll', 'Microsoft.ui.xaml.dll', 'LibreOffice\program\soffice.exe', 'Condec.pri') {
     if (-not (Test-Path (Join-Path $publishDir $required))) { throw "The portable build lacks $required" }
 }
 
