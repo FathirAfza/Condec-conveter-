@@ -1,5 +1,6 @@
 # Builds Condec on a Windows runner, runs every test (including the Windows-only ones), packs the
-# signed MSIX with the bundled LibreOffice, and publishes a GitHub release for tags named v*.
+# signed MSIX and the portable zip with the bundled LibreOffice, and publishes a GitHub release for
+# tags named v*.
 # A manual run (workflow_dispatch) does everything except the release and keeps the package as an artifact.
 name: Rilis
 
@@ -79,12 +80,19 @@ jobs:
         shell: pwsh
         run: tools/pack-test-msix.ps1 -Configuration Release
 
+      # Same app without the package: a zip with Condec.exe, the .NET and Windows App SDK runtimes,
+      # and LibreOffice, for trying Condec without importing a certificate.
+      - name: Publish the portable build
+        shell: pwsh
+        run: tools/publish-portable.ps1 -Configuration Release
+
       - name: Name the files after the release
         shell: pwsh
         run: |
           $version = ([xml](Get-Content src/Condec/Package.appxmanifest -Raw)).Package.Identity.Version
           $label = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { "v$version-dev.$env:GITHUB_RUN_NUMBER" }
           Move-Item "dist/Condec_${version}_x64_uji.msix" "dist/Condec_${label}_x64.msix"
+          Move-Item "dist/Condec_${version}_x64_portable.zip" "dist/Condec_${label}_x64_portable.zip"
           Move-Item dist/Condec-uji.cer dist/Condec.cer
           Get-ChildItem dist -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)" } |
             Set-Content dist/SHA256SUMS.txt -Encoding ascii
@@ -103,9 +111,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The tag may come from a plain `git push --tags`, or from a release that was
+          # created in the GitHub UI (which creates the tag and the release together).
+          # Either way the release ends up with the same title, notes, and assets.
           $tag = $env:GITHUB_REF_NAME
-          $arguments = @('release', 'create', $tag, '--title', "Condec $tag", '--verify-tag')
           $notes = "docs/releases/$tag.md"
-          if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
-          if ($tag -match '-') { $arguments += '--prerelease' }
-          gh @arguments (Get-ChildItem dist -File | ForEach-Object FullName)
+          $assets = Get-ChildItem dist -File | ForEach-Object FullName
+          gh release view $tag *> $null
+          $exists = $LASTEXITCODE -eq 0
+          if ($exists) {
+            $arguments = @('release', 'edit', $tag, '--title', "Condec $tag")
+            if (Test-Path $notes) { $arguments += @('--notes-file', $notes) }
+            if ($tag -match '-') { $arguments += '--prerelease' }
+            gh @arguments
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            gh release upload $tag @assets --clobber
+          } else {
+            $arguments = @('release', 'create', $tag, '--title', "Condec $tag", '--verify-tag')
+            if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
+            if ($tag -match '-') { $arguments += '--prerelease' }
+            gh @arguments @assets
+          }

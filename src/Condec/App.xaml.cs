@@ -12,7 +12,6 @@ using Condec.Core.Pipeline;
 using Condec.Services;
 using Condec.ViewModels;
 using Microsoft.UI.Xaml;
-using Windows.Storage;
 
 namespace Condec;
 
@@ -33,7 +32,7 @@ public partial class App : Application
                 new PdfToImageConverter(),
                 new PdfToCadConverter(new PdfPageRenderer()),
                 new CadFileConverter(),
-                new LibreOfficeConverter(Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "libreoffice-profile")),
+                new LibreOfficeConverter(CondecPaths.LibreOfficeProfileDirectory),
             ],
             [new ImageOutputValidator(), new PdfOutputValidator(), new OfficeDocumentValidator(), new CadOutputValidator()]);
         var journal = new TempFileJournal(CondecPaths.JournalDirectory);
