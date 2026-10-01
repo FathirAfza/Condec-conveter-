@@ -106,27 +106,9 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         ct.ThrowIfCancellationRequested();
         progress.Report(new ConversionProgress(ConversionStage.Encode, 0, $"Menulis {entityCount} objek CAD"));
 
-        var bytes = Write(cad, target);
+        var bytes = CadFiles.Write(cad, target);
         await request.Output.WriteAsync(bytes, ct).ConfigureAwait(false);
         progress.Report(new ConversionProgress(ConversionStage.Encode, 1));
-    }
-
-    /// <summary>ACadSharp writers dispose the stream they write to, so they write to memory first.</summary>
-    internal static byte[] Write(CadDocument cad, string target)
-    {
-        using var buffer = new MemoryStream();
-        if (target == ".dwg")
-        {
-            using var writer = new DwgWriter(buffer, cad);
-            writer.Write();
-        }
-        else
-        {
-            using var writer = new DxfWriter(buffer, cad, false);
-            writer.Write();
-        }
-
-        return buffer.ToArray();
     }
 
     /// <summary>Drawing extents in the header, so "zoom extents" lands on the drawing right away.</summary>

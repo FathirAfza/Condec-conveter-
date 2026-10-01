@@ -296,7 +296,7 @@ public sealed class PdfToCadTests : IDisposable
         }
 
         var path = _temp.File("out" + extension);
-        File.WriteAllBytes(path, PdfToCadConverter.Write(document, extension));
+        File.WriteAllBytes(path, CadFiles.Write(document, extension));
         var back = CadFiles.Read(path, extension);
 
         Assert.Equal(["ARC", "CIRCLE", "LINE", "SPLINE", "TEXT"], back.Entities.Select(e => e.ObjectName).Order());

@@ -39,6 +39,8 @@ internal static class ErrorMessages
         LockedPdfException => LockedPdf,
         NothingToConvertException =>
             "Halaman ini tidak berisi garis, teks, atau hasil scan yang bisa diubah menjadi gambar CAD. Pilih halaman lain.",
+        UnsupportedCadVersionException =>
+            "Versi gambar CAD ini belum didukung. Condec membaca DWG mulai AutoCAD R14 dan DXF mulai R12. Simpan ulang file dengan versi yang lebih baru di aplikasi CAD-nya, lalu coba lagi.",
         ExternalToolException tool =>
             $"{tool.ToolName} tidak bisa mengonversi file ini. File mungkin rusak atau dilindungi kata sandi.",
         _ when stage == PipelineStage.Decode =>

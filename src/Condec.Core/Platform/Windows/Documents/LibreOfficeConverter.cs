@@ -112,7 +112,7 @@ public sealed class LibreOfficeConverter : IExternalToolConverter
         {
             var dxf = Path.Combine(inputDirectory, "dokumen.dxf");
             var drawing = await Task.Run(() => CadFiles.Read(sourcePath, ".dwg"), ct).ConfigureAwait(false);
-            await File.WriteAllBytesAsync(dxf, PdfToCadConverter.Write(drawing, ".dxf"), ct).ConfigureAwait(false);
+            await File.WriteAllBytesAsync(dxf, CadFiles.Write(drawing, ".dxf"), ct).ConfigureAwait(false);
             return dxf;
         }
 
