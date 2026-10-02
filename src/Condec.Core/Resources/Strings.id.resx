@@ -113,6 +113,7 @@
   <data name="Processing.Title" xml:space="preserve"><value>Mengonversi {0}</value></data>
   <data name="Processing.Caption" xml:space="preserve"><value>Ke {0} · disimpan sebagai {1}</value></data>
   <data name="Result.Integrity" xml:space="preserve"><value>SHA-256 cocok · {0} chunk terverifikasi</value></data>
+  <data name="Result.IntegrityOne" xml:space="preserve"><value>SHA-256 cocok · 1 chunk terverifikasi</value></data>
   <data name="History.Empty" xml:space="preserve"><value>Belum ada riwayat konversi.</value></data>
   <data name="History.EmptyDisabled" xml:space="preserve"><value>Riwayat sedang tidak dicatat. Konversi berikutnya tidak akan muncul di sini.</value></data>
   <data name="History.LoadFailed" xml:space="preserve"><value>Riwayat tidak bisa dibaca. Konversi tetap bisa dilakukan.</value></data>
@@ -135,6 +136,7 @@
   <data name="Step.VerifyIntegrity" xml:space="preserve"><value>Cek integritas file</value></data>
   <data name="Step.Done" xml:space="preserve"><value>Selesai</value></data>
   <data name="Step.ChunksMatch" xml:space="preserve"><value>{0} chunk cocok</value></data>
+  <data name="Step.ChunksMatchOne" xml:space="preserve"><value>1 chunk cocok</value></data>
   <data name="Step.HashMatches" xml:space="preserve"><value>Hash cocok</value></data>
   <data name="Step.Reading" xml:space="preserve"><value>Membaca {0}</value></data>
   <data name="Step.Encoding" xml:space="preserve"><value>Encode ke {0}</value></data>

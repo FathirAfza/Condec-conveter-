@@ -189,7 +189,9 @@ public sealed partial class ConverterViewModel : ObservableObject
         ? string.Empty
         : $"{FileExtension.ToCode(Source.Extension)} → {SelectedTarget.DisplayName}";
 
-    public string ResultIntegrity => Loc.Format("Result.Integrity", Result?.ChunkCount ?? 0);
+    public string ResultIntegrity => Result?.ChunkCount == 1
+        ? Loc.Get("Result.IntegrityOne")
+        : Loc.Format("Result.Integrity", Result?.ChunkCount ?? 0);
 
     /// <summary>What the converter wants the user to know about this result (a cut-off source, dropped frames).</summary>
     public ObservableCollection<ResultNoteItem> ResultNotes { get; } = [];
@@ -535,7 +537,7 @@ public sealed partial class ConverterViewModel : ObservableObject
 
     private string DoneDetail(PipelineStage stage) => stage switch
     {
-        PipelineStage.VerifyChunks => Loc.Format("Step.ChunksMatch", _chunkCount),
+        PipelineStage.VerifyChunks => _chunkCount == 1 ? Loc.Get("Step.ChunksMatchOne") : Loc.Format("Step.ChunksMatch", _chunkCount),
         PipelineStage.VerifyIntegrity => Loc.Get("Step.HashMatches"),
         _ => Loc.Get("Step.Done"),
     };

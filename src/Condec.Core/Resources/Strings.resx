@@ -113,6 +113,7 @@
   <data name="Processing.Title" xml:space="preserve"><value>Converting {0}</value></data>
   <data name="Processing.Caption" xml:space="preserve"><value>To {0} · saving as {1}</value></data>
   <data name="Result.Integrity" xml:space="preserve"><value>SHA-256 matches · {0} chunks verified</value></data>
+  <data name="Result.IntegrityOne" xml:space="preserve"><value>SHA-256 matches · 1 chunk verified</value></data>
   <data name="History.Empty" xml:space="preserve"><value>No conversion history yet.</value></data>
   <data name="History.EmptyDisabled" xml:space="preserve"><value>History isn't being recorded. Later conversions won't appear here.</value></data>
   <data name="History.LoadFailed" xml:space="preserve"><value>History can't be read. You can still convert files.</value></data>
@@ -135,6 +136,7 @@
   <data name="Step.VerifyIntegrity" xml:space="preserve"><value>Checking file integrity</value></data>
   <data name="Step.Done" xml:space="preserve"><value>Done</value></data>
   <data name="Step.ChunksMatch" xml:space="preserve"><value>{0} chunks match</value></data>
+  <data name="Step.ChunksMatchOne" xml:space="preserve"><value>1 chunk matches</value></data>
   <data name="Step.HashMatches" xml:space="preserve"><value>Hash matches</value></data>
   <data name="Step.Reading" xml:space="preserve"><value>Reading {0}</value></data>
   <data name="Step.Encoding" xml:space="preserve"><value>Encoding to {0}</value></data>

@@ -210,14 +210,14 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 |---|---|---|
 | Mendekode file sumber | 0–35% | "Membaca `<nama>`" → "Selesai" |
 | Menulis ke format `<FORMAT>` | 35–70% | "Encode ke `.ext`" → "Selesai" |
-| Verifikasi chunk | 70–90% | "Chunk n dari N" → "N chunk cocok" |
+| Verifikasi chunk | 70–90% | "Chunk n dari N" → "N chunk cocok" ("1 chunk matches" untuk satu chunk di Inggris) |
 | Cek integritas file | 90–100% | "Menghitung SHA-256" → "Hash cocok" |
 
 - Batal bisa di setiap tahap. File sementara dihapus.
 
 **Keadaan Selesai**
 - `InfoBar` Success: judul "Konversi selesai", pesan "File berhasil disimpan dan lolos verifikasi chunk serta cek integritas."
-- Tiga baris detail (label lebar 96, Caption sekunder): Lokasi (path penuh), Format ("DOCX → PDF"), Integritas ("SHA-256 cocok · N chunk terverifikasi").
+- Tiga baris detail (label lebar 96, Caption sekunder): Lokasi (path penuh), Format ("DOCX → PDF"), Integritas ("SHA-256 cocok · N chunk terverifikasi"; untuk satu chunk, Inggris memakai bentuk tunggal "1 chunk verified").
 - Catatan konverter (nol atau lebih), di antara tiga baris detail dan tombol: satu `InfoBar` per catatan (`IsClosable=False`, margin bawah 20), urut seperti dilaporkan konverter. Catatan **bukan kegagalan**: file tetap disimpan dan lolos verifikasi; catatan hanya memberi tahu sesuatu tentang sumbernya.
 
 | Tingkat | Teks (kunci resource) | Kapan |
@@ -571,7 +571,7 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
 | 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]` |
 | 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
-| 19 | Konverter gambar tidak membawa metadata (EXIF, GPS, profil ICC); warna dikonversi ke sRGB, transparansi dilebur ke putih untuk format tanpa alfa (§6.1.1) | `[TERBUKA]`. Sementara: tidak dibawa (juga lebih aman untuk privasi). Perlu opsi "pertahankan metadata"? |
+| 19 | Konverter gambar tidak membawa metadata (EXIF, GPS, profil ICC); warna dikonversi ke sRGB, transparansi dilebur ke putih untuk format tanpa alfa (§6.1.1) | Diputuskan pemilik untuk beta: tidak dibawa (lebih aman untuk privasi). Opsi "pertahankan metadata" (bawaan mati, JPG/PNG/TIFF) hanya ditambah bila diminta. |
 | 20 | Batas gambar 536.870.911 piksel (`int.MaxValue / 4`, §6.1.1) dan kehabisan memori dianggap "terlalu besar" | `[ASUMSI]`. Batas itu adalah batas satu array .NET; batas nyata bergantung memori mesin dan belum diukur untuk gambar di antara 100 dan 537 MP |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
@@ -586,7 +586,8 @@ Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru dita
 - **Ditambah:** galat `Error.ImageTooLarge` untuk gambar yang terlalu besar bagi memori (§6.1 Gagal, §6.1.1). Sebelumnya `E_OUTOFMEMORY` jatuh ke "Terjadi galat tak terduga (COMException)".
 - **Ditambah (dokumentasi):** keadaan Gagal dan kotak "Catat riwayat" di §6.1, yang sudah ada di aplikasi tetapi belum tercatat; §6.1.1 Konverter gambar (format, piksel, metadata tidak dibawa, banyak frame).
 - **Dicek:** uji langsung pada build portabel: JPEG terpotong → Warning; GIF 3 frame → Informational; PNG rusak → `Error.Decode`; PNG utuh → tanpa catatan; catatan hilang di konversi berikutnya.
-- **Diajukan:** §13 #19 (metadata) dan #20 (batas piksel), untuk keputusan pemilik.
+- **Diajukan:** §13 #19 (metadata) dan #20 (batas piksel), untuk keputusan pemilik. Keputusan pemilik atas #19: metadata tetap dibuang di beta; opsi "pertahankan metadata" (mati secara bawaan, hanya JPG/PNG/TIFF) bisa ditambah nanti bila diminta.
+- **Diubah:** ringkasan integritas dan keterangan tahap Verifikasi chunk memakai bentuk tunggal untuk satu chunk ("1 chunk verified", "1 chunk matches"; Indonesia tidak berubah). Keputusan pemilik.
 
 ### [0.2.2] 2026-10-02 (tahap 3: shell dan Settings)
 - **Ditambah:** shell (§3): `TitleBar` + `NavigationView` (pane 280, mode Auto) + `Frame`, halaman Convert File, Upscale Image, Architecture, Settings. Tema (terang/gelap/ikuti sistem) dan Mica bisa diubah dan berlaku langsung.
