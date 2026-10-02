@@ -7,7 +7,7 @@ Salin semua teks di bawah garis ke sesi baru Claude Code yang dibuka di root fol
 Kita melanjutkan proyek **Condec**: aplikasi konverter file untuk Windows (WinUI 3, Windows App SDK, .NET 10, MSIX), open source dan 100% offline. Sesi sebelumnya dikerjakan di server Linux yang tidak bisa mem-build WinUI, jadi pengerjaan pindah ke mesin Windows ini.
 
 **Sebelum melakukan apa pun, baca berurutan:**
-1. `docs/SPEC.md`: spesifikasi dan aturan wajib dari saya. Aturan intinya: jangan mengarang API, tidak ada koneksi jaringan sama sekali, tidak ada pembongkaran DRM atau password PDF, identifier berbahasa Inggris, teks UI bahasa Indonesia dengan sentence case, dan warna hanya lewat ThemeResource.
+1. `docs/SPEC.md`: spesifikasi dan aturan wajib dari saya. Aturan intinya: jangan mengarang API, tidak ada koneksi jaringan sama sekali, tidak ada pembongkaran DRM atau password PDF, identifier berbahasa Inggris, teks UI mengikuti bahasa Windows (Inggris dan Indonesia, lihat catatan di SPEC) dengan sentence case, dan warna hanya lewat ThemeResource.
 2. `docs/PLAN.md`: rencana teknis yang sudah disetujui sebagai arah kerja.
 3. `docs/HANDOFF.md`: status terakhir, fakta dan versi yang sudah diverifikasi, keputusan yang sudah diambil, dan ringkasan desain.
 

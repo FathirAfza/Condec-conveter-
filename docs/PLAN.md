@@ -60,7 +60,7 @@ public interface IConverter
 - `IExternalToolConverter` (opsional): melaporkan prasyarat eksternal. Hanya dipakai konverter LibreOffice, supaya format dokumen bisa tampil **disabled** dengan InfoBar. Format yang codec-nya tidak ada tidak dikembalikan oleh `GetTargets` sama sekali, jadi tidak muncul.
 
 ### ConverterRegistry
-Mengumpulkan semua `IConverter`. `GetTargetOptions(ext)` mengembalikan `TargetOption(Extension, DisplayName, IsEnabled, DisabledReason)`. UI hanya membaca dari sini. Katalog `FormatCatalog` menyimpan nama tampilan berbahasa Indonesia ("Dokumen Word", "DXF (gambar CAD)").
+Mengumpulkan semua `IConverter`. `GetTargetOptions(ext)` mengembalikan `TargetOption(Extension, DisplayName, IsEnabled, DisabledReason)`. UI hanya membaca dari sini. Katalog `FormatCatalog` mengambil nama tampilan dari resource bahasa ("Word document" / "Dokumen Word", "DXF (CAD drawing)" / "DXF (gambar CAD)").
 
 ### Pipeline 4 tahap
 | Tahap | Bobot | Isi |
