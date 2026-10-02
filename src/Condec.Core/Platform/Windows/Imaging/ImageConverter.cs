@@ -126,7 +126,7 @@ public sealed class ImageConverter : IConverter
     }
 
     /// <summary>E_OUTOFMEMORY (0x8007000E) comes back from Windows as a COMException, not as OutOfMemoryException.</summary>
-    private static bool IsOutOfMemory(Exception ex) =>
+    internal static bool IsOutOfMemory(Exception ex) =>
         ex is OutOfMemoryException || (ex is COMException { HResult: unchecked((int)0x8007000E) });
 
     /// <summary>Composites straight-alpha BGRA pixels onto white and makes them opaque.</summary>

@@ -4,6 +4,7 @@
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
 using Condec.Core.Imaging;
+using Condec.Core.Media;
 using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
@@ -38,6 +39,8 @@ internal static class ErrorMessages
         LockedPdfException => LockedPdf,
         ImageTooLargeException tooLarge =>
             Loc.Format("Error.ImageTooLarge", tooLarge.Megapixels),
+        MediaConversionException =>
+            Loc.Get("Error.Media"),
         NothingToTraceException =>
             Loc.Get("Error.NothingToTraceImage"),
         NothingToConvertException =>

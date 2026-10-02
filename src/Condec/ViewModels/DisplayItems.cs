@@ -19,9 +19,21 @@ internal static class FileGlyphs
     private static readonly HashSet<string> ImageExtensions =
         [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".heic", ".heif", ".webp"];
 
+    /// <summary>Segoe Fluent Icons "Audio" and "Video".</summary>
+    public const string Audio = "\uE8D6";
+    public const string Video = "\uE714";
+
+    private static readonly HashSet<string> AudioExtensions = [".mp3", ".m4a", ".wav", ".wma", ".flac"];
+
+    private static readonly HashSet<string> VideoExtensions = [".mp4", ".m4v", ".mov", ".wmv", ".avi"];
+
     public static bool IsImage(string extension) => ImageExtensions.Contains(extension);
 
-    public static string For(string extension) => IsImage(extension) ? Photo : Document;
+    public static string For(string extension) =>
+        IsImage(extension) ? Photo
+        : AudioExtensions.Contains(extension) ? Audio
+        : VideoExtensions.Contains(extension) ? Video
+        : Document;
 }
 
 /// <summary>The file chosen for conversion.</summary>

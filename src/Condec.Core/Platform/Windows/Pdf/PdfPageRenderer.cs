@@ -37,6 +37,25 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
             DestinationHeight = (uint)Math.Max(1, Math.Round(page.Size.Height * pixelsPerDip)),
         };
 
+        // A page is rendered whole, at 4 bytes per pixel. Say so before the minutes it would take, not after.
+        var pixelCount = (long)options.DestinationWidth * options.DestinationHeight;
+        if (pixelCount > Imaging.ImageTooLargeException.MaximumPixels)
+        {
+            throw new Imaging.ImageTooLargeException(pixelCount);
+        }
+
+        try
+        {
+            return await RenderPageAsync(page, options, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (Imaging.ImageConverter.IsOutOfMemory(ex))
+        {
+            throw new Imaging.ImageTooLargeException(pixelCount, ex);
+        }
+    }
+
+    private static async Task<RenderedPage> RenderPageAsync(PdfPage page, PdfPageRenderOptions options, CancellationToken ct)
+    {
         using var rendered = new InMemoryRandomAccessStream();
         await page.RenderToStreamAsync(rendered, options).AsTask(ct).ConfigureAwait(false);
 

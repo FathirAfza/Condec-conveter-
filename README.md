@@ -22,6 +22,8 @@ The format list in the app is built from what the machine can actually do. A for
 | JPG, PNG, BMP, GIF, TIFF | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | Windows Imaging Component (`Windows.Graphics.Imaging`) |
 | HEIC, HEIF, WebP² | JPG, PNG, BMP, GIF, TIFF | Windows Imaging Component |
 | JPG, PNG, BMP, GIF, TIFF, HEIC², WebP² | DXF, DWG (AutoCAD 2000) | Windows Imaging Component, outline tracing, ACadSharp |
+| MP3, M4A, WAV, WMA, FLAC | MP3, M4A, WAV, WMA, FLAC | `Windows.Media.Transcoding` |
+| MP4, M4V, MOV, WMV, AVI | MP4, WMV, and the audio formats above | `Windows.Media.Transcoding` |
 | PDF (one page) | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | `Windows.Data.Pdf` |
 | PDF (one page) | DXF, DWG (AutoCAD 2000) | PdfPig + ACadSharp |
 | PDF | DOCX, DOC, ODT, PPTX, PPT, ODP | LibreOffice (PDF import into Writer or Impress) |
@@ -34,7 +36,9 @@ The format list in the app is built from what the machine can actually do. A for
 ¹ HEIC is offered only when the HEVC codec is installed and has been proven to work.
 ² Only when the HEIF or WebP decoder is installed in Windows (extensions from the Microsoft Store).
 
-Audio and video conversion (`Windows.Media.Transcoding`) is still being worked on.
+Audio and video use the profiles Windows provides, so only formats whose encoders are present on the PC are offered. WAV and FLAC keep the source's sample rate, channels and bit depth; MP3, M4A and WMA are written at 192 kbps. Tags (title, artist, album) are kept.
+
+When a source file looks cut off or damaged, the conversion still runs and the result carries a warning. Windows reads such PNG, JPEG, GIF, WAV, FLAC, WMA and WMV files without an error and fills in or ends early, so Condec checks the file's own structure. A cut-off MP3 can't be told from a short one.
 
 LibreOffice ships inside the x64 Condec package, so no other app needs to be installed. If LibreOffice is already installed on the system, that copy is used.
 

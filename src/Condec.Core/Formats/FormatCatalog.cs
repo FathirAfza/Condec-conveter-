@@ -39,6 +39,9 @@ public static class FormatCatalog
         [".wma"] = Plain("WMA", "Kind.Audio", "WMA"),
         [".flac"] = Plain("FLAC", "Kind.Audio", "FLAC"),
         [".mp4"] = Plain("MP4", "Kind.Video", "MP4"),
+        [".m4v"] = Plain("M4V", "Kind.Video", "M4V"),
+        [".mov"] = Plain("MOV", "Kind.Video", "MOV"),
+        [".avi"] = Plain("AVI", "Kind.Video", "AVI"),
         [".wmv"] = Plain("WMV", "Kind.Video", "WMV"),
 
         [".pdf"] = Plain("PDF", "Kind.Pdf"),

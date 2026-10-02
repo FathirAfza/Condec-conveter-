@@ -249,6 +249,22 @@ public sealed class PdfConversionTests(PdfSamplesFixture fixture) : IClassFixtur
     }
 
     [Fact]
+    public async Task PdfPage_TooLargeToRender_IsRefusedAtOnce()
+    {
+        // 14,400 pt (200 inches) is the largest page PDF allows: 40,000 x 40,000 pixels at 200 dpi, 1.6 gigapixels.
+        // Windows would work for half a minute and then run out of memory; the size is known before that.
+        var source = TestPdf.Write(_dir.File("raksasa.pdf"), "0.2 0.4 0.8 rg 100 100 14000 14000 re f", mediaBox: "0 0 14400 14400");
+        var destination = _dir.File("raksasa.png");
+
+        var error = await Assert.ThrowsAsync<Condec.Core.Imaging.ImageTooLargeException>(
+            () => CreatePipeline().RunAsync(new ConversionJob(source, ".png", destination, new PdfPageOptions(1)), null, Ct));
+
+        Assert.Equal(1600, error.Megapixels);
+        Assert.False(File.Exists(destination));
+        Assert.Empty(Directory.GetFiles(_dir.Path, "*.condec-tmp"));
+    }
+
+    [Fact]
     public async Task PdfPage_ToHeic_WhenThisMachineCanWriteHeic()
     {
         Assert.SkipUnless(new PdfToImageConverter().GetTargets(".pdf").Contains(".heic"), "HEIC can't be written on this machine.");

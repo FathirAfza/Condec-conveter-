@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.3 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.4 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -224,6 +224,7 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 |---|---|---|
 | Warning | "File sumber tampak terpotong atau rusak, jadi sebagian gambar bisa hilang atau abu-abu. Periksa hasilnya sebelum dipakai." (`Note.SourceIncomplete`) | PNG, JPEG, GIF, atau WebP yang strukturnya berakhir sebelum penanda akhirnya (§6.1.1) |
 | Informational | "File ini berisi N gambar (frame atau halaman). Hanya yang pertama yang dikonversi." (`Note.FirstFrameOnly`) | Sumber punya lebih dari satu frame (GIF animasi, TIFF banyak halaman) |
+| Warning | "File sumber tampak terpotong atau rusak, jadi hasilnya bisa berhenti lebih awal atau ada bagian yang hilang. Periksa hasilnya sebelum dipakai." (`Note.MediaIncomplete`) | Audio atau video yang terpotong (§6.1.2) |
 
   - Catatan dikosongkan saat konversi baru dimulai (termasuk "Coba lagi") dan saat "Konversi file lain". Setiap catatan juga ditulis ke log aktivitas tanpa path: hanya jenis konversi ("`.jpg -> .png`") dan tingkatnya.
   - "SHA-256 cocok" dan status "Terverifikasi" di Riwayat berarti **keluaran** utuh dan sama dengan yang ditulis, bukan bahwa sumbernya utuh. Untuk sumber yang terpotong, kedua hal itu tampil bersama Warning di atas.
@@ -238,6 +239,7 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 |---|---|
 | Sumber tidak bisa didekode (rusak, atau codec belum terpasang) | "File sumber tidak bisa dibaca. File mungkin rusak, atau codec untuk format ini belum terpasang di Windows." (`Error.Decode`) |
 | Gambar terlalu besar untuk memori (§6.1.1) | "Gambar ini (N MP) terlalu besar untuk dikonversi dengan memori yang tersedia di PC ini. Tutup aplikasi lain lalu coba lagi, atau pakai gambar yang lebih kecil." (`Error.ImageTooLarge`) |
+| Windows tidak bisa mengonversi audio atau video (rusak, kosong, bukan media, codec tidak ada, atau gagal di tengah jalan) | "Windows tidak bisa mengonversi file audio atau video ini. File mungkin rusak, atau codec-nya belum terpasang." (`Error.Media`) |
 | Verifikasi gagal, file tidak ditulis, folder, izin, PDF terkunci, dan sebagainya | Teks yang sudah ada di `Strings.resx` (`Error.*`) |
 
 **Riwayat**
@@ -255,8 +257,21 @@ Dipakai Convert File untuk JPG, PNG, BMP, GIF, TIFF, serta WebP dan HEIC. Hanya 
 - **Tidak dibawa:** metadata (EXIF, GPS, profil ICC, teks) dan kualitas khusus. Hanya piksel dan DPI yang ditulis; encoder Windows memakai nilai bawaannya, tanpa pengaturan kualitas (§13 #19).
 - **Banyak frame.** Hanya frame pertama yang dikonversi; catatan Informational memberi tahu jumlahnya (§6.1 Selesai).
 - **Sumber terpotong.** Windows mendekode PNG, JPEG, dan GIF yang terpotong **tanpa galat** dan mengisi bagian yang hilang (sering abu-abu), sehingga verifikasi keluaran saja tidak menangkapnya. `ImageStructure` (Core, portabel) menelusuri struktur file: PNG sampai chunk `IEND` (termasuk 4 byte CRC-nya; nilai CRC tidak diperiksa), JPEG sampai `EOI` (`FFD9`), GIF sampai trailer `3B`, WebP sampai panjang RIFF yang dideklarasikan. Kalau berakhir lebih awal, konversi tetap jalan dan hasilnya membawa Warning. File yang terpotong di dalam header juga dihitung terpotong. BMP dan TIFF tidak diperiksa: Windows sendiri menolaknya (galat dekode). Format lain, dan struktur yang tidak bisa diikuti, tidak dinilai (tanpa catatan).
-- **Ukuran.** Gambar dibaca utuh di memori, 4 byte per piksel, dalam satu array .NET. Gambar dengan lebih dari 536.870.911 piksel (`int.MaxValue / 4`, sekitar 537 MP) ditolak sebelum didekode, dibaca dari header. Kehabisan memori (`E_OUTOFMEMORY`, yang datang sebagai `COMException`, bukan `OutOfMemoryException`) saat dekode atau encode juga menjadi galat yang sama. Pesan: `Error.ImageTooLarge` (§6.1 Gagal). Keduanya memakai `ImageTooLargeException`; angka MP dibulatkan ke bilangan bulat terdekat.
+- **Ukuran.** Gambar dibaca utuh di memori, 4 byte per piksel, dalam satu array .NET. Gambar dengan lebih dari 536.870.911 piksel (`int.MaxValue / 4`, sekitar 537 MP) ditolak sebelum didekode, dibaca dari header. Kehabisan memori (`E_OUTOFMEMORY`, yang datang sebagai `COMException`, bukan `OutOfMemoryException`) saat dekode atau encode juga menjadi galat yang sama. Pesan: `Error.ImageTooLarge` (§6.1 Gagal). Keduanya memakai `ImageTooLargeException`; angka MP dibulatkan ke bilangan bulat terdekat. Halaman PDF yang dirender menjadi gambar (PDF → PNG/JPG/HEIC pada 200 dpi, dan jalur Architecture) memakai batas dan pesan yang sama, dihitung dari ukuran halaman sebelum merender: halaman 14.400 pt (200 inci, ukuran terbesar PDF) berarti 1.600 MP dan ditolak seketika, bukan setelah setengah menit dengan galat memori.
 - **Catatan konverter** adalah jalur umum, bukan khusus gambar: `ConversionRequest.Notes` diisi konverter mana pun, dan `ConversionResult.Notes` membawanya ke layar Selesai. Konverter lain boleh memakainya di tahap berikutnya.
+
+#### 6.1.2 Konverter audio dan video (`Windows.Media.Transcoding`)
+
+Dipakai Convert File untuk audio dan video. Hanya memakai `MediaTranscoder` dengan profil bawaan Windows; tanpa pustaka luar dan tanpa jaringan.
+
+- **Format.** Sumber audio: MP3, M4A, WAV, WMA, FLAC. Sumber video: MP4, M4V, MOV, WMV, AVI. Windows mengenali file dari isinya, bukan namanya (MP3 yang dinamai `.wav` tetap terbaca), jadi daftar ini adalah daftar Condec sendiri: hanya jenis yang dicoba pada file asli yang ditawarkan (§13 #21). Tujuan audio: MP3, M4A (AAC), WAV, WMA, FLAC. Tujuan video: MP4 (H.264 + AAC), WMV (VC-1 + WMA). Sumber audio hanya mendapat tujuan audio; sumber video mendapat tujuan video dan tujuan audio (suaranya diambil). Format sumber tidak ditawarkan sebagai tujuan. Urutan daftar: video lebih dulu, lalu audio.
+- **Encoder.** Tujuan muncul hanya bila Windows punya encoder untuk setiap trek yang dibutuhkan, ditanyakan lewat `CodecQuery` (jadi Windows edisi N tanpa Media Feature Pack tidak menawarkan satu pun). HEVC dan ALAC tidak ditawarkan: keduanya berekstensi sama dengan MP4 dan M4A biasa, dan daftar format dibangun dari ekstensi (§13 #22). AVI tidak ditawarkan sebagai tujuan: profil AVI bawaan Windows tidak terkompresi (162 MB untuk 3 detik).
+- **Kualitas.** Tanpa pengaturan. Audio memakai profil "High" Windows (MP3, M4A, WMA: 192 kbps, 48 kHz, stereo); video memakai resolusi "Auto" (sama dengan sumber). Khusus WAV dan FLAC, yang "tanpa kehilangan", sample rate, jumlah kanal, dan kedalaman bit (16 atau 24) dipertahankan dari sumber; profil bawaan akan mengubahnya menjadi 48 kHz stereo (24 bit untuk FLAC). Kalau Windows menolak kombinasi itu, dipakai profil standar. FLAC buatan Windows tidak menulis di bawah 44,1 kHz (22,05 kHz kembali sebagai 44,1 kHz). WAV → FLAC → WAV memberi sampel yang sama persis (diuji).
+- **Dibawa.** Tag audio (judul, artis, album) ikut terbawa (diuji MP3 ke M4A, WMA, FLAC). Hanya satu trek video dan satu trek audio yang ditulis.
+- **Keanehan Windows, tercatat.** Encoder WMV menulis file satu detik lebih panjang dari sumbernya (3 detik jadi 4 detik). Durasi FLAC yang dilaporkan Windows tidak bisa dipercaya (2,0 detik untuk file 3,0 detik), maka durasi FLAC dibaca dari header FLAC sendiri (STREAMINFO).
+- **Sumber terpotong.** Windows menolak MP4 dan M4A yang terpotong (galat jelas, `Error.Media`), tetapi mengonversi WAV, FLAC, WMA, WMV, dan MP3 yang terpotong tanpa galat dan hasilnya berhenti lebih awal. `MediaStructure` (Core, portabel) memeriksa: WAV dan AVI lewat ukuran RIFF, WMA dan WMV lewat ukuran file di header ASF (kecuali bendera siaran langsung), FLAC lewat total sampel di STREAMINFO dibandingkan dengan panjang hasil (selisih lebih dari 0,25 detik atau 1,5%). Hasilnya Warning `Note.MediaIncomplete`. **MP3 yang terpotong tidak bisa dikenali**: formatnya tidak menyatakan panjang.
+- **Verifikasi hasil.** Selain chunk dan hash (§6.1), hasil dibuka lagi lewat Windows: trek audio dan videonya harus jenis yang benar (mis. MP3, AAC, H.264), file audio tidak boleh punya trek video, dan panjangnya harus lebih dari nol. Ini membaca format dan panjang, bukan mendekode setiap sampel.
+- **Pengerjaan.** `MediaTranscoder` butuh menulis dengan seek (MP4 dan FLAC menulis ulang headernya), jadi hasil dibuat di `%TEMP%\Condec\media-<id>` lalu disalin ke pipeline pada akhir tahap Encode; folder itu dihapus di akhir, juga saat gagal atau dibatalkan. Progres: Decode "Membuka file" lalu Encode 0 sampai 90% mengikuti transcoder, 90 sampai 100% menyalin hasil. Pembatalan berlaku di setiap titik. Encoder perangkat keras dipakai bila ada.
 
 ### 6.2 Upscale Image
 
@@ -573,12 +588,22 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
 | 19 | Konverter gambar tidak membawa metadata (EXIF, GPS, profil ICC); warna dikonversi ke sRGB, transparansi dilebur ke putih untuk format tanpa alfa (§6.1.1) | Diputuskan pemilik untuk beta: tidak dibawa (lebih aman untuk privasi). Opsi "pertahankan metadata" (bawaan mati, JPG/PNG/TIFF) hanya ditambah bila diminta. |
 | 20 | Batas gambar 536.870.911 piksel (`int.MaxValue / 4`, §6.1.1) dan kehabisan memori dianggap "terlalu besar" | `[ASUMSI]`. Batas itu adalah batas satu array .NET; batas nyata bergantung memori mesin dan belum diukur untuk gambar di antara 100 dan 537 MP |
+| 21 | Daftar sumber audio/video (§6.1.2): hanya MP3, M4A, WAV, WMA, FLAC, MP4, M4V, MOV, WMV, AVI. `.mkv`, `.ogg`, `.opus`, `.aac`, `.3gp`, `.webm`, dan lain-lain belum ditawarkan karena belum dicoba pada file asli, walau mesin ini punya dekodernya (Opus, FFmpeg lewat Web Media Extensions, AV1, VP9, HEVC) | `[TERBUKA]`. Tambahkan setelah pemilik memberi contoh file |
+| 22 | HEVC dan ALAC sebagai tujuan: sama ekstensi dengan MP4 dan M4A, jadi butuh konsep "profil" selain ekstensi di daftar format | `[TERBUKA]` |
+| 23 | Kualitas audio/video bawaan Windows (192 kbps, video "Auto") tanpa pengaturan (§6.1.2) | `[ASUMSI]`. Perlu opsi kualitas? |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.4] 2026-10-02 (tahap 5: audio dan video, PDF → gambar)
+- **Ditambah:** konverter audio dan video lewat `Windows.Media.Transcoding` (§6.1.2): MP3, M4A, WAV, WMA, FLAC dan MP4, WMV sebagai tujuan; sumber MP3, M4A, WAV, WMA, FLAC, MP4, M4V, MOV, WMV, AVI; video bisa diambil suaranya. WAV dan FLAC mempertahankan sample rate, kanal, dan kedalaman bit sumber. Tujuan disaring dengan `CodecQuery`.
+- **Ditambah:** deteksi audio/video terpotong (`MediaStructure`, Warning `Note.MediaIncomplete`) dan galat `Error.Media`; validator hasil (`MediaOutputValidator`). Ikon audio dan video untuk file sumber dan riwayat; `.m4v`, `.mov`, `.avi` masuk katalog format.
+- **Diperbaiki:** halaman PDF yang terlalu besar untuk dirender (14.400 pt = 1.600 MP) menghabiskan 38 detik lalu gagal dengan `OutOfMemoryException` ("galat tak terduga"); sekarang ditolak seketika dengan `Error.ImageTooLarge` (§6.1.1). Halaman 8000 pt (494 MP) tetap diproses (61 detik, 2,5 GB di mesin ini).
+- **Dicek:** uji langsung di build portabel: WAV → MP3 (tanpa catatan), WAV terpotong → Warning, MP4 → MP3 (suara diambil), MP4 terpotong → `Error.Media`. **Tidak diaudit ulang:** dokumen lewat LibreOffice (belum terpasang di mesin ini, 27 tes dilewati).
+- **Diajukan:** §13 #21 sampai #23.
 
 ### [0.2.3] 2026-10-02 (tahap 4: Convert File dan konverter gambar)
 - **Ditambah:** catatan konverter di keadaan Selesai (§6.1): `InfoBar` Warning "File sumber tampak terpotong atau rusak…" dan Informational "File ini berisi N gambar… Hanya yang pertama yang dikonversi." Jalurnya umum (`ConversionRequest.Notes` → `ConversionResult.Notes`), dicatat ke log tanpa path.

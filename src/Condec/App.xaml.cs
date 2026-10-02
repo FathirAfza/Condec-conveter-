@@ -9,6 +9,7 @@ using Condec.Core.History;
 using Condec.Core.Imaging;
 using Condec.Core.Localization;
 using Condec.Core.Logging;
+using Condec.Core.Media;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 using Condec.Core.Platform.Windows.Devices;
@@ -49,13 +50,14 @@ public partial class App : Application
         var registry = new ConverterRegistry(
             [
                 new ImageConverter(),
+                new MediaConverter(),
                 new ImageToCadConverter(new WicImageRasterizer()),
                 new PdfToImageConverter(),
                 new PdfToCadConverter(new PdfPageRenderer()),
                 new CadFileConverter(),
                 new LibreOfficeConverter(CondecPaths.LibreOfficeProfileDirectory),
             ],
-            [new ImageOutputValidator(), new PdfOutputValidator(), new OfficeDocumentValidator(), new CadOutputValidator()]);
+            [new ImageOutputValidator(), new MediaOutputValidator(), new PdfOutputValidator(), new OfficeDocumentValidator(), new CadOutputValidator()]);
         var journal = new TempFileJournal(CondecPaths.JournalDirectory);
         var pipeline = new ConversionPipeline(registry, journal);
         var history = new HistoryStore(CondecPaths.HistoryFile);
