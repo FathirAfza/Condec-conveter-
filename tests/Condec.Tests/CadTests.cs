@@ -245,6 +245,28 @@ public sealed class CadFileConverterTests : IDisposable
         Assert.Equal("Halo", Assert.Single(dwg.Entities.OfType<ACadSharp.Entities.TextEntity>()).Value);
     }
 
+    /// <summary>
+    /// An INSERT with ATTRIBs closed by a SEQEND, a common DXF layout. ACadSharp's reader leaves the SEQEND in the
+    /// drawing as an entity, which its writers reject with NotImplementedException ("Entity not implemented: Seqend").
+    /// </summary>
+    [Theory]
+    [InlineData("AC1009")]
+    [InlineData("AC1015")]
+    [InlineData("AC1027")]
+    public async Task Dxf_WithAStraySeqend_ConvertsToDwg(string version)
+    {
+        const string entities =
+            "0\nLINE\n8\n0\n10\n0\n20\n0\n11\n10\n21\n10\n" +
+            "0\nINSERT\n8\n0\n2\nB\n66\n1\n10\n0\n20\n0\n" +
+            "0\nATTRIB\n8\n0\n10\n0\n20\n0\n40\n1\n1\nX\n2\nT\n70\n0\n0\nSEQEND\n8\n0\n" +
+            "0\nLINE\n8\n0\n10\n0\n20\n0\n11\n1\n21\n1\n0\nSEQEND\n8\n0\n";
+
+        var dwg = await ConvertAsync(Dxf(version, entities), ".dxf", ".dwg");
+
+        Assert.DoesNotContain(dwg.Entities, e => e is ACadSharp.Entities.Seqend);
+        Assert.Equal(2, dwg.Entities.OfType<ACadSharp.Entities.Line>().Count());
+    }
+
     [Fact]
     public async Task Dwg_ToDxf_KeepsTheDrawing()
     {

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Condec contributors
 
 using ACadSharp;
+using ACadSharp.Entities;
 using ACadSharp.Exceptions;
 using ACadSharp.IO;
 using Condec.Core.Conversion;
@@ -61,12 +62,35 @@ internal static class CadFiles
         };
 
     /// <summary>
+    /// Removes entities the writers throw NotImplementedException for. A SEQEND closes the vertex or attribute list of
+    /// a POLYLINE or INSERT; ACadSharp's DXF reader also leaves it behind as an entity of its own, which the writers
+    /// can't save and which carries no drawing data. The placeholder types are what the reader puts where it couldn't
+    /// build the real entity.
+    /// </summary>
+    internal static int DropUnwritableEntities(CadDocument cad)
+    {
+        var dropped = 0;
+        foreach (var record in cad.BlockRecords)
+        {
+            var unwritable = record.Entities.Where(IsUnwritable).ToList();
+            record.Entities.Remove(unwritable);
+            dropped += unwritable.Count;
+        }
+
+        return dropped;
+    }
+
+    private static bool IsUnwritable(Entity entity) =>
+        entity is Seqend || entity.GetType().Name.EndsWith("Placeholder", StringComparison.Ordinal);
+
+    /// <summary>
     /// Writes the drawing as DWG or ASCII DXF, first moving it to a version the writer supports (see
     /// <see cref="WritableVersion"/>). ACadSharp writers dispose the stream they write to, so they write to memory.
     /// </summary>
     public static byte[] Write(CadDocument cad, string target)
     {
         cad.Header.Version = WritableVersion(cad.Header.Version, target);
+        DropUnwritableEntities(cad);
 
         using var buffer = new MemoryStream();
         if (target == ".dwg")

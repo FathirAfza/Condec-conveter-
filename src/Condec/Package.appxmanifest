@@ -10,7 +10,7 @@
   <Identity
     Name="Condec"
     Publisher="CN=Condec"
-    Version="0.1.0.1" />
+    Version="0.1.0.2" />
 
   <Properties>
     <DisplayName>Condec</DisplayName>
