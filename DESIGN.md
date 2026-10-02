@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.4 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.5 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -199,6 +199,11 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
   - Belum ada file: ComboBox nonaktif, teks "Pilih file dulu", bantu "Format muncul setelah file dipilih".
   - Sudah ada file: placeholder "Pilih format", bantu "N format tersedia untuk .ext". Isi daftar diambil dari `ConverterRegistry`, bukan daftar tetap. Format yang tidak didukung mesin tidak muncul.
 - Bawah kartu: kiri teks Caption dengan ikon perisai "Diproses sepenuhnya di perangkat ini. Tidak ada file yang diunggah."; kanan tombol aksen "Konversi dan simpan…", **nonaktif sampai file dan format dipilih**.
+- Opsi media, hanya untuk target audio dan video: satu baris di bawah dua panel (margin atas 20, dua kolom, jarak 16), `ComboBox` stock berheader. Tidak ada untuk WAV dan FLAC (tanpa kehilangan) dan untuk format lain.
+  - Target MP3, M4A, WMA: "Kualitas audio" dengan "Tinggi (192 kbps)" (bawaan), "Sedang (128 kbps)", "Rendah (96 kbps)".
+  - Target MP4, WMV: "Ukuran video" dengan "Sama dengan sumber" (bawaan), "1080p (Full HD)", "720p (HD)", "480p", dan teks bantu Caption "Video tidak pernah diperbesar, dan bentuk gambarnya tetap sama."
+  - Pilihan bertahan sampai aplikasi ditutup (tidak disimpan ke Settings) dan berlaku juga untuk "Coba lagi". Detailnya di §6.1.2.
+- Format sumber tidak ditawarkan sebagai tujuan, **kecuali** MP3, M4A, WMA, MP4, dan WMV: itu boleh dikonversi ke format yang sama supaya kualitas atau ukurannya bisa diubah (memperkecil MP4, menurunkan bitrate MP3). Nama yang disarankan di dialog simpan lalu diberi akhiran " (hasil)" (Inggris " (converted)"), supaya yang pertama ditawarkan bukan menimpa sumber. Menyimpan di atas sumber tetap ditolak (`Error.SameFile`).
 - Klik tombol → `FileSavePicker`, lalu keadaan Proses.
 
 **Keadaan Proses**
@@ -264,9 +269,9 @@ Dipakai Convert File untuk JPG, PNG, BMP, GIF, TIFF, serta WebP dan HEIC. Hanya 
 
 Dipakai Convert File untuk audio dan video. Hanya memakai `MediaTranscoder` dengan profil bawaan Windows; tanpa pustaka luar dan tanpa jaringan.
 
-- **Format.** Sumber audio: MP3, M4A, WAV, WMA, FLAC. Sumber video: MP4, M4V, MOV, WMV, AVI. Windows mengenali file dari isinya, bukan namanya (MP3 yang dinamai `.wav` tetap terbaca), jadi daftar ini adalah daftar Condec sendiri: hanya jenis yang dicoba pada file asli yang ditawarkan (§13 #21). Tujuan audio: MP3, M4A (AAC), WAV, WMA, FLAC. Tujuan video: MP4 (H.264 + AAC), WMV (VC-1 + WMA). Sumber audio hanya mendapat tujuan audio; sumber video mendapat tujuan video dan tujuan audio (suaranya diambil). Format sumber tidak ditawarkan sebagai tujuan. Urutan daftar: video lebih dulu, lalu audio.
+- **Format.** Sumber audio: MP3, M4A, WAV, WMA, FLAC. Sumber video: MP4, M4V, MOV, WMV, AVI. Windows mengenali file dari isinya, bukan namanya (MP3 yang dinamai `.wav` tetap terbaca), jadi daftar ini adalah daftar Condec sendiri: hanya jenis yang dicoba pada file asli yang ditawarkan (§13 #21). Tujuan audio: MP3, M4A (AAC), WAV, WMA, FLAC. Tujuan video: MP4 (H.264 + AAC), WMV (VC-1 + WMA). Sumber audio hanya mendapat tujuan audio; sumber video mendapat tujuan video dan tujuan audio (suaranya diambil). Format sumber tidak ditawarkan sebagai tujuan, kecuali MP3, M4A, WMA, MP4, dan WMV (§6.1; `IReencodingConverter`). Urutan daftar: video lebih dulu, lalu audio.
 - **Encoder.** Tujuan muncul hanya bila Windows punya encoder untuk setiap trek yang dibutuhkan, ditanyakan lewat `CodecQuery` (jadi Windows edisi N tanpa Media Feature Pack tidak menawarkan satu pun). HEVC dan ALAC tidak ditawarkan: keduanya berekstensi sama dengan MP4 dan M4A biasa, dan daftar format dibangun dari ekstensi (§13 #22). AVI tidak ditawarkan sebagai tujuan: profil AVI bawaan Windows tidak terkompresi (162 MB untuk 3 detik).
-- **Kualitas.** Tanpa pengaturan. Audio memakai profil "High" Windows (MP3, M4A, WMA: 192 kbps, 48 kHz, stereo); video memakai resolusi "Auto" (sama dengan sumber). Khusus WAV dan FLAC, yang "tanpa kehilangan", sample rate, jumlah kanal, dan kedalaman bit (16 atau 24) dipertahankan dari sumber; profil bawaan akan mengubahnya menjadi 48 kHz stereo (24 bit untuk FLAC). Kalau Windows menolak kombinasi itu, dipakai profil standar. FLAC buatan Windows tidak menulis di bawah 44,1 kHz (22,05 kHz kembali sebagai 44,1 kHz). WAV → FLAC → WAV memberi sampel yang sama persis (diuji).
+- **Kualitas.** Dua pilihan (§6.1), bawaan Windows di balik nama yang jujur. Kualitas audio untuk MP3, M4A, dan WMA memakai profil Windows: Tinggi 192 kbps (48 kHz), Sedang 128 kbps (44,1 kHz), Rendah 96 kbps (44,1 kHz), stereo; hasil dibuktikan dengan membaca bitrate file keluaran. Ukuran video untuk MP4 dan WMV: "Sama dengan sumber" memakai profil Auto; 1080p, 720p, dan 480p menetapkan tinggi gambar (bitrate 18, 9, dan 4,5 Mbps seperti profil standarnya) dengan lebar mengikuti bentuk gambar sumber, dibulatkan ke genap. Windows tidak pernah memperbesar: video yang sudah setinggi itu atau lebih kecil dibiarkan seperti aslinya. Profil ukuran standar Windows memaksa bentuk tetap (video 4:3 menjadi 1280 × 720), itu sebabnya ukuran dihitung sendiri. **Belum diuji:** video yang diputar lewat metadata rotasi (rekaman ponsel tegak); ukurannya dihitung dari ukuran terkode, jadi hasilnya mungkin salah arah (§13 #24). Khusus WAV dan FLAC, yang "tanpa kehilangan", sample rate, jumlah kanal, dan kedalaman bit (16 atau 24) dipertahankan dari sumber; profil bawaan akan mengubahnya menjadi 48 kHz stereo (24 bit untuk FLAC). Kalau Windows menolak kombinasi itu, dipakai profil standar. FLAC buatan Windows tidak menulis di bawah 44,1 kHz (22,05 kHz kembali sebagai 44,1 kHz). WAV → FLAC → WAV memberi sampel yang sama persis (diuji).
 - **Dibawa.** Tag audio (judul, artis, album) ikut terbawa (diuji MP3 ke M4A, WMA, FLAC). Hanya satu trek video dan satu trek audio yang ditulis.
 - **Keanehan Windows, tercatat.** Encoder WMV menulis file satu detik lebih panjang dari sumbernya (3 detik jadi 4 detik). Durasi FLAC yang dilaporkan Windows tidak bisa dipercaya (2,0 detik untuk file 3,0 detik), maka durasi FLAC dibaca dari header FLAC sendiri (STREAMINFO).
 - **Sumber terpotong.** Windows menolak MP4 dan M4A yang terpotong (galat jelas, `Error.Media`), tetapi mengonversi WAV, FLAC, WMA, WMV, dan MP3 yang terpotong tanpa galat dan hasilnya berhenti lebih awal. `MediaStructure` (Core, portabel) memeriksa: WAV dan AVI lewat ukuran RIFF, WMA dan WMV lewat ukuran file di header ASF (kecuali bendera siaran langsung), FLAC lewat total sampel di STREAMINFO dibandingkan dengan panjang hasil (selisih lebih dari 0,25 detik atau 1,5%). Hasilnya Warning `Note.MediaIncomplete`. **MP3 yang terpotong tidak bisa dikenali**: formatnya tidak menyatakan panjang.
@@ -590,13 +595,20 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 20 | Batas gambar 536.870.911 piksel (`int.MaxValue / 4`, §6.1.1) dan kehabisan memori dianggap "terlalu besar" | `[ASUMSI]`. Batas itu adalah batas satu array .NET; batas nyata bergantung memori mesin dan belum diukur untuk gambar di antara 100 dan 537 MP |
 | 21 | Daftar sumber audio/video (§6.1.2): hanya MP3, M4A, WAV, WMA, FLAC, MP4, M4V, MOV, WMV, AVI. `.mkv`, `.ogg`, `.opus`, `.aac`, `.3gp`, `.webm`, dan lain-lain belum ditawarkan karena belum dicoba pada file asli, walau mesin ini punya dekodernya (Opus, FFmpeg lewat Web Media Extensions, AV1, VP9, HEVC) | `[TERBUKA]`. Tambahkan setelah pemilik memberi contoh file |
 | 22 | HEVC dan ALAC sebagai tujuan: sama ekstensi dengan MP4 dan M4A, jadi butuh konsep "profil" selain ekstensi di daftar format | `[TERBUKA]` |
-| 23 | Kualitas audio/video bawaan Windows (192 kbps, video "Auto") tanpa pengaturan (§6.1.2) | `[ASUMSI]`. Perlu opsi kualitas? |
+| 23 | Opsi kualitas audio dan ukuran video (§6.1, §6.1.2) | Diputuskan pemilik 2026-10-02 ("justru itu yang aku butuhkan"). Tiga tingkat audio dan tiga ukuran video adalah usulan; bitrate kustom tidak ada |
+| 24 | Ukuran video yang dipilih untuk video dengan metadata rotasi (rekaman ponsel tegak) | `[TERBUKA]`, belum diuji; butuh contoh file dari ponsel |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.5] 2026-10-02 (opsi kualitas audio dan video)
+- **Ditambah:** "Kualitas audio" (MP3, M4A, WMA: 192, 128, 96 kbps) dan "Ukuran video" (MP4, WMV: sama dengan sumber, 1080p, 720p, 480p; tidak pernah memperbesar, bentuk gambar terjaga) di keadaan Input (§6.1, §6.1.2). Permintaan pemilik.
+- **Diubah:** MP3, M4A, WMA, MP4, dan WMV boleh dikonversi ke format yang sama supaya kualitas atau ukuran bisa diubah (`IReencodingConverter`); nama yang disarankan diberi akhiran " (hasil)". Format lain tetap tidak menawarkan format sumbernya.
+- **Dicek:** bitrate file keluaran sama dengan pilihan (192, 128, 96); 640 × 480 tetap 640 × 480 untuk semua ukuran, 1440 × 1080 menjadi 640 × 480 pada 480p, 1280 × 720 menjadi 854 × 480. Uji langsung di UI.
+- **Diajukan:** §13 #24 (video berotasi).
 
 ### [0.2.4] 2026-10-02 (tahap 5: audio dan video, PDF → gambar)
 - **Ditambah:** konverter audio dan video lewat `Windows.Media.Transcoding` (§6.1.2): MP3, M4A, WAV, WMA, FLAC dan MP4, WMV sebagai tujuan; sumber MP3, M4A, WAV, WMA, FLAC, MP4, M4V, MOV, WMV, AVI; video bisa diambil suaranya. WAV dan FLAC mempertahankan sample rate, kanal, dan kedalaman bit sumber. Tujuan disaring dengan `CodecQuery`.

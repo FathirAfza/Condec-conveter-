@@ -278,4 +278,15 @@
   <data name="Note.MediaIncomplete" xml:space="preserve"><value>The source file looks cut off or damaged, so the result may end early or have parts missing. Check the result before you use it.</value></data>
   <data name="Error.Media" xml:space="preserve"><value>Windows couldn't convert this audio or video file. It may be damaged, or the codec for it isn't installed.</value></data>
   <data name="Progress.OpeningMedia" xml:space="preserve"><value>Opening the file</value></data>
+  <data name="Media.AudioQualityHeader" xml:space="preserve"><value>Audio quality</value></data>
+  <data name="Media.VideoSizeHeader" xml:space="preserve"><value>Video size</value></data>
+  <data name="Media.VideoSizeHelp" xml:space="preserve"><value>A video is never made larger, and the shape of the picture stays the same.</value></data>
+  <data name="MediaQuality.High" xml:space="preserve"><value>High (192 kbps)</value></data>
+  <data name="MediaQuality.Medium" xml:space="preserve"><value>Medium (128 kbps)</value></data>
+  <data name="MediaQuality.Low" xml:space="preserve"><value>Low (96 kbps)</value></data>
+  <data name="MediaSize.Original" xml:space="preserve"><value>Same as the source</value></data>
+  <data name="MediaSize.P1080" xml:space="preserve"><value>1080p (Full HD)</value></data>
+  <data name="MediaSize.P720" xml:space="preserve"><value>720p (HD)</value></data>
+  <data name="MediaSize.P480" xml:space="preserve"><value>480p</value></data>
+  <data name="Convert.SameFormatSuffix" xml:space="preserve"><value> (converted)</value></data>
 </root>

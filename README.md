@@ -36,7 +36,7 @@ The format list in the app is built from what the machine can actually do. A for
 ¹ HEIC is offered only when the HEVC codec is installed and has been proven to work.
 ² Only when the HEIF or WebP decoder is installed in Windows (extensions from the Microsoft Store).
 
-Audio and video use the profiles Windows provides, so only formats whose encoders are present on the PC are offered. WAV and FLAC keep the source's sample rate, channels and bit depth; MP3, M4A and WMA are written at 192 kbps. Tags (title, artist, album) are kept.
+Audio and video use the profiles Windows provides, so only formats whose encoders are present on the PC are offered. WAV and FLAC keep the source's sample rate, channels and bit depth; MP3, M4A and WMA are written at 192, 128 or 96 kbps as you choose, and a video can be made 1080p, 720p or 480p (never enlarged, shape kept), also in the same format, to make it smaller. Tags (title, artist, album) are kept.
 
 When a source file looks cut off or damaged, the conversion still runs and the result carries a warning. Windows reads such PNG, JPEG, GIF, WAV, FLAC, WMA and WMV files without an error and fills in or ends early, so Condec checks the file's own structure. A cut-off MP3 can't be told from a short one.
 

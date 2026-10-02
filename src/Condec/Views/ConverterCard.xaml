@@ -175,6 +175,32 @@
                     local:L.Title="Image.TraceTitle"
                     Visibility="{x:Bind ViewModel.ShowsImageTraceNotice, Mode=OneWay}" />
 
+                <!--  Audio quality and video size, for the targets that have them (DESIGN §6.1.2).  -->
+                <Grid
+                    Grid.Row="2"
+                    Margin="0,20,0,0"
+                    ColumnSpacing="16"
+                    Visibility="{x:Bind ViewModel.ShowsMediaOptions, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox
+                        HorizontalAlignment="Stretch"
+                        local:L.Header="Media.AudioQualityHeader"
+                        ItemsSource="{x:Bind ViewModel.Media.AudioChoices}"
+                        SelectedItem="{x:Bind ViewModel.Media.SelectedAudio, Mode=TwoWay}"
+                        Visibility="{x:Bind ViewModel.ShowsAudioQuality, Mode=OneWay}" />
+                    <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.ShowsVideoSize, Mode=OneWay}">
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            local:L.Header="Media.VideoSizeHeader"
+                            ItemsSource="{x:Bind ViewModel.Media.VideoChoices}"
+                            SelectedItem="{x:Bind ViewModel.Media.SelectedVideo, Mode=TwoWay}" />
+                        <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Media.VideoSizeHelp" />
+                    </StackPanel>
+                </Grid>
+
                 <!--  PDF options: the page for image and CAD targets; unit, scale and switches for CAD only.  -->
                 <StackPanel
                     Grid.Row="2"

@@ -70,24 +70,60 @@ internal static class MediaFormats
     /// would change a lossless result, so for WAV and FLAC the first profile keeps the source's sample rate, channels and bit
     /// depth. Windows refuses some combinations, so the standard profile always follows.
     /// </summary>
-    public static IEnumerable<MediaEncodingProfile> CreateProfiles(Target target, AudioEncodingProperties? sourceAudio)
+    public static IEnumerable<MediaEncodingProfile> CreateProfiles(Target target, MediaEncodingProfile? source, MediaOptions options)
     {
-        if (sourceAudio is { SampleRate: > 0, ChannelCount: > 0 } && target.Extension is ".wav" or ".flac")
+        if (source?.Audio is { SampleRate: > 0, ChannelCount: > 0 } sourceAudio && target.Extension is ".wav" or ".flac")
         {
             yield return CreateMatchedProfile(target, sourceAudio);
         }
 
+        var audioQuality = options.Audio switch
+        {
+            AudioQuality.Medium => AudioEncodingQuality.Medium,
+            AudioQuality.Low => AudioEncodingQuality.Low,
+            _ => AudioEncodingQuality.High,
+        };
+
         yield return target.Extension switch
         {
-            ".mp4" => MediaEncodingProfile.CreateMp4(VideoEncodingQuality.Auto),
-            ".wmv" => MediaEncodingProfile.CreateWmv(VideoEncodingQuality.Auto),
-            ".mp3" => MediaEncodingProfile.CreateMp3(AudioEncodingQuality.High),
-            ".m4a" => MediaEncodingProfile.CreateM4a(AudioEncodingQuality.High),
+            ".mp4" or ".wmv" => CreateVideoProfile(target, source?.Video, options),
+            ".mp3" => MediaEncodingProfile.CreateMp3(audioQuality),
+            ".m4a" => MediaEncodingProfile.CreateM4a(audioQuality),
             ".wav" => MediaEncodingProfile.CreateWav(AudioEncodingQuality.High),
-            ".wma" => MediaEncodingProfile.CreateWma(AudioEncodingQuality.High),
+            ".wma" => MediaEncodingProfile.CreateWma(audioQuality),
             ".flac" => MediaEncodingProfile.CreateFlac(AudioEncodingQuality.High),
             _ => throw new ArgumentOutOfRangeException(nameof(target)),
         };
+    }
+
+    /// <summary>
+    /// The source's own size unless a smaller one was chosen. The size profiles Windows provides have a fixed shape (a 4:3
+    /// video becomes 1280 x 720), so the chosen height is applied to the source's shape instead, and a video that is
+    /// already that small is left alone.
+    /// </summary>
+    private static MediaEncodingProfile CreateVideoProfile(Target target, VideoEncodingProperties? source, MediaOptions options)
+    {
+        MediaEncodingProfile Create(VideoEncodingQuality quality) => target.Extension == ".mp4"
+            ? MediaEncodingProfile.CreateMp4(quality)
+            : MediaEncodingProfile.CreateWmv(quality);
+
+        if (options.MaxHeight is not { } height || source is not { Width: > 0, Height: > 0 } || source.Height <= height)
+        {
+            return Create(VideoEncodingQuality.Auto);
+        }
+
+        // The profile for the nearest standard size supplies the bitrate (18, 9 and 4.5 Mbps).
+        var profile = Create(height switch
+        {
+            1080 => VideoEncodingQuality.HD1080p,
+            720 => VideoEncodingQuality.HD720p,
+            _ => VideoEncodingQuality.Wvga,
+        });
+
+        // Video wants even dimensions.
+        profile.Video.Width = (uint)(Math.Round(source.Width * (double)height / source.Height / 2) * 2);
+        profile.Video.Height = (uint)height;
+        return profile;
     }
 
     private static MediaEncodingProfile CreateMatchedProfile(Target target, AudioEncodingProperties source)

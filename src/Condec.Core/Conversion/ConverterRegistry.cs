@@ -38,7 +38,7 @@ public sealed class ConverterRegistry
             var status = GetStatus(converter);
             foreach (var target in converter.GetTargets(source).Select(FileExtension.Normalize))
             {
-                if (target == source)
+                if (target == source && !(converter is IReencodingConverter reencoding && reencoding.CanReencode(source)))
                 {
                     continue;
                 }

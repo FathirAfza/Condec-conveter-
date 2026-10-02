@@ -278,4 +278,15 @@
   <data name="Note.MediaIncomplete" xml:space="preserve"><value>File sumber tampak terpotong atau rusak, jadi hasilnya bisa berhenti lebih awal atau ada bagian yang hilang. Periksa hasilnya sebelum dipakai.</value></data>
   <data name="Error.Media" xml:space="preserve"><value>Windows tidak bisa mengonversi file audio atau video ini. File mungkin rusak, atau codec-nya belum terpasang.</value></data>
   <data name="Progress.OpeningMedia" xml:space="preserve"><value>Membuka file</value></data>
+  <data name="Media.AudioQualityHeader" xml:space="preserve"><value>Kualitas audio</value></data>
+  <data name="Media.VideoSizeHeader" xml:space="preserve"><value>Ukuran video</value></data>
+  <data name="Media.VideoSizeHelp" xml:space="preserve"><value>Video tidak pernah diperbesar, dan bentuk gambarnya tetap sama.</value></data>
+  <data name="MediaQuality.High" xml:space="preserve"><value>Tinggi (192 kbps)</value></data>
+  <data name="MediaQuality.Medium" xml:space="preserve"><value>Sedang (128 kbps)</value></data>
+  <data name="MediaQuality.Low" xml:space="preserve"><value>Rendah (96 kbps)</value></data>
+  <data name="MediaSize.Original" xml:space="preserve"><value>Sama dengan sumber</value></data>
+  <data name="MediaSize.P1080" xml:space="preserve"><value>1080p (Full HD)</value></data>
+  <data name="MediaSize.P720" xml:space="preserve"><value>720p (HD)</value></data>
+  <data name="MediaSize.P480" xml:space="preserve"><value>480p</value></data>
+  <data name="Convert.SameFormatSuffix" xml:space="preserve"><value> (hasil)</value></data>
 </root>

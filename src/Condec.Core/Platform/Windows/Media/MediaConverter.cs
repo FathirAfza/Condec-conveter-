@@ -14,7 +14,7 @@ namespace Condec.Core.Media;
 /// Audio and video through <c>Windows.Media.Transcoding.MediaTranscoder</c>, with the profiles Windows provides.
 /// Everything stays on this computer. A video can also be reduced to its audio.
 /// </summary>
-public sealed class MediaConverter : IConverter
+public sealed class MediaConverter : IReencodingConverter
 {
     /// <summary>Share of the Encode stage that is the transcode; the rest is copying the result to the pipeline.</summary>
     private const double TranscodeShare = 0.9;
@@ -37,6 +37,10 @@ public sealed class MediaConverter : IConverter
             ? [.. MediaFormats.Targets.Where(target => hasVideo || !target.IsVideo).Select(target => target.Extension)]
             : [];
 
+    /// <summary>A lossy result can be made again at another quality or size; WAV and FLAC have none to change.</summary>
+    public bool CanReencode(string extension) =>
+        FileExtension.Normalize(extension) is ".mp3" or ".m4a" or ".wma" or ".mp4" or ".wmv";
+
     public async Task ConvertAsync(ConversionRequest request, IProgress<ConversionProgress> progress, CancellationToken ct)
     {
         var target = MediaFormats.FindTarget(FileExtension.Normalize(request.TargetExtension))
@@ -52,9 +56,10 @@ public sealed class MediaConverter : IConverter
         {
             var staged = Path.Combine(staging, "result" + target.Extension);
             var incomplete = MediaStructure.IsComplete(request.SourcePath) == false;
-            var sourceAudio = await ReadSourceAudioAsync(request.SourcePath, ct).ConfigureAwait(false);
+            var sourceProfile = await ReadSourceProfileAsync(request.SourcePath, ct).ConfigureAwait(false);
+            var options = request.Options as MediaOptions ?? MediaOptions.Default;
 
-            await TranscodeAsync(request.SourcePath, staged, MediaFormats.CreateProfiles(target, sourceAudio), progress, ct).ConfigureAwait(false);
+            await TranscodeAsync(request.SourcePath, staged, MediaFormats.CreateProfiles(target, sourceProfile, options), progress, ct).ConfigureAwait(false);
 
             // A FLAC states how long it should be. If the result is shorter, the file was cut off.
             if (!incomplete && MediaStructure.GetDeclaredDuration(request.SourcePath) is { } declared)
@@ -76,15 +81,17 @@ public sealed class MediaConverter : IConverter
         }
     }
 
-    /// <summary>What the source's sound is like, so a lossless result can keep it. Null when Windows can't say.</summary>
-    private static async Task<AudioEncodingProperties?> ReadSourceAudioAsync(string path, CancellationToken ct)
+    /// <summary>
+    /// What the source's sound and picture are like, so a lossless result can keep the sound and a smaller video keeps the
+    /// shape of the picture. Null when Windows can't say.
+    /// </summary>
+    private static async Task<MediaEncodingProfile?> ReadSourceProfileAsync(string path, CancellationToken ct)
     {
         try
         {
             using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous);
             using var stream = file.AsRandomAccessStream();
-            var profile = await MediaEncodingProfile.CreateFromStreamAsync(stream).AsTask(ct).ConfigureAwait(false);
-            return profile?.Audio;
+            return await MediaEncodingProfile.CreateFromStreamAsync(stream).AsTask(ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException)
         {

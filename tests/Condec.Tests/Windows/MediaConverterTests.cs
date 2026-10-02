@@ -138,6 +138,134 @@ public sealed class MediaConverterTests : IDisposable
     }
 
     [Fact]
+    public void SameFormat_IsOfferedOnlyWhereTheQualityOrSizeCanChange()
+    {
+        var registry = new ConverterRegistry([new MediaConverter(Staging)], [new MediaOutputValidator()]);
+        var converter = new MediaConverter(Staging);
+        Assert.SkipWhen(!converter.GetTargets(".mp4").Contains(".mp4") || !converter.GetTargets(".mp3").Contains(".mp3"), "MP3 or MP4 can't be written on this machine.");
+
+        Assert.Contains(registry.GetTargetOptions(".mp3"), o => o.Extension == ".mp3");
+        Assert.Contains(registry.GetTargetOptions(".mp4"), o => o.Extension == ".mp4");
+
+        // Lossless formats have nothing to change; a video isn't offered as itself in another container's name.
+        Assert.DoesNotContain(registry.GetTargetOptions(".wav"), o => o.Extension == ".wav");
+        Assert.DoesNotContain(registry.GetTargetOptions(".flac"), o => o.Extension == ".flac");
+        Assert.DoesNotContain(registry.GetTargetOptions(".m4v"), o => o.Extension == ".m4v");
+        Assert.DoesNotContain(registry.GetTargetOptions(".mov"), o => o.Extension == ".mov");
+    }
+
+    [Fact]
+    public async Task AFileCanBeConvertedToItsOwnFormatUnderAnotherName_ButNotOverItself()
+    {
+        var converter = new MediaConverter(Staging);
+        Assert.SkipWhen(!converter.GetTargets(".mp3").Contains(".mp3"), "MP3 can't be written on this machine.");
+        var wav = _dir.File("asli.wav");
+        WriteWav(wav, Seconds);
+        var source = _dir.File("lagu.mp3");
+        await CreatePipeline().RunAsync(new ConversionJob(wav, ".mp3", source), null, Ct);
+
+        await CreatePipeline().RunAsync(new ConversionJob(source, ".mp3", _dir.File("lagu (hasil).mp3"), new MediaOptions(Audio: AudioQuality.Low)), null, Ct);
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => CreatePipeline().RunAsync(new ConversionJob(source, ".mp3", source), null, Ct));
+
+        Assert.True(new FileInfo(_dir.File("lagu (hasil).mp3")).Length < new FileInfo(source).Length);
+    }
+
+    [Theory]
+    [InlineData(".mp3")]
+    [InlineData(".m4a")]
+    [InlineData(".wma")]
+    public async Task AudioQuality_SetsTheBitrate(string target)
+    {
+        var converter = new MediaConverter(Staging);
+        Assert.SkipWhen(!converter.GetTargets(".wav").Contains(target), $"{target} can't be written on this machine.");
+        var source = _dir.File("nada.wav");
+        WriteWav(source, Seconds);
+
+        var sizes = new Dictionary<AudioQuality, long>();
+        foreach (var (quality, kbps) in new[] { (AudioQuality.High, 192), (AudioQuality.Medium, 128), (AudioQuality.Low, 96) })
+        {
+            var destination = _dir.File($"hasil-{quality}{target}");
+            await CreatePipeline().RunAsync(new ConversionJob(source, target, destination, new MediaOptions(Audio: quality)), null, Ct);
+
+            Assert.Equal(kbps, (int)Math.Round((await ProfileOfAsync(destination)).Audio.Bitrate / 1000.0));
+            sizes[quality] = new FileInfo(destination).Length;
+        }
+
+        Assert.True(sizes[AudioQuality.High] > sizes[AudioQuality.Medium] && sizes[AudioQuality.Medium] > sizes[AudioQuality.Low]);
+    }
+
+    [Fact]
+    public async Task NoOptions_MeansHighQuality()
+    {
+        var converter = new MediaConverter(Staging);
+        Assert.SkipWhen(!converter.GetTargets(".wav").Contains(".mp3"), "MP3 can't be written on this machine.");
+        var source = _dir.File("nada.wav");
+        WriteWav(source, Seconds);
+
+        await CreatePipeline().RunAsync(new ConversionJob(source, ".mp3", _dir.File("hasil.mp3")), null, Ct);
+
+        Assert.Equal(192, (int)Math.Round((await ProfileOfAsync(_dir.File("hasil.mp3"))).Audio.Bitrate / 1000.0));
+    }
+
+    [Theory]
+    [InlineData(".mp4", VideoSize.P480, 854, 480)]
+    [InlineData(".mp4", VideoSize.P720, 1280, 720)]
+    [InlineData(".mp4", VideoSize.Original, 1280, 720)]
+    [InlineData(".wmv", VideoSize.P480, 854, 480)]
+    public async Task VideoSize_KeepsTheShapeOfAWidePicture(string target, VideoSize size, int width, int height)
+    {
+        var converter = new MediaConverter(Staging);
+        Assert.SkipWhen(!converter.GetTargets(".mp4").Contains(target) && target != ".mp4", $"{target} can't be written on this machine.");
+        var source = await MakeVideoAsync(".mp4", VideoEncodingQuality.HD720p);
+        var destination = _dir.File("hasil" + target);
+
+        await CreatePipeline().RunAsync(new ConversionJob(source, target, destination, new MediaOptions(Video: size)), null, Ct);
+
+        var video = (await ProfileOfAsync(destination)).Video;
+        Assert.Equal((width, height), ((int)video.Width, (int)video.Height));
+    }
+
+    [Theory]
+    [InlineData(VideoSize.P1080)]
+    [InlineData(VideoSize.P720)]
+    [InlineData(VideoSize.P480)]
+    [InlineData(VideoSize.Original)]
+    public async Task VideoSize_NeverEnlarges_AndKeepsA4By3Picture(VideoSize size)
+    {
+        // The source is 640 x 480. The size profiles of Windows would make it 1280 x 720; here it stays as it is.
+        var source = await MakeVideoAsync(".mp4", VideoEncodingQuality.Vga);
+        Assert.SkipWhen(!new MediaConverter(Staging).GetTargets(".mp4").Contains(".wmv"), "WMV can't be written on this machine.");
+        var destination = _dir.File("hasil.wmv");
+
+        await CreatePipeline().RunAsync(new ConversionJob(source, ".wmv", destination, new MediaOptions(Video: size)), null, Ct);
+
+        var video = (await ProfileOfAsync(destination)).Video;
+        Assert.Equal((640, 480), ((int)video.Width, (int)video.Height));
+    }
+
+    [Fact]
+    public async Task VideoSize_ScalesA4By3PictureDownByHeight()
+    {
+        var source = _dir.File("sumber.mp4");
+        await File.WriteAllBytesAsync(source, [], Ct);
+        var composition = new MediaComposition();
+        composition.Clips.Add(MediaClip.CreateFromColor(Windows.UI.Color.FromArgb(255, 20, 160, 60), TimeSpan.FromSeconds(1)));
+        var file = await StorageFile.GetFileFromPathAsync(source);
+        var profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
+        profile.Video.Width = 1440;
+        profile.Video.Height = 1080;
+        Assert.Equal(TranscodeFailureReason.None, await composition.RenderToFileAsync(file, MediaTrimmingPreference.Fast, profile));
+        var destination = _dir.File("hasil.mp4");
+
+        await CreatePipeline().RunAsync(new ConversionJob(source, ".mp4", destination, new MediaOptions(Video: VideoSize.P480)), null, Ct);
+
+        // 1440 x 1080 is 4:3: 480 high is 640 wide.
+        var video = (await ProfileOfAsync(destination)).Video;
+        Assert.Equal((640, 480), ((int)video.Width, (int)video.Height));
+    }
+
+    [Fact]
     public async Task Progress_ReachesTheEnd_AndStaysInsideTheEncodeStage()
     {
         var converter = new MediaConverter(Staging);
@@ -389,7 +517,14 @@ public sealed class MediaConverterTests : IDisposable
         throw new InvalidDataException("No data chunk.");
     }
 
-    private async Task<string> MakeVideoAsync(string extension)
+    private static async Task<MediaEncodingProfile> ProfileOfAsync(string path)
+    {
+        using var file = File.OpenRead(path);
+        using var stream = file.AsRandomAccessStream();
+        return await MediaEncodingProfile.CreateFromStreamAsync(stream);
+    }
+
+    private async Task<string> MakeVideoAsync(string extension, VideoEncodingQuality quality = VideoEncodingQuality.Vga)
     {
         var path = _dir.File("video" + extension);
         await File.WriteAllBytesAsync(path, [], Ct);
@@ -397,7 +532,7 @@ public sealed class MediaConverterTests : IDisposable
         composition.Clips.Add(MediaClip.CreateFromColor(Windows.UI.Color.FromArgb(255, 200, 30, 30), TimeSpan.FromSeconds(2)));
         composition.Clips.Add(MediaClip.CreateFromColor(Windows.UI.Color.FromArgb(255, 30, 30, 200), TimeSpan.FromSeconds(1)));
         var file = await StorageFile.GetFileFromPathAsync(path);
-        var status = await composition.RenderToFileAsync(file, MediaTrimmingPreference.Fast, MediaEncodingProfile.CreateMp4(VideoEncodingQuality.Vga));
+        var status = await composition.RenderToFileAsync(file, MediaTrimmingPreference.Fast, MediaEncodingProfile.CreateMp4(quality));
         Assert.Equal(TranscodeFailureReason.None, status);
         return path;
     }

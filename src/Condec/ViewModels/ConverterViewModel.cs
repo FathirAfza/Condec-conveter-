@@ -122,12 +122,22 @@ public sealed partial class ConverterViewModel : ObservableObject
     public ObservableCollection<FormatOption> TargetOptions { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ConversionFormat), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ShowsImageTraceNotice), nameof(ConvertLabel))]
+    [NotifyPropertyChangedFor(nameof(ConversionFormat), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ShowsImageTraceNotice), nameof(ConvertLabel), nameof(ShowsAudioQuality), nameof(ShowsVideoSize), nameof(ShowsMediaOptions))]
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     public partial FormatOption? SelectedTarget { get; set; }
 
     /// <summary>Page, unit, scale and switches for a PDF source.</summary>
     public PdfOptionsViewModel Pdf { get; } = new();
+
+    /// <summary>Audio quality and video size for audio and video targets (DESIGN §6.1.2).</summary>
+    public MediaOptionsViewModel Media { get; } = new();
+
+    /// <summary>MP3, M4A and WMA have a bitrate to choose; WAV and FLAC are lossless.</summary>
+    public bool ShowsAudioQuality => SelectedTarget?.Extension is ".mp3" or ".m4a" or ".wma";
+
+    public bool ShowsVideoSize => SelectedTarget?.Extension is ".mp4" or ".wmv";
+
+    public bool ShowsMediaOptions => ShowsAudioQuality || ShowsVideoSize;
 
     private bool IsPdfSource => Source?.Extension == ".pdf";
 
@@ -379,8 +389,11 @@ public sealed partial class ConverterViewModel : ObservableObject
             return;
         }
 
+        // A smaller MP4 is an MP4 again: its name is suggested with a suffix, so the source isn't the first thing offered to be replaced.
+        var suggestedName = Path.GetFileNameWithoutExtension(Source.Path)
+            + (SelectedTarget.Extension == Source.Extension ? Loc.Get("Convert.SameFormatSuffix") : string.Empty);
         var destination = await _desktop.PickDestinationAsync(
-            Path.GetFileNameWithoutExtension(Source.Path),
+            suggestedName,
             Path.GetDirectoryName(Source.Path),
             SelectedTarget.DisplayName,
             SelectedTarget.Extension);
@@ -395,7 +408,7 @@ public sealed partial class ConverterViewModel : ObservableObject
             destination += SelectedTarget.Extension;
         }
 
-        var options = IsPdfSource ? Pdf.BuildOptions(SelectedTarget.Extension) : null;
+        ConversionOptions? options = IsPdfSource ? Pdf.BuildOptions(SelectedTarget.Extension) : ShowsMediaOptions ? Media.BuildOptions() : null;
         await RunAsync(new ConversionJob(Source.Path, SelectedTarget.Extension, destination, options));
     }
 
