@@ -48,6 +48,38 @@
     <Content Include="..\..\third_party\libreoffice\**" Link="LibreOffice\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The upscale model from tools\fetch-model.ps1 (Real-ESRGAN x4plus as ONNX, BSD-3-Clause), packaged unmodified at Models\. -->
+  <ItemGroup Condition="Exists('..\..\third_party\models\realesrgan-x4plus\model.onnx')">
+    <Content Include="..\..\third_party\models\**" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- The license and third-party notice files of ONNX Runtime and DirectML go with their DLLs (THIRD-PARTY-NOTICES.md §1). -->
+  <ItemGroup>
+    <Content Include="$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\LICENSE" Link="Licenses\ONNXRuntime\LICENSE.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\LICENSE')" />
+    <Content Include="$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\ThirdPartyNotices.txt" Link="Licenses\ONNXRuntime\ThirdPartyNotices.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\ThirdPartyNotices.txt')" />
+    <Content Include="$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\LICENSE.txt" Link="Licenses\DirectML\LICENSE.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\LICENSE.txt')" />
+    <Content Include="$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\ThirdPartyNotices.txt" Link="Licenses\DirectML\ThirdPartyNotices.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\ThirdPartyNotices.txt')" />
+  </ItemGroup>
+
+  <!-- ONNX Runtime and DirectML bring files that are only for people who build against them (the import library, and the
+       DirectML debug layer with the symbol files, about 15 MB). The app loads none of them. -->
+  <Target Name="TrimDevelopmentOnlyNativeFiles" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <_DevOnlyFile Include="@(Content);@(None);@(ReferenceCopyLocalPaths);@(RuntimeTargetsCopyLocalItems)" Condition="'%(Filename)%(Extension)' == 'DirectML.Debug.dll' or '%(Filename)%(Extension)' == 'DirectML.Debug.pdb' or '%(Filename)%(Extension)' == 'DirectML.pdb' or '%(Filename)%(Extension)' == 'onnxruntime.lib'" />
+      <Content Remove="@(_DevOnlyFile)" />
+      <None Remove="@(_DevOnlyFile)" />
+      <ReferenceCopyLocalPaths Remove="@(_DevOnlyFile)" />
+      <RuntimeTargetsCopyLocalItems Remove="@(_DevOnlyFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="TrimDevelopmentOnlyNativeFilesFromPublish" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <_DevOnlyPublishFile Include="@(ResolvedFileToPublish)" Condition="'%(Filename)%(Extension)' == 'DirectML.Debug.dll' or '%(Filename)%(Extension)' == 'DirectML.Debug.pdb' or '%(Filename)%(Extension)' == 'DirectML.pdb' or '%(Filename)%(Extension)' == 'onnxruntime.lib'" />
+      <ResolvedFileToPublish Remove="@(_DevOnlyPublishFile)" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <!-- Framework-dependent: the Windows App SDK runtime is a system framework package, not bundled. -->
     <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" />

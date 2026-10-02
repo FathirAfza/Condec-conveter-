@@ -30,6 +30,11 @@
     <Compile Remove="Windows\**" />
   </ItemGroup>
 
+  <!-- The upscale model from tools\fetch-model.ps1, when it has been fetched; the tests that need the real network skip without it. -->
+  <ItemGroup Condition="Exists('..\..\third_party\models\realesrgan-x4plus\model.onnx')">
+    <Content Include="..\..\third_party\models\**" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="xunit.v3.mtp-v2" />
   </ItemGroup>

@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.5 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.6 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -294,16 +294,20 @@ Dipakai Convert File untuk audio dan video. Hanya memakai `MediaTranscoder` deng
 +------------------------------------------------------------------------+
 ```
 
+**Mesin upscale.** Real-ESRGAN x4plus (BSD-3-Clause) sebagai ONNX, dijalankan ONNX Runtime di CPU atau, lewat DirectML, di GPU; seluruhnya di perangkat. Model selalu memperbesar 4×; hasil 4× itu lalu diubah ukurannya dengan Lanczos3 ke ukuran yang dipilih persis (lebih kecil untuk 1,5×–3,5×, lebih besar untuk di atas 4×; di atas 4× detail tambahan berasal dari interpolasi, bukan dari model). PNG dengan transparansi: kanal alfa diubah ukurannya terpisah dengan Lanczos3, warna lewat model. JPG: transparansi dilebur ke putih sebelum masuk model. Metadata tidak dibawa (§13 #19); DPI sumber dipertahankan. Gambar beranimasi: hanya bingkai pertama, dengan catatan. Model dicek SHA-256-nya saat aplikasi mulai; bila hilang atau rusak, halaman menampilkan `InfoBar` Error "Upscale tidak tersedia" dengan pesan yang sesuai (model tidak ada / model rusak); gambar masih bisa dipilih, tetapi skala, slider, resolusi, format, dan tombol "Upscale dan simpan…" nonaktif.
+
+**Belum ada gambar:** kartu tunggal sebagai area seret: ikon gambar, "Seret gambar ke sini", tombol "Pilih gambar…". Hanya satu gambar; menyeret beberapa file atau folder memberi pesan "Seret satu gambar saja.". Sumbernya format gambar yang bisa dibaca konverter gambar (§6.1.1); format lain ditolak dengan pesan berisi daftar format.
+
 **Kartu kiri**
 - Baris info: ikon gambar 32, nama (BodyStrong), Caption "W × H · X,X MP · ukuran file", `HyperlinkButton` "Ganti".
 - Diagram ukuran proporsional (rasio 16:9 mengikuti gambar): kotak besar bergaris putus-putus = hasil, kotak kecil di pojok kiri atas = asli, lebarnya 100/skala persen. Legenda: "Asli · W × H" dan "Hasil · W × H".
 
 **Kartu kanan, berurutan**
-1. **Mesin render:** Caption "Mesin render", nilai BodyStrong ("GPU · `<nama>`", "CPU · `<nama>`", atau "NPU · `<nama>`") dari Settings, `HyperlinkButton` "Ubah di Settings".
+1. **Mesin render:** Caption "Mesin render", nilai BodyStrong ("GPU · `<nama>`", "CPU · `<nama>`", atau "NPU · `<nama>`") dari Settings, `HyperlinkButton` "Ubah di Settings". Mesin NPU belum bisa menjalankan model (§13 #8): bila NPU dipilih, Caption di bawahnya "NPU belum bisa menjalankan model ini, jadi `<GPU/CPU>` yang merender." dan perkiraan waktu memakai mesin yang benar-benar merender.
 2. **Skala:** label "Skala", `ComboBox` dengan item 2×, 4×, 8×, 16× (keterangan kanan "200%", "400%", dst.). Item di atas batas efektif (§7) nonaktif dengan keterangan "Dikunci". Kalau skala berasal dari slider dan bukan preset, ComboBox menampilkan "Kustom 3,5×" lewat `PlaceholderText`.
 3. **Persentase upscale:** label dan nilai ("400%", BodyStrong). `Slider` Minimum=150, Maximum = batas efektif × 100, StepFrequency=50, TickFrequency=50, tick di bawah. Di bawah slider: Caption "150%" (kiri) dan nilai maksimum (kanan). Slider dan ComboBox Skala saling menyinkronkan.
 4. Bila ada skala terkunci: Caption berwarna peringatan dengan ikon gembok "Dikunci: 8×, 16×. `<alasan>`." (alasan dari §7.4).
-5. **Resolusi hasil:** `ComboBox`, tampilan "Full HD · 1920 × 1080" atau "Kustom · W × H". Preset: Full HD 1920 × 1080, 2K (QHD) 2560 × 1440, 4K (UHD) 3840 × 2160, 5K 5120 × 2880, 8K (UHD) 7680 × 4320 (untuk sumber 16:9). Item nonaktif bila skala yang dibutuhkan (lebar target ÷ lebar sumber) < 1,5 atau di atas batas efektif.
+5. **Resolusi hasil:** `ComboBox`, tampilan "Full HD · 1920 × 1080" atau "Kustom · W × H". Preset: Full HD 1920 × 1080, 2K (QHD) 2560 × 1440, 4K (UHD) 3840 × 2160, 5K 5120 × 2880, 8K (UHD) 7680 × 4320 (untuk sumber 16:9). Preset menetapkan **sisi terpanjang** (1920, 2560, 3840, 5120, 7680); sisi lain mengikuti bentuk gambar, jadi gambar tegak 1080 × 1920 pada "Full HD" tetap tegak dan bentuk tidak pernah berubah `[ASUMSI]`. Item nonaktif bila skala yang dibutuhkan (sisi terpanjang target ÷ sisi terpanjang sumber) < 1,5 atau di atas batas efektif. Memilih skala atau menggeser slider memilih preset yang ukurannya persis sama, selain itu "Kustom".
 6. **Format hasil:** `RadioButtons` PNG | JPG (horizontal).
 
 **Kartu perkiraan** (grid 4 kolom, nilai `BodyLargeStrongTextBlockStyle`, label dan keterangan Caption):
@@ -313,13 +317,15 @@ Dipakai Convert File untuk audio dan video. Hanya memakai `MediaTranscoder` deng
 - "RAM dibutuhkan" — "32 GB" / "Terpasang 32 GB, cukup" (warna sukses) atau "Terpasang N GB, kurang" (warna galat)
 - Tombol aksen "Upscale dan simpan…" di kanan, **nonaktif** bila upscale tidak tersedia atau RAM kurang.
 
-**Upscale tidak tersedia** (batas efektif < 1,5): `InfoBar` Error di atas kartu. Judul "Perangkat ini belum memenuhi syarat upscale". Pesan "Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 2K. Perangkat ini hanya punya N GB." Skala, slider, dan resolusi nonaktif.
+**Upscale tidak tersedia** (batas efektif < 1,5): `InfoBar` Error di atas kartu. Judul "Perangkat ini belum memenuhi syarat upscale". Pesan "Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 2K. Perangkat ini hanya punya N GB." Bila RAM cukup tetapi gambarnya terlalu besar untuk diperbesar 1,5× (syarat RAM §7.2 atau batas satu gambar di memori, §13 #20), pesannya "Gambar ini terlalu besar untuk diperbesar di perangkat ini. `<alasan §7.4>`." Skala, slider, dan resolusi nonaktif.
 
-**Proses:** kartu tunggal. Judul "Meng-upscale `<nama>`", Caption "`<skala>` · `<W × H>` · `<mesin>`", "Batal", ProgressBar + persen, tahap: "Menyiapkan mesin render" (0–10%), "Memproses tile" (10–90%, "Tile n dari N"), "Menyimpan hasil" (90–96%, "Menulis .png"), "Verifikasi integritas" (96–100%, "Menghitung SHA-256"). Ukuran tile input 256 px `[ASUMSI]`.
+**Proses:** kartu tunggal. Judul "Meng-upscale `<nama>`", Caption "`<skala>` · `<W × H>` · `<mesin>`", "Batal", ProgressBar + persen, tahap: "Menyiapkan mesin render" (0–10%; keterangan "Mengukur kecepatan mesin (sekali saja)" saat benchmark §8 berjalan, lalu "Memuat model"), "Memproses tile" (10–90%, "Tile n dari N"), "Menyimpan hasil" (90–96%, "Menulis .png"), "Verifikasi integritas" (96–100%, "Menghitung SHA-256"). Tile masukan 128 × 128 px dengan tepi 10 px yang dibuang setelah diproses (108 px berguna per tile, 432 px di hasil); tepi gambar diisi pantulan supaya semua tile berukuran sama. Ukuran ini hasil pengukuran di GPU terintegrasi mesin uji (2026-10-02, DirectML): tile 128 menghasilkan 0,47 MP/detik, tile 256 hanya 0,32; tile 48–192 tidak lebih cepat dari 128. Hasil bertile dengan tepi 10 px sama dengan hasil satu gambar utuh pada 52,9 dB PSNR (tanpa sambungan yang terlihat). Bila GPU gagal menjalankan model, render pindah ke CPU dengan catatan Informational "Kartu grafis tidak bisa menjalankan model upscale, jadi CPU yang merender gambar. Ini lebih lama."
 
-**Selesai:** `InfoBar` Success "Upscale selesai" / "Gambar disimpan dan lolos cek integritas." Detail: Lokasi, Resolusi ("W × H → W' × H' (4×)"), Mesin. Tombol: "Buka file" (aksen), "Tampilkan di folder", `HyperlinkButton` "Upscale gambar lain".
+**Selesai:** `InfoBar` Success "Upscale selesai" / "Gambar disimpan dan lolos cek integritas." Detail: Lokasi, Resolusi ("W × H → W' × H' (4×)"), Mesin, Integritas (sama dengan Convert File). Catatan konversi (mis. bingkai pertama saja, render pindah ke CPU) tampil sebagai `InfoBar` di bawah detail. Tombol: "Buka file" (aksen), "Tampilkan di folder", `HyperlinkButton` "Upscale gambar lain".
 
-Nama file hasil: `<nama>-<W>x<H>.<ext>`.
+**Gagal:** `InfoBar` Error "Upscale gagal" dengan pesan dari §6.1 (mis. memori habis = gambar terlalu besar), nama file, tombol "Coba lagi" (aksen) dan "Ubah pilihan". Batal tidak meninggalkan file dan kembali ke pilihan dengan pesan "Upscale dibatalkan. Tidak ada file yang disimpan."
+
+Nama file hasil: `<nama>-<W>x<H>.<ext>`. Upscale tidak dicatat di daftar Riwayat Convert File `[ASUMSI]` (§13 #10).
 
 ### 6.3 Architecture
 
@@ -488,6 +494,8 @@ tersedia     = efektif >= 1.5
 ### 7.5 Batas memori (Settings)
 Tidak menutup akses skala. Batas kecil memperlambat render karena tile lebih kecil dan paralelisme lebih rendah `[ASUMSI]`: faktor waktu ×1,0 bila ≥ 12 GB, ×1,3 bila 8–11 GB, ×1,8 bila < 8 GB.
 
+Kenyataan di tahap 6: renderer memakai tile 128 px tetap (§6.2) dan **tidak membaca batas ini**, jadi faktor di atas hanya memperbesar perkiraan waktu, bukan waktu nyata (lihat §13 #26).
+
 ## 8. Estimasi
 
 | Besaran | Rumus | Tag |
@@ -495,8 +503,8 @@ Tidak menutup akses skala. Batas kecil memperlambat render karena tile lebih kec
 | Piksel hasil | `round(W × skala) × round(H × skala)` | |
 | Ukuran file PNG | piksel × 1,7 byte | `[ASUMSI]` |
 | Ukuran file JPG | piksel × 0,4 byte | `[ASUMSI]` |
-| Waktu render | `MP hasil ÷ throughput(mesin) × faktorMemori` | |
-| Throughput | hasil benchmark singkat pada eksekusi pertama (tile kecil per mesin), disimpan per mesin dan nama perangkat; ganti GPU atau NPU berarti diukur ulang. Protokol: 1 tile pemanasan tanpa hitung waktu, lalu 3 tile diukur | protokol `[ASUMSI]` |
+| Waktu render | `MP kerja ÷ throughput(mesin) × faktorMemori`. MP kerja = jumlah tile × 0,186624 MP (satu tile 108 px berguna, 4× = 432 × 432 px). Tile di tepi kanan dan bawah dihitung utuh karena model tetap memproses tile penuh. Tidak bergantung pada skala yang dipilih, karena model selalu bekerja 4× (§6.2) | |
+| Throughput | hasil benchmark singkat pada eksekusi pertama (tile 128 px yang sama dengan render), disimpan per mesin dan nama perangkat; ganti GPU atau NPU berarti diukur ulang. Protokol: 1 tile pemanasan tanpa hitung waktu, lalu 3 tile diukur; satuannya MP berguna per detik. Diukur saat upscale pertama dengan mesin itu, pada tahap "Menyiapkan mesin render" | protokol `[ASUMSI]` |
 | Format waktu | < 1 dtk: "< 1 detik"; < 60: "N detik"; < 60 mnt: "N menit M detik"; selain itu "N jam M menit" | |
 
 Selalu tampil dengan awalan "± ". Angka throughput di mock hanya contoh dan tidak boleh dipakai di aplikasi nyata. Sebelum ada hasil benchmark untuk mesin terpilih, "Perkiraan waktu render" menampilkan "—" dan keterangan "Belum diukur", bukan angka karangan.
@@ -582,14 +590,14 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 5 | Lebar pill `SelectorBar` | `[TERBUKA]` |
 | 6 | Ukuran minimum jendela 900 × 640 | `[TERBUKA]`, usulan ini sudah dipakai (tahap 3); konfirmasi atau ganti |
 | 7 | Versi DWG yang ditulis ACadSharp | diputuskan: AC1015 (AutoCAD 2000). ACadSharp 3.8.0 menulis DWG AC1014, AC1015, AC1018, AC1024, AC1027, AC1032 |
-| 8 | Model upscale (lisensi kode dan bobot harus kompatibel GPL-3.0) dan apakah bisa jalan di NPU | `[TERBUKA]`, jangan menebak |
+| 8 | Model upscale (lisensi kode dan bobot harus kompatibel GPL-3.0) dan apakah bisa jalan di NPU | Model diputuskan pemilik 2026-10-02: hanya Real-ESRGAN x4plus (BSD-3-Clause), ekspor ONNX pihak ketiga (SkillSafe) yang diverifikasi identik dengan bobot resmi (THIRD-PARTY-NOTICES.md). NPU: `[TERBUKA]`. Paket ONNX Runtime DirectML tidak bisa diarahkan ke NPU, dan belum ada perangkat ber-NPU untuk dicoba; pilihan NPU merender di GPU (atau CPU) dengan keterangan (§6.2) |
 | 9 | OCR teks gambar: `Windows.Media.Ocr`, bahasa terpasang | `[TERBUKA]`, cek dokumentasi |
-| 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | `[TERBUKA]`. Sementara (tahap 3): konversi di Architecture tercatat di daftar yang sama dengan Convert File (satu `history.json`), supaya riwayat konversi DXF/DWG yang sudah ada tidak hilang; daftar hanya ditampilkan di Convert File. |
+| 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | `[TERBUKA]`. Sementara (tahap 3): konversi di Architecture tercatat di daftar yang sama dengan Convert File (satu `history.json`), supaya riwayat konversi DXF/DWG yang sudah ada tidak hilang; daftar hanya ditampilkan di Convert File. Tahap 6: hasil Upscale **tidak** dicatat di daftar itu `[ASUMSI]`, karena daftarnya hanya tampil di Convert File dan berisi konversi format; menambahkan upscale menunggu jawaban pertanyaan ini. |
 | 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`, kalibrasi |
 | 12 | Perkiraan ukuran file (§8) dan hasil DWG → gambar (§6.3.2) | `[ASUMSI]` |
 | 13 | Win2D untuk render DWG | `[TERBUKA]`, hanya kalau kontrol stock tidak cukup |
 | 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
-| 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]` |
+| 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]`. Terbukti di mesin uji (2026-10-03): GPU terintegrasi 0,32 MP/detik, CPU 0,061 MP/detik. Gambar 640 × 360 (24 tile) di CPU: perkiraan dari jumlah tile 73 detik, render nyata 61 detik (tanpa faktor memori) |
 | 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
 | 19 | Konverter gambar tidak membawa metadata (EXIF, GPS, profil ICC); warna dikonversi ke sRGB, transparansi dilebur ke putih untuk format tanpa alfa (§6.1.1) | Diputuskan pemilik untuk beta: tidak dibawa (lebih aman untuk privasi). Opsi "pertahankan metadata" (bawaan mati, JPG/PNG/TIFF) hanya ditambah bila diminta. |
 | 20 | Batas gambar 536.870.911 piksel (`int.MaxValue / 4`, §6.1.1) dan kehabisan memori dianggap "terlalu besar" | `[ASUMSI]`. Batas itu adalah batas satu array .NET; batas nyata bergantung memori mesin dan belum diukur untuk gambar di antara 100 dan 537 MP |
@@ -597,12 +605,27 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 22 | HEVC dan ALAC sebagai tujuan: sama ekstensi dengan MP4 dan M4A, jadi butuh konsep "profil" selain ekstensi di daftar format | `[TERBUKA]` |
 | 23 | Opsi kualitas audio dan ukuran video (§6.1, §6.1.2) | Diputuskan pemilik 2026-10-02 ("justru itu yang aku butuhkan"). Tiga tingkat audio dan tiga ukuran video adalah usulan; bitrate kustom tidak ada |
 | 24 | Ukuran video yang dipilih untuk video dengan metadata rotasi (rekaman ponsel tegak) | `[TERBUKA]`, belum diuji; butuh contoh file dari ponsel |
+| 25 | Data latih Real-ESRGAN (DIV2K, Flickr2K, OST) punya ketentuan sendiri yang tidak dijelaskan repo Real-ESRGAN untuk bobotnya | Diputuskan pemilik 2026-10-02: dicatat apa adanya di THIRD-PARTY-NOTICES.md, model tetap dibawa |
+| 26 | Batas memori di Settings (§7.5) tidak dipakai renderer, tetapi faktor ×1,3/×1,8 tetap memperbesar perkiraan waktu (di mesin uji RAM 8 GB, CPU: tampil "± 2 menit 11 detik" untuk render nyata 61 detik). Render CPU 640 × 360 memakai puncak ±790 MB memori privat lalu turun lagi; Windows mencatat event `RADAR_PRE_LEAK_64` (deteksi pemakaian memori, bukan crash) saat render pertama | `[TERBUKA]`: buang faktornya, atau buat batasnya nyata (mis. tile lebih kecil atau satu inti CPU lebih sedikit) |
+| 27 | Laptop dengan dua GPU: DirectML memakai adaptor 0, yang belum tentu GPU yang ditampilkan Settings | `[TERBUKA]`, belum ada perangkat untuk diuji |
+| 28 | Microsoft menyatakan DirectML dalam mode pemeliharaan (Windows ML disarankan untuk proyek baru) | `[TERBUKA]`. DirectML dipakai karena berjalan tanpa identitas paket (build portabel) dan sudah diuji di mesin ini; pindah ke Windows ML dipertimbangkan setelah beta |
+| 29 | Skala di atas 4×: model berhenti di 4×, sisanya diperbesar dengan Lanczos3, jadi 8× dan 16× tidak menambah detail baru | `[ASUMSI]`. Alternatifnya (model dijalankan dua kali) jauh lebih lama dan butuh jauh lebih banyak memori; belum bisa dicoba di mesin uji (batas 2×) |
+| 30 | `PdfDocument` (Windows.Data.Pdf) yang sudah merender lalu dilepas membuat proses crash beberapa saat kemudian di driver grafis (AMD `atidxx64.dll`), juga di test host | Diatasi tahap 6: dokumen yang sudah dirender disimpan sampai proses selesai (maksimal 64). Belum dicoba di driver lain |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.6] 2026-10-03 (tahap 6: Upscale Image)
+- **Ditambah:** halaman Upscale Image berfungsi penuh (§6.2): Real-ESRGAN x4plus lewat ONNX Runtime di CPU atau GPU (DirectML), sepenuhnya lokal; tile 128 px dengan tepi 10 px; hasil diubah ukurannya ke ukuran persis dengan Lanczos3; PNG mempertahankan transparansi. Keadaan "belum ada gambar" dengan area seret, keadaan gagal, dan catatan saat NPU atau GPU tidak bisa dipakai.
+- **Ditambah:** benchmark nyata saat upscale pertama per mesin (§8), disimpan per mesin dan nama perangkat; perkiraan waktu dihitung dari jumlah tile.
+- **Ditambah:** model dibundel di `Models\realesrgan-x4plus\` (diambil `tools/fetch-model.ps1`, SHA-256 dipin, dicek aplikasi sebelum dipakai); pesan bila model hilang atau rusak. ONNX Runtime 1.24.4 dan DirectML 1.15.4 beserta berkas lisensinya (`Licenses\`). THIRD-PARTY-NOTICES.md: ONNX Runtime, DirectML, Real-ESRGAN (lampiran E), dan catatan data latih (keputusan pemilik).
+- **Diubah:** preset resolusi menetapkan sisi terpanjang, jadi gambar tegak tetap tegak (§6.2). Ukuran tile 256 `[ASUMSI]` diganti 128 hasil ukur.
+- **Diperbaiki:** proses crash beberapa saat setelah PDF dirender (driver AMD, `PdfDocument` dilepas), yang juga membuat test host berhenti acak (§13 #30).
+- **Dicek:** uji langsung di build portabel: benchmark GPU 0,32 MP/detik, 24 tile, PNG dan JPG lolos integritas, Batal tanpa file sisa, tautan "Ubah di Settings". Mode CPU (benchmark 0,061 MP/detik, 24 tile dalam 61 detik), pesan model hilang dan model rusak, dan menutup aplikasi tanpa crash juga dicek langsung. **Belum dicoba langsung:** perangkat ber-NPU, GPU diskrit, skala di atas 2× (ada unit test).
+- **Diajukan:** §13 #25 sampai #30; §13 #8, #10, #17 diperbarui.
 
 ### [0.2.5] 2026-10-02 (opsi kualitas audio dan video)
 - **Ditambah:** "Kualitas audio" (MP3, M4A, WMA: 192, 128, 96 kbps) dan "Ukuran video" (MP4, WMV: sama dengan sumber, 1080p, 720p, 480p; tidak pernah memperbesar, bentuk gambar terjaga) di keadaan Input (§6.1, §6.1.2). Permintaan pemilik.

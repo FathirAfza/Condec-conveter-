@@ -22,6 +22,7 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
         // Through StorageFile, not a wrapped .NET stream: see PdfOutputValidator.
         var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path)).AsTask(ct).ConfigureAwait(false);
         var document = await PdfDocument.LoadFromFileAsync(file).AsTask(ct).ConfigureAwait(false);
+        RenderedPdfDocuments.Keep(document);
         if (document.IsPasswordProtected)
         {
             throw new LockedPdfException("The PDF is password protected.");

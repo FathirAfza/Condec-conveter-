@@ -23,6 +23,8 @@ public sealed class AppServices
         ConversionPipeline pipeline,
         HistoryStore history,
         IDesktopServices desktop,
+        ConverterRegistry upscaleRegistry,
+        ConversionPipeline upscalePipeline,
         string version)
     {
         Settings = settings;
@@ -30,6 +32,7 @@ public sealed class AppServices
         Desktop = desktop;
         Convert = new ConverterViewModel(ConverterScope.Files, registry, pipeline, history, desktop, log);
         Architecture = new ConverterViewModel(ConverterScope.Cad, registry, pipeline, history, desktop, log);
+        Upscale = new UpscaleViewModel(settings, upscaleRegistry, upscalePipeline, desktop, log);
         SettingsPage = new SettingsViewModel(settings, log, desktop, version);
     }
 
@@ -42,6 +45,8 @@ public sealed class AppServices
     public ConverterViewModel Convert { get; }
 
     public ConverterViewModel Architecture { get; }
+
+    public UpscaleViewModel Upscale { get; }
 
     public SettingsViewModel SettingsPage { get; }
 }

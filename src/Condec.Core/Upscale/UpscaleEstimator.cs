@@ -31,17 +31,18 @@ public static class UpscaleEstimator
         (long)Math.Round(outputPixels * (format == UpscaleFormat.Png ? PngBytesPerPixel : JpgBytesPerPixel), MidpointRounding.AwayFromZero);
 
     /// <summary>
-    /// Render time: result megapixels ÷ how many megapixels per second the engine measured, times the slowdown of a
-    /// small memory limit. Null when the engine hasn't been measured yet, because the app never shows an invented speed.
+    /// Render time: the megapixels the network works through (whole tiles at 4 times each side of the source, whatever size is
+    /// asked for; <see cref="UpscaleSupport.RenderedPixels"/>) ÷ how many megapixels per second the engine measured, times the
+    /// slowdown of a small memory limit. Null when the engine hasn't been measured yet, because the app never shows an invented speed.
     /// </summary>
-    public static double? EstimatedSeconds(long outputPixels, double? megapixelsPerSecond, int memoryLimitGb)
+    public static double? EstimatedSeconds(long networkPixels, double? megapixelsPerSecond, int memoryLimitGb)
     {
         if (megapixelsPerSecond is not > 0)
         {
             return null;
         }
 
-        return outputPixels / 1_000_000d / megapixelsPerSecond.Value * Devices.CapabilityPolicy.MemoryTimeFactor(memoryLimitGb);
+        return networkPixels / 1_000_000d / megapixelsPerSecond.Value * Devices.CapabilityPolicy.MemoryTimeFactor(memoryLimitGb);
     }
 
     private static int Scaled(int value, double scale) => (int)Math.Round(value * scale, MidpointRounding.AwayFromZero);

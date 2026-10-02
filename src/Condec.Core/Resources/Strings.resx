@@ -213,8 +213,6 @@
   <data name="Format.ArchitectureLink" xml:space="preserve"><value>Need DXF or DWG? Open Architecture</value></data>
   <data name="Input.UseArchitecture" xml:space="preserve"><value>{0} files are handled in Architecture. Open it from the menu.</value></data>
   <data name="Input.UseConvertFile" xml:space="preserve"><value>{0} files are handled in Convert File. Open it from the menu.</value></data>
-  <data name="Upscale.NotYetTitle" xml:space="preserve"><value>Upscaling isn't available yet</value></data>
-  <data name="Upscale.NotYetMessage" xml:space="preserve"><value>This part of Condec is still being built. The limits of this device can already be seen in Settings.</value></data>
   <data name="Device.Gigabytes" xml:space="preserve"><value>{0} GB</value></data>
   <data name="Device.NotDetected" xml:space="preserve"><value>Not detected</value></data>
   <data name="Device.Detected" xml:space="preserve"><value>Detected</value></data>
@@ -289,4 +287,60 @@
   <data name="MediaSize.P720" xml:space="preserve"><value>720p (HD)</value></data>
   <data name="MediaSize.P480" xml:space="preserve"><value>480p</value></data>
   <data name="Convert.SameFormatSuffix" xml:space="preserve"><value> (converted)</value></data>
+  <data name="Note.UpscaleNpuFallback" xml:space="preserve"><value>Windows can't send this model to the NPU yet, so the {0} rendered the picture.</value></data>
+  <data name="Note.UpscaleGpuFallback" xml:space="preserve"><value>The graphics card couldn't run the upscale model, so the CPU rendered the picture. This takes longer.</value></data>
+  <data name="Error.UpscaleModelMissing" xml:space="preserve"><value>The upscale model isn't in this copy of Condec, so pictures can't be enlarged. Reinstall Condec, or run tools\fetch-model.ps1 if you built it yourself.</value></data>
+  <data name="Error.UpscaleModelDamaged" xml:space="preserve"><value>The upscale model file is damaged or isn't the one released with Condec, so it wasn't used. Reinstall Condec to get a good copy.</value></data>
+  <data name="Upscale.DropHere" xml:space="preserve"><value>Drag a picture here</value></data>
+  <data name="Upscale.Choose" xml:space="preserve"><value>Choose picture…</value></data>
+  <data name="Upscale.Unsupported" xml:space="preserve"><value>{0} files can't be enlarged. Choose a picture ({1}).</value></data>
+  <data name="Upscale.UnsupportedNoExtension" xml:space="preserve"><value>A file without an extension can't be enlarged. Choose a picture ({0}).</value></data>
+  <data name="Upscale.DropMany" xml:space="preserve"><value>Drag a single picture. Condec enlarges pictures one at a time.</value></data>
+  <data name="Upscale.Cancelled" xml:space="preserve"><value>Upscaling cancelled. No file was saved.</value></data>
+  <data name="Upscale.OriginalLegend" xml:space="preserve"><value>Original · {0}</value></data>
+  <data name="Upscale.ResultLegend" xml:space="preserve"><value>Result · {0}</value></data>
+  <data name="Upscale.DiagramSpoken" xml:space="preserve"><value>Size comparison: original {0}, result {1}</value></data>
+  <data name="Upscale.Engine" xml:space="preserve"><value>Render engine</value></data>
+  <data name="Upscale.EngineChange" xml:space="preserve"><value>Change in Settings</value></data>
+  <data name="Upscale.EngineNpuNote" xml:space="preserve"><value>The NPU can't run this model yet, so the {0} renders.</value></data>
+  <data name="Upscale.Scale" xml:space="preserve"><value>Scale</value></data>
+  <data name="Upscale.ScaleCustom" xml:space="preserve"><value>Custom {0}</value></data>
+  <data name="Upscale.ScaleLocked" xml:space="preserve"><value>Locked</value></data>
+  <data name="Upscale.LockedScales" xml:space="preserve"><value>Locked: {0}. {1}.</value></data>
+  <data name="Upscale.Percent" xml:space="preserve"><value>Upscale percentage</value></data>
+  <data name="Upscale.ResultResolution" xml:space="preserve"><value>Result resolution</value></data>
+  <data name="Upscale.ResolutionCustom" xml:space="preserve"><value>Custom · {0}</value></data>
+  <data name="Upscale.Preset.FullHd" xml:space="preserve"><value>Full HD</value></data>
+  <data name="Upscale.Preset.TwoK" xml:space="preserve"><value>2K (QHD)</value></data>
+  <data name="Upscale.Preset.FourK" xml:space="preserve"><value>4K (UHD)</value></data>
+  <data name="Upscale.Preset.FiveK" xml:space="preserve"><value>5K</value></data>
+  <data name="Upscale.Preset.EightK" xml:space="preserve"><value>8K (UHD)</value></data>
+  <data name="Upscale.Format" xml:space="preserve"><value>Result format</value></data>
+  <data name="Upscale.Estimate.Size" xml:space="preserve"><value>Estimated file size</value></data>
+  <data name="Upscale.Estimate.Time" xml:space="preserve"><value>Estimated render time</value></data>
+  <data name="Upscale.Estimate.Ram" xml:space="preserve"><value>RAM needed</value></data>
+  <data name="Upscale.Estimate.NotMeasured" xml:space="preserve"><value>Not measured yet</value></data>
+  <data name="Upscale.Estimate.RamEnough" xml:space="preserve"><value>{0} GB installed, enough</value></data>
+  <data name="Upscale.Estimate.RamShort" xml:space="preserve"><value>{0} GB installed, not enough</value></data>
+  <data name="Upscale.Start" xml:space="preserve"><value>Upscale and save…</value></data>
+  <data name="Upscale.UnavailableTitle" xml:space="preserve"><value>This device doesn't meet the upscale requirements</value></data>
+  <data name="Upscale.UnavailableRam" xml:space="preserve"><value>Upscaling needs at least 8 GB of installed RAM for results up to 2K. This device has only {0} GB.</value></data>
+  <data name="Upscale.UnavailableTooBig" xml:space="preserve"><value>This picture is too large to enlarge on this device. {0}.</value></data>
+  <data name="Upscale.ModelProblemTitle" xml:space="preserve"><value>Upscaling isn't available</value></data>
+  <data name="Upscale.Processing.Title" xml:space="preserve"><value>Upscaling {0}</value></data>
+  <data name="Upscale.ProgressSpoken" xml:space="preserve"><value>Upscale progress</value></data>
+  <data name="Upscale.Step.Prepare" xml:space="preserve"><value>Preparing the render engine</value></data>
+  <data name="Upscale.Step.Tiles" xml:space="preserve"><value>Processing tiles</value></data>
+  <data name="Upscale.Step.Save" xml:space="preserve"><value>Saving the result</value></data>
+  <data name="Upscale.Step.Verify" xml:space="preserve"><value>Verifying integrity</value></data>
+  <data name="Upscale.Step.Measuring" xml:space="preserve"><value>Measuring the engine speed (once)</value></data>
+  <data name="Upscale.Step.Loading" xml:space="preserve"><value>Loading the model</value></data>
+  <data name="Upscale.Step.TileOf" xml:space="preserve"><value>Tile {0} of {1}</value></data>
+  <data name="Upscale.Step.Writing" xml:space="preserve"><value>Writing {0}</value></data>
+  <data name="Upscale.Done.Title" xml:space="preserve"><value>Upscale complete</value></data>
+  <data name="Upscale.Done.Message" xml:space="preserve"><value>The picture was saved and passed the integrity check.</value></data>
+  <data name="Upscale.Done.Resolution" xml:space="preserve"><value>Resolution</value></data>
+  <data name="Upscale.Done.Engine" xml:space="preserve"><value>Engine</value></data>
+  <data name="Upscale.Done.Another" xml:space="preserve"><value>Upscale another picture</value></data>
+  <data name="Upscale.Failed.Title" xml:space="preserve"><value>Upscale failed</value></data>
 </root>

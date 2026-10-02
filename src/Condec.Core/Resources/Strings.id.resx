@@ -213,8 +213,6 @@
   <data name="Format.ArchitectureLink" xml:space="preserve"><value>Butuh DXF atau DWG? Buka Architecture</value></data>
   <data name="Input.UseArchitecture" xml:space="preserve"><value>File {0} diproses di Architecture. Buka dari menu.</value></data>
   <data name="Input.UseConvertFile" xml:space="preserve"><value>File {0} diproses di Convert File. Buka dari menu.</value></data>
-  <data name="Upscale.NotYetTitle" xml:space="preserve"><value>Upscale belum tersedia</value></data>
-  <data name="Upscale.NotYetMessage" xml:space="preserve"><value>Bagian ini masih dibangun. Batas perangkat ini sudah bisa dilihat di Settings.</value></data>
   <data name="Device.Gigabytes" xml:space="preserve"><value>{0} GB</value></data>
   <data name="Device.NotDetected" xml:space="preserve"><value>Tidak terdeteksi</value></data>
   <data name="Device.Detected" xml:space="preserve"><value>Terdeteksi</value></data>
@@ -289,4 +287,60 @@
   <data name="MediaSize.P720" xml:space="preserve"><value>720p (HD)</value></data>
   <data name="MediaSize.P480" xml:space="preserve"><value>480p</value></data>
   <data name="Convert.SameFormatSuffix" xml:space="preserve"><value> (hasil)</value></data>
+  <data name="Note.UpscaleNpuFallback" xml:space="preserve"><value>Windows belum bisa mengirim model ini ke NPU, jadi {0} yang merender gambar.</value></data>
+  <data name="Note.UpscaleGpuFallback" xml:space="preserve"><value>Kartu grafis tidak bisa menjalankan model upscale, jadi CPU yang merender gambar. Ini lebih lama.</value></data>
+  <data name="Error.UpscaleModelMissing" xml:space="preserve"><value>Model upscale tidak ada di salinan Condec ini, jadi gambar tidak bisa diperbesar. Pasang ulang Condec, atau jalankan tools\fetch-model.ps1 bila kamu membangunnya sendiri.</value></data>
+  <data name="Error.UpscaleModelDamaged" xml:space="preserve"><value>File model upscale rusak atau bukan yang dirilis bersama Condec, jadi tidak dipakai. Pasang ulang Condec untuk mendapat salinan yang baik.</value></data>
+  <data name="Upscale.DropHere" xml:space="preserve"><value>Seret gambar ke sini</value></data>
+  <data name="Upscale.Choose" xml:space="preserve"><value>Pilih gambar…</value></data>
+  <data name="Upscale.Unsupported" xml:space="preserve"><value>File {0} tidak bisa diperbesar. Pilih gambar ({1}).</value></data>
+  <data name="Upscale.UnsupportedNoExtension" xml:space="preserve"><value>File tanpa ekstensi tidak bisa diperbesar. Pilih gambar ({0}).</value></data>
+  <data name="Upscale.DropMany" xml:space="preserve"><value>Seret satu gambar saja. Condec memperbesar gambar satu per satu.</value></data>
+  <data name="Upscale.Cancelled" xml:space="preserve"><value>Upscale dibatalkan. Tidak ada file yang disimpan.</value></data>
+  <data name="Upscale.OriginalLegend" xml:space="preserve"><value>Asli · {0}</value></data>
+  <data name="Upscale.ResultLegend" xml:space="preserve"><value>Hasil · {0}</value></data>
+  <data name="Upscale.DiagramSpoken" xml:space="preserve"><value>Perbandingan ukuran: asli {0}, hasil {1}</value></data>
+  <data name="Upscale.Engine" xml:space="preserve"><value>Mesin render</value></data>
+  <data name="Upscale.EngineChange" xml:space="preserve"><value>Ubah di Settings</value></data>
+  <data name="Upscale.EngineNpuNote" xml:space="preserve"><value>NPU belum bisa menjalankan model ini, jadi {0} yang merender.</value></data>
+  <data name="Upscale.Scale" xml:space="preserve"><value>Skala</value></data>
+  <data name="Upscale.ScaleCustom" xml:space="preserve"><value>Kustom {0}</value></data>
+  <data name="Upscale.ScaleLocked" xml:space="preserve"><value>Dikunci</value></data>
+  <data name="Upscale.LockedScales" xml:space="preserve"><value>Dikunci: {0}. {1}.</value></data>
+  <data name="Upscale.Percent" xml:space="preserve"><value>Persentase upscale</value></data>
+  <data name="Upscale.ResultResolution" xml:space="preserve"><value>Resolusi hasil</value></data>
+  <data name="Upscale.ResolutionCustom" xml:space="preserve"><value>Kustom · {0}</value></data>
+  <data name="Upscale.Preset.FullHd" xml:space="preserve"><value>Full HD</value></data>
+  <data name="Upscale.Preset.TwoK" xml:space="preserve"><value>2K (QHD)</value></data>
+  <data name="Upscale.Preset.FourK" xml:space="preserve"><value>4K (UHD)</value></data>
+  <data name="Upscale.Preset.FiveK" xml:space="preserve"><value>5K</value></data>
+  <data name="Upscale.Preset.EightK" xml:space="preserve"><value>8K (UHD)</value></data>
+  <data name="Upscale.Format" xml:space="preserve"><value>Format hasil</value></data>
+  <data name="Upscale.Estimate.Size" xml:space="preserve"><value>Perkiraan ukuran file</value></data>
+  <data name="Upscale.Estimate.Time" xml:space="preserve"><value>Perkiraan waktu render</value></data>
+  <data name="Upscale.Estimate.Ram" xml:space="preserve"><value>RAM dibutuhkan</value></data>
+  <data name="Upscale.Estimate.NotMeasured" xml:space="preserve"><value>Belum diukur</value></data>
+  <data name="Upscale.Estimate.RamEnough" xml:space="preserve"><value>Terpasang {0} GB, cukup</value></data>
+  <data name="Upscale.Estimate.RamShort" xml:space="preserve"><value>Terpasang {0} GB, kurang</value></data>
+  <data name="Upscale.Start" xml:space="preserve"><value>Upscale dan simpan…</value></data>
+  <data name="Upscale.UnavailableTitle" xml:space="preserve"><value>Perangkat ini belum memenuhi syarat upscale</value></data>
+  <data name="Upscale.UnavailableRam" xml:space="preserve"><value>Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 2K. Perangkat ini hanya punya {0} GB.</value></data>
+  <data name="Upscale.UnavailableTooBig" xml:space="preserve"><value>Gambar ini terlalu besar untuk diperbesar di perangkat ini. {0}.</value></data>
+  <data name="Upscale.ModelProblemTitle" xml:space="preserve"><value>Upscale tidak tersedia</value></data>
+  <data name="Upscale.Processing.Title" xml:space="preserve"><value>Meng-upscale {0}</value></data>
+  <data name="Upscale.ProgressSpoken" xml:space="preserve"><value>Kemajuan upscale</value></data>
+  <data name="Upscale.Step.Prepare" xml:space="preserve"><value>Menyiapkan mesin render</value></data>
+  <data name="Upscale.Step.Tiles" xml:space="preserve"><value>Memproses tile</value></data>
+  <data name="Upscale.Step.Save" xml:space="preserve"><value>Menyimpan hasil</value></data>
+  <data name="Upscale.Step.Verify" xml:space="preserve"><value>Verifikasi integritas</value></data>
+  <data name="Upscale.Step.Measuring" xml:space="preserve"><value>Mengukur kecepatan mesin (sekali saja)</value></data>
+  <data name="Upscale.Step.Loading" xml:space="preserve"><value>Memuat model</value></data>
+  <data name="Upscale.Step.TileOf" xml:space="preserve"><value>Tile {0} dari {1}</value></data>
+  <data name="Upscale.Step.Writing" xml:space="preserve"><value>Menulis {0}</value></data>
+  <data name="Upscale.Done.Title" xml:space="preserve"><value>Upscale selesai</value></data>
+  <data name="Upscale.Done.Message" xml:space="preserve"><value>Gambar disimpan dan lolos cek integritas.</value></data>
+  <data name="Upscale.Done.Resolution" xml:space="preserve"><value>Resolusi</value></data>
+  <data name="Upscale.Done.Engine" xml:space="preserve"><value>Mesin</value></data>
+  <data name="Upscale.Done.Another" xml:space="preserve"><value>Upscale gambar lain</value></data>
+  <data name="Upscale.Failed.Title" xml:space="preserve"><value>Upscale gagal</value></data>
 </root>

@@ -76,6 +76,9 @@ public static class L
             case NumberBox numberBox:
                 numberBox.Header = text;
                 break;
+            case RadioButtons radioButtons:
+                radioButtons.Header = text;
+                break;
             default:
                 throw Unsupported(target, "Header");
         }

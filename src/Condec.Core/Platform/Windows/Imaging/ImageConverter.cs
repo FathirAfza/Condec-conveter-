@@ -59,32 +59,47 @@ public sealed class ImageConverter : IConverter
         ct.ThrowIfCancellationRequested();
         progress.Report(new ConversionProgress(ConversionStage.Encode, 0));
 
-        // BitmapEncoder needs a seekable stream, so it writes to memory first. The finished image is then
-        // copied to the pipeline's forward-only output in one pass, where it is hashed.
-        using var staging = new InMemoryRandomAccessStream();
-        try
-        {
-            var encoder = await BitmapEncoder.CreateAsync(target.EncoderId, staging).AsTask(ct).ConfigureAwait(false);
-            encoder.SetPixelData(
-                BitmapPixelFormat.Bgra8,
-                target.KeepsTransparency ? BitmapAlphaMode.Straight : BitmapAlphaMode.Ignore,
-                image.Width,
-                image.Height,
-                image.DpiX,
-                image.DpiY,
-                image.Pixels);
-            await encoder.FlushAsync().AsTask(ct).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (IsOutOfMemory(ex))
-        {
-            throw new ImageTooLargeException((long)image.Width * image.Height, ex);
-        }
+        using var staging = await EncodeAsync(target, image.Pixels, image.Width, image.Height, image.DpiX, image.DpiY, ct).ConfigureAwait(false);
 
         progress.Report(new ConversionProgress(ConversionStage.Encode, 0.6));
 
         using var encoded = staging.GetInputStreamAt(0).AsStreamForRead();
         await encoded.CopyToAsync(request.Output, ct).ConfigureAwait(false);
         progress.Report(new ConversionProgress(ConversionStage.Encode, 1));
+    }
+
+    /// <summary>
+    /// Encodes BGRA pixels in memory. BitmapEncoder needs a seekable stream, so callers copy the finished image to the
+    /// pipeline's forward-only output in one pass, where it is hashed.
+    /// </summary>
+    internal static async Task<InMemoryRandomAccessStream> EncodeAsync(
+        ImageFormats.Target target, byte[] pixels, uint width, uint height, double dpiX, double dpiY, CancellationToken ct)
+    {
+        var staging = new InMemoryRandomAccessStream();
+        try
+        {
+            var encoder = await BitmapEncoder.CreateAsync(target.EncoderId, staging).AsTask(ct).ConfigureAwait(false);
+            encoder.SetPixelData(
+                BitmapPixelFormat.Bgra8,
+                target.KeepsTransparency ? BitmapAlphaMode.Straight : BitmapAlphaMode.Ignore,
+                width,
+                height,
+                dpiX,
+                dpiY,
+                pixels);
+            await encoder.FlushAsync().AsTask(ct).ConfigureAwait(false);
+            return staging;
+        }
+        catch (Exception ex)
+        {
+            staging.Dispose();
+            if (IsOutOfMemory(ex))
+            {
+                throw new ImageTooLargeException((long)width * height, ex);
+            }
+
+            throw;
+        }
     }
 
     internal static async Task<DecodedImage> DecodeAsync(string path, CancellationToken ct)

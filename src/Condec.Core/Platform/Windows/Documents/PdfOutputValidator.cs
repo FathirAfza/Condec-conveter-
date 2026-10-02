@@ -17,9 +17,11 @@ public sealed class PdfOutputValidator : IOutputValidator
     public async Task ValidateAsync(string path, string targetExtension, CancellationToken ct)
     {
         // Loaded through StorageFile, not a wrapped .NET stream: a PdfDocument can outlive a stream disposed
-        // here, and the test host then crashed with an access violation when it shut down.
+        // here, and the test host then crashed with an access violation when it shut down. (The document itself also
+        // has to stay alive after it renders: see RenderedPdfDocuments.)
         var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path)).AsTask(ct).ConfigureAwait(false);
         var document = await PdfDocument.LoadFromFileAsync(file).AsTask(ct).ConfigureAwait(false);
+        Pdf.RenderedPdfDocuments.Keep(document);
 
         if (document.IsPasswordProtected)
         {

@@ -3,6 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Pins the transitive Windows App SDK components below. -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <!-- Also used by src\Condec\Condec.csproj to package the license files of these two packages. -->
+    <CondecOnnxRuntimeVersion>1.24.4</CondecOnnxRuntimeVersion>
+    <CondecDirectMLVersion>1.15.4</CondecDirectMLVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Windows App SDK 2.5.1 (component packages, framework-dependent)">
@@ -20,6 +23,10 @@
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="PdfPig" Version="0.1.16" />
     <PackageVersion Include="ACadSharp" Version="3.8.0" />
+    <!-- DirectML build of ONNX Runtime: runs on the CPU or any DirectX 12 GPU (Upscale). -->
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML" Version="$(CondecOnnxRuntimeVersion)" />
+    <!-- Pinned so the packaged DirectML license files match the DirectML.dll that ships. -->
+    <PackageVersion Include="Microsoft.AI.DirectML" Version="$(CondecDirectMLVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">

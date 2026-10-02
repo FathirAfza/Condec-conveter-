@@ -55,6 +55,19 @@ jobs:
         shell: pwsh
         run: tools/fetch-libreoffice.ps1
 
+      # The upscale model (64 MB) is downloaded once and checked against its pinned SHA-256 by the script.
+      - name: Restore the upscale model from cache
+        id: upscale-model
+        uses: actions/cache@v4
+        with:
+          path: third_party/models
+          key: upscale-model-${{ hashFiles('tools/fetch-model.ps1') }}
+
+      - name: Fetch the upscale model
+        if: steps.upscale-model.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: tools/fetch-model.ps1
+
       - name: Test
         shell: pwsh
         run: dotnet test --solution Condec.sln --configuration Release

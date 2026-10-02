@@ -14,6 +14,7 @@ using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 using Condec.Core.Platform.Windows.Devices;
 using Condec.Core.Settings;
+using Condec.Core.Upscale;
 using Condec.Services;
 using Microsoft.UI.Xaml;
 
@@ -60,6 +61,10 @@ public partial class App : Application
             [new ImageOutputValidator(), new MediaOutputValidator(), new PdfOutputValidator(), new OfficeDocumentValidator(), new CadOutputValidator()]);
         var journal = new TempFileJournal(CondecPaths.JournalDirectory);
         var pipeline = new ConversionPipeline(registry, journal);
+
+        // Upscale has its own registry: its converter takes the same picture formats as Convert File's, so the two can't share one.
+        var upscaleRegistry = new ConverterRegistry([new UpscaleConverter(device)], [new ImageOutputValidator()]);
+        var upscalePipeline = new ConversionPipeline(upscaleRegistry, journal);
         var history = new HistoryStore(CondecPaths.HistoryFile);
 
         // Leftovers from a conversion that was cut off by a crash or power loss. Best effort: the
@@ -67,9 +72,10 @@ public partial class App : Application
         _ = Task.Run(journal.CleanupStale);
 
         _window = new MainWindow();
-        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), version);
+        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), upscaleRegistry, upscalePipeline, version);
         _window.Start(Services);
         _window.Activate();
+        _ = Services.Upscale.InitializeAsync();
         await Services.Convert.InitializeAsync();
     }
 }

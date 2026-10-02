@@ -9,6 +9,7 @@ Built with WinUI 3 (Windows App SDK) and .NET 10, packaged as MSIX. License: GPL
 - **Verified results.** Every conversion goes through four stages: decode, encode, chunk verification (SHA-256 of each 1 MiB, read back from disk) and an integrity check (SHA-256 of the whole file, then the file is reopened with the matching decoder). A file is saved only when every stage passes, so there is never a half-written file.
 - **Local history.** File name, format, time, output location and verification status are kept in `%LOCALAPPDATA%\Condec\history.json`. No copy of any file's contents is kept. History can be cleared or switched off.
 - **PDF → DXF/DWG.** Lines, arcs, circles, curves and text of a vector PDF become editable CAD objects, with a choice of unit, scale and page. A scanned PDF is traced into polylines.
+- **Upscale pictures.** Real-ESRGAN x4plus enlarges a picture 1.5× to 16× (as far as the device allows) on the GPU through DirectML, or on the CPU, with ONNX Runtime. The model ships inside the app and runs on the device. The first upscale on an engine measures its speed, so the time estimate is real, not invented.
 - **Picture → DXF/DWG.** PNG, JPG, HEIC and other pictures are traced into closed outlines, sized in millimeters from the picture's resolution. A DWG is made from the DXF, the same steps as converting the DXF yourself.
 - **Your language.** The app follows the Windows language list: English and Indonesian today, English for any other language.
 - **Fluent look.** Follows the Windows 11 light, dark and high-contrast themes.
@@ -65,6 +66,7 @@ LibreOffice ships inside the x64 Condec package, so no other app needs to be ins
 - There is no network code in Condec. A unit test makes sure `Condec.Core` doesn't reference the `System.Net.*` assemblies.
 - The MSIX manifest doesn't declare the `internetClient` capability.
 - The bundled LibreOffice runs headless with its update check switched off.
+- The upscale model runs on the device through ONNX Runtime, with ONNX Runtime's telemetry events switched off.
 - A limit of the verification: the read-back for chunk verification can be served from the operating system's cache, so it catches write mistakes made by the app, not damage to the storage medium.
 
 ## Download and install
@@ -98,6 +100,10 @@ Prerequisites on Windows 10 1809 or later:
 # Once: download the official LibreOffice MSI (SHA-256 pinned), extract it without installing,
 # and trim it into third_party\libreoffice (ignored by git).
 tools\fetch-libreoffice.ps1
+
+# Once: download the upscale model (Real-ESRGAN x4plus as ONNX, SHA-256 pinned) into
+# third_party\models (ignored by git). Without it the app builds, but Upscale reports the model missing.
+tools\fetch-model.ps1
 
 dotnet build Condec.sln
 dotnet test --solution Condec.sln

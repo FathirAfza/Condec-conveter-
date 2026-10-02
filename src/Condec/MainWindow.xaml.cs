@@ -43,6 +43,7 @@ public sealed partial class MainWindow : Window
         _services = services;
         services.Settings.Changed += (_, _) => ApplyAppearance();
         services.Convert.ArchitectureRequested += (_, _) => Navigation.SelectedItem = ArchitectureItem;
+        services.Upscale.SettingsRequested += (_, _) => Navigation.SelectedItem = Navigation.SettingsItem;
         ApplyAppearance();
         Navigation.SelectedItem = ConvertItem;
     }

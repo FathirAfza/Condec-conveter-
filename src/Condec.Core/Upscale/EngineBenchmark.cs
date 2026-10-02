@@ -37,10 +37,13 @@ public sealed class EngineBenchmark
             return known;
         }
 
-        return await MeasureAsync(engine, workload, ct).ConfigureAwait(false);
+        return await MeasureAsync(engine, workload, ct);
     }
 
-    /// <summary>Measures again, and remembers the result.</summary>
+    /// <summary>
+    /// Measures again, and remembers the result. The result is stored on the caller's own context (no ConfigureAwait(false)):
+    /// the settings raise their Changed event when it is stored, and the window reacts to that on its own thread.
+    /// </summary>
     public async Task<double> MeasureAsync(RenderEngine engine, IBenchmarkWorkload workload, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(workload);
@@ -49,13 +52,13 @@ public sealed class EngineBenchmark
             throw new InvalidOperationException($"This device has no {engine} to measure.");
         }
 
-        await workload.RunTileAsync(engine, ct).ConfigureAwait(false);
+        await workload.RunTileAsync(engine, ct);
 
         double megapixels = 0;
         var clock = Stopwatch.StartNew();
         for (var i = 0; i < TimedTiles; i++)
         {
-            megapixels += await workload.RunTileAsync(engine, ct).ConfigureAwait(false);
+            megapixels += await workload.RunTileAsync(engine, ct);
         }
 
         clock.Stop();

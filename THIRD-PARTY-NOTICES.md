@@ -1,8 +1,8 @@
 # Pemberitahuan pihak ketiga (THIRD-PARTY-NOTICES)
 
-Condec berlisensi **GPL-3.0-or-later** (lihat `LICENSE`, dan izin tambahan GPLv3 pasal 7 di `LICENSE-ADDITIONAL-PERMISSION.md`). Dokumen ini mencantumkan setiap komponen pihak ketiga yang dipakai Condec, versinya, lisensinya, dan perannya. Versi diambil dari `Directory.Packages.props`, `global.json`, dan `tools/fetch-libreoffice.ps1`; kalau versi di sana berubah, perbarui dokumen ini.
+Condec berlisensi **GPL-3.0-or-later** (lihat `LICENSE`, dan izin tambahan GPLv3 pasal 7 di `LICENSE-ADDITIONAL-PERMISSION.md`). Dokumen ini mencantumkan setiap komponen pihak ketiga yang dipakai Condec, versinya, lisensinya, dan perannya. Versi diambil dari `Directory.Packages.props`, `global.json`, `tools/fetch-libreoffice.ps1`, dan `tools/fetch-model.ps1`; kalau versi di sana berubah, perbarui dokumen ini.
 
-Semua komponen open source di bawah ini berlisensi MIT, Apache-2.0, BSD-3-Clause, atau MPL-2.0, yang kompatibel dengan GPL-3.0. Komponen Microsoft yang proprietary (Windows App SDK dan Windows SDK) dicakup oleh izin tambahan GPLv3 pasal 7.
+Semua komponen open source di bawah ini berlisensi MIT, Apache-2.0, BSD-3-Clause, atau MPL-2.0, yang kompatibel dengan GPL-3.0. Komponen Microsoft yang proprietary (Windows App SDK, Windows SDK, dan DirectML) dicakup oleh izin tambahan GPLv3 pasal 7.
 
 ## 1. Komponen yang ikut dalam paket aplikasi (runtime)
 
@@ -16,6 +16,9 @@ Semua komponen open source di bawah ini berlisensi MIT, Apache-2.0, BSD-3-Clause
 | Windows SDK projection (`Microsoft.Windows.SDK.NET.Ref`) | 10.0.26100.57 | Microsoft Windows SDK License | Proyeksi .NET untuk API WinRT (`Windows.Graphics.Imaging`, `Windows.Data.Pdf`, `Windows.Media.*`). `Microsoft.Windows.SDK.NET.dll` dan `WinRT.Runtime.dll` ikut dalam paket | https://aka.ms/WinSDKLicenseURL |
 | .NET Runtime dan Windows Desktop Runtime | 10.0 | MIT | Runtime aplikasi (framework-dependent) | https://github.com/dotnet/runtime |
 | LibreOffice | 26.8.0 (x64) | MPL-2.0 (lihat lampiran D). Berisi komponen pihak ketiga dengan lisensinya masing-masing, dicantumkan di berkas lisensi LibreOffice sendiri | Dibawa di folder `LibreOffice\` dalam paket Condec x64 untuk konversi dokumen (DOCX/XLSX/PPTX → PDF, PDF → DOCX/PPTX, DXF → PDF, dan lain-lain). Dijalankan sebagai proses terpisah (`soffice.exe --headless`), tidak di-link | https://www.libreoffice.org/ — kode sumber: https://git.libreoffice.org/core dan https://download.documentfoundation.org/libreoffice/src/ |
+| ONNX Runtime (`Microsoft.ML.OnnxRuntime.DirectML`, `Microsoft.ML.OnnxRuntime.Managed`) | 1.24.4 | MIT (lihat lampiran A), © Microsoft Corporation. `onnxruntime.dll` berisi komponen pihak ketiga dengan lisensinya masing-masing | Menjalankan model upscale di CPU, atau di GPU lewat DirectML (Upscale Image). `LICENSE.txt` dan `ThirdPartyNotices.txt` dari paket NuGet ikut di `Licenses\ONNXRuntime\` | https://github.com/microsoft/onnxruntime |
+| DirectML (`Microsoft.AI.DirectML`) | 1.15.4 | Microsoft Software License Terms (proprietary; boleh disebarkan di dalam aplikasi untuk Windows) | Lapisan DirectX 12 yang dipakai ONNX Runtime untuk GPU. `DirectML.dll` ikut dalam paket, dengan `LICENSE.txt` dan `ThirdPartyNotices.txt` dari paket NuGet di `Licenses\DirectML\` | https://github.com/microsoft/DirectML |
+| Model Real-ESRGAN x4plus (bobot `RealESRGAN_x4plus.pth` rilis v0.1.0, dalam bentuk ONNX) | v0.1.0 | BSD-3-Clause (lihat lampiran E), © 2021 Xintao Wang | Model upscale 4× di `Models\realesrgan-x4plus\model.onnx`, dibawa tanpa diubah | https://github.com/xinntao/Real-ESRGAN — berkas ONNX: https://huggingface.co/skillsafe-ai/realesrgan-x4plus |
 
 ### Catatan tentang LibreOffice yang dibawa
 
@@ -24,6 +27,13 @@ Semua komponen open source di bawah ini berlisensi MIT, Apache-2.0, BSD-3-Clause
 - Font yang ikut (di `LibreOffice\share\fonts\truetype`), antara lain Liberation, Carlito, Caladea, DejaVu, Noto, Linux Libertine G, dan Linux Biolinum G, berlisensi SIL Open Font License 1.1, lisensi Bitstream Vera, atau lisensi bebas lain sebagaimana tercantum di berkas lisensi LibreOffice. Font hanya dipakai oleh proses LibreOffice (didaftarkan privat), tidak dipasang ke Windows.
 - Runtime Visual C++ (`vcruntime140.dll`, `msvcp140.dll`, dan berkas serumpun yang dipindah ke `LibreOffice\program`) adalah Microsoft Visual C++ Redistributable, yang boleh disebarkan bersama aplikasi menurut ketentuan Microsoft.
 - MPL-2.0 pasal 3.2 mewajibkan pemberitahuan cara mendapatkan kode sumber. Kode sumber LibreOffice 26.8.0 tersedia di https://download.documentfoundation.org/libreoffice/src/26.8.0/ dan https://git.libreoffice.org/core.
+
+### Catatan tentang model upscale
+
+- **Asal berkas.** `model.onnx` adalah ekspor ONNX yang diterbitkan SkillSafe di Hugging Face (`skillsafe-ai/realesrgan-x4plus`; kartu modelnya menyatakan BSD-3-Clause), bukan oleh penulis Real-ESRGAN. `tools/fetch-model.ps1` mengunduhnya dan menolaknya bila SHA-256-nya bukan `4851ec156207d271f5328605d0582eeb851e656227da8aca093ced9e60789291`. Aplikasi memeriksa hash yang sama sebelum memakai model.
+- **Sudah diverifikasi.** `tools/verify-upscale-model.py` membandingkan berkas itu dengan `RealESRGAN_x4plus.pth` dari rilis resmi xinntao/Real-ESRGAN v0.1.0: ke-702 tensor bobotnya identik bit demi bit, dan hasil PyTorch dan ONNX Runtime sama di atas 100 dB PSNR pada tiga masukan uji (2026-10-02). Jadi bobot yang dibawa adalah bobot Real-ESRGAN, dengan lisensi Real-ESRGAN (BSD-3-Clause), yang kompatibel dengan GPL-3.0.
+- **Data latih.** Menurut makalah dan repo Real-ESRGAN, model ini dilatih dengan gambar dari DIV2K, Flickr2K, dan OutdoorSceneTraining (OST). Kumpulan data itu punya ketentuan sendiri (DIV2K, misalnya, disediakan untuk riset akademis), dan repo Real-ESRGAN tidak menjelaskan bagaimana ketentuan itu berlaku pada bobot yang dirilisnya. Condec memakai bobot yang dirilis di bawah BSD-3-Clause apa adanya dan tidak membawa data latih apa pun. Catatan ini ditulis apa adanya supaya penyebar ulang bisa menilai sendiri; ini bukan nasihat hukum.
+- **Tanpa jaringan.** Model berjalan sepenuhnya di perangkat. Condec mematikan event telemetri ONNX Runtime (`OrtEnv.DisableTelemetryEvents`) sebelum model dimuat. Ketentuan ONNX Runtime dan DirectML menyebut bahwa build resmi bisa menulis event lewat TraceLogging Windows; event seperti itu hanya diteruskan oleh Windows sendiri menurut pengaturan data diagnostik Windows, bukan oleh Condec.
 
 ### Dependensi transitif paket NuGet
 
@@ -47,6 +57,8 @@ ACadSharp menyatakan dependensi `System.Memory` 4.6.3 dan `System.Text.Encoding.
 
 - Sertakan `LICENSE`, `LICENSE-ADDITIONAL-PERMISSION.md`, dan dokumen ini.
 - Sertakan berkas lisensi LibreOffice yang ada di folder `LibreOffice\` (untuk paket x64).
+- Sertakan folder `Licenses\` (ONNX Runtime dan DirectML). Bila Anda menyebarkan model upscale, teks BSD-3-Clause di lampiran E harus ikut (dokumen ini sudah memuatnya).
+- DirectML hanya boleh disebarkan di dalam aplikasi untuk Windows, bukan sebagai berkas lepas (ketentuan DirectML pasal 1a dan 3e).
 - Sediakan kode sumber Condec yang sesuai, sebagaimana diwajibkan GPL-3.0.
 - Jangan memakai merek dagang Microsoft dengan cara yang mengesankan aplikasi ini berasal dari atau didukung Microsoft (ketentuan Windows App SDK pasal 3c).
 
@@ -698,4 +710,40 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
+```
+
+## Lampiran E. Lisensi Real-ESRGAN (BSD-3-Clause)
+
+Disalin dari `LICENSE` di https://github.com/xinntao/Real-ESRGAN. Berlaku untuk bobot model Real-ESRGAN x4plus yang dibawa Condec.
+
+```
+BSD 3-Clause License
+
+Copyright (c) 2021, Xintao Wang
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```

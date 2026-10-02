@@ -25,6 +25,10 @@
     <PackageReference Include="ACadSharp" />
   </ItemGroup>
 
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="Condec.Tests" />
   </ItemGroup>

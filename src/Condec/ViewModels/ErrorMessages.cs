@@ -8,6 +8,7 @@ using Condec.Core.Media;
 using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
+using Condec.Core.Upscale;
 
 namespace Condec.ViewModels;
 
@@ -39,6 +40,10 @@ internal static class ErrorMessages
         LockedPdfException => LockedPdf,
         ImageTooLargeException tooLarge =>
             Loc.Format("Error.ImageTooLarge", tooLarge.Megapixels),
+        UpscaleModelUnavailableException { Status: UpscaleModelStatus.Damaged } =>
+            Loc.Get("Error.UpscaleModelDamaged"),
+        UpscaleModelUnavailableException =>
+            Loc.Get("Error.UpscaleModelMissing"),
         MediaConversionException =>
             Loc.Get("Error.Media"),
         NothingToTraceException =>
