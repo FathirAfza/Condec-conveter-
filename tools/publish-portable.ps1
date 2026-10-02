@@ -38,10 +38,12 @@ if (-not (Test-Path (Join-Path $root 'third_party\models\realesrgan-x4plus\model
 
 if (Test-Path -LiteralPath $publishDir) { Remove-Item -LiteralPath $publishDir -Recurse -Force }
 
+# No trailing backslash on PublishDir: Windows PowerShell 5.1 reads \" as an escaped quote when the path has a space,
+# and the rest of the command line (-v q -nologo) ends up inside the path. MSBuild adds the trailing slash itself.
 # ReadyToRun stays off: it roughly doubles the publish time for a start-up gain nobody notices here.
 dotnet publish $project -c $Configuration -r win-x64 -p:Platform=x64 --self-contained `
     -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:PublishReadyToRun=false `
-    -p:PublishDir="$publishDir\" -v q -nologo
+    "-p:PublishDir=$publishDir" -v q -nologo
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
 
 foreach ($required in 'Condec.exe', 'Microsoft.WindowsAppRuntime.dll', 'Microsoft.ui.xaml.dll', 'LibreOffice\program\soffice.exe', 'Models\realesrgan-x4plus\model.onnx', 'onnxruntime.dll', 'Condec.pri') {
