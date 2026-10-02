@@ -25,6 +25,23 @@
                 <Setter Property="CornerRadius" Value="{StaticResource OverlayCornerRadius}" />
             </Style>
 
+            <!-- One setting in Settings (DESIGN §6.4): title and description on the left, the control on the right. -->
+            <Style x:Key="SettingRowBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+                <Setter Property="MinHeight" Value="68" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
+
+            <Style
+                x:Key="SettingGroupTextStyle"
+                BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+                TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,16,0,4" />
+            </Style>
+
             <Style
                 x:Key="SecondaryCaptionTextStyle"
                 BasedOn="{StaticResource CaptionTextBlockStyle}"

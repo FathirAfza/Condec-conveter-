@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Architecture (DESIGN §6.3). Until stage 7 builds the two-way screen, this page carries the conversions to and from
+    DXF and DWG that used to sit in Convert File, unchanged (DESIGN §14 [0.2.2]).
+-->
+<Page
+    x:Class="Condec.Views.ArchitecturePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Condec"
+    xmlns:views="using:Condec.Views"
+    NavigationCacheMode="Required">
+
+    <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel
+            x:Name="Column"
+            Margin="40,28,40,32"
+            HorizontalAlignment="Left">
+            <TextBlock
+                AutomationProperties.HeadingLevel="Level1"
+                Style="{StaticResource TitleTextBlockStyle}"
+                local:L.Text="Page.Architecture.Title" />
+            <TextBlock
+                Margin="0,4,0,0"
+                Style="{StaticResource SecondaryBodyTextStyle}"
+                local:L.Text="Page.Architecture.Subtitle" />
+
+            <views:ConverterCard x:Name="Card" Margin="0,20,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

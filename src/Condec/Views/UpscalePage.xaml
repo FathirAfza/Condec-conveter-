@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  Upscale Image (DESIGN §6.2). A frame with the title until stage 6 brings the upscaler.  -->
+<Page
+    x:Class="Condec.Views.UpscalePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Condec"
+    NavigationCacheMode="Required">
+
+    <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel
+            x:Name="Column"
+            Margin="40,28,40,32"
+            HorizontalAlignment="Left">
+            <TextBlock
+                AutomationProperties.HeadingLevel="Level1"
+                Style="{StaticResource TitleTextBlockStyle}"
+                local:L.Text="Page.Upscale.Title" />
+            <TextBlock
+                Margin="0,4,0,0"
+                Style="{StaticResource SecondaryBodyTextStyle}"
+                local:L.Text="Page.Upscale.Subtitle" />
+
+            <InfoBar
+                Margin="0,20,0,0"
+                IsClosable="False"
+                IsOpen="True"
+                Severity="Informational"
+                local:L.Message="Upscale.NotYetMessage"
+                local:L.Title="Upscale.NotYetTitle" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

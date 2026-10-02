@@ -1,36 +1,33 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Condec.Core.Localization;
-using Condec.ViewModels;
-using Microsoft.UI;
-using Microsoft.UI.Dispatching;
+using Condec.Core.Settings;
+using Condec.Services;
+using Condec.Views;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
-using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
-using Windows.Storage;
 
 namespace Condec;
 
 public sealed partial class MainWindow : Window
 {
-    private const int DefaultWidth = 1120;
-    private const int DefaultHeight = 780;
-    private const int MinimumWidth = 760;
-    private const int MinimumHeight = 680;
-    private const double ContentMaxWidth = 880;
+    // DESIGN §3.1: 1280 × 820 at first. The minimum is the proposal in §13 #6 (open).
+    private const int DefaultWidth = 1280;
+    private const int DefaultHeight = 820;
+    private const int MinimumWidth = 900;
+    private const int MinimumHeight = 640;
 
-    public MainWindow(Func<WindowId, MainViewModel> createViewModel)
+    private AppServices? _services;
+
+    public MainWindow()
     {
         InitializeComponent();
-        ViewModel = createViewModel(AppWindow.Id);
-        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -38,141 +35,109 @@ public sealed partial class MainWindow : Window
         AppWindow.SetIcon("Assets/Condec.ico");
 
         ResizeToDefault();
-        Activated += OnActivated;
-
-        PageScroller.SizeChanged += (_, _) => UpdatePageSize();
-        HeaderPanel.SizeChanged += (_, _) => UpdatePageSize();
-        ConverterCard.SizeChanged += (_, _) => UpdatePageSize();
     }
 
-    public MainViewModel ViewModel { get; }
-
-    /// <summary>
-    /// For x:Bind, which has no "and" of two properties. Returns Visibility itself: the XAML compiler
-    /// generates code that doesn't build when a bool function result is cast to Visibility.
-    /// </summary>
-    public Visibility VisibleWhenBoth(bool a, bool b) => a && b ? Visibility.Visible : Visibility.Collapsed;
-
-    /// <summary>The page list sits under "Halaman" in the third column next to unit and scale, or alone in the first.</summary>
-    public int PageColumn(bool showsCadOptions) => showsCadOptions ? 2 : 0;
-
-    /// <summary>Label style for a row in the progress list, used by x:Bind.</summary>
-    public static Style StepLabelStyle(StepState state) => (Style)Application.Current.Resources[state switch
+    /// <summary>Applies the appearance settings and opens Convert File.</summary>
+    public void Start(AppServices services)
     {
-        StepState.Done => "StepDoneTextStyle",
-        StepState.Active => "StepActiveTextStyle",
-        _ => "StepWaitingTextStyle",
-    }];
+        _services = services;
+        services.Settings.Changed += (_, _) => ApplyAppearance();
+        services.Convert.ArchitectureRequested += (_, _) => Navigation.SelectedItem = ArchitectureItem;
+        ApplyAppearance();
+        Navigation.SelectedItem = ConvertItem;
+    }
 
-    // AppWindow.Resize takes physical pixels, so scale the 1120×780 design size by the window DPI.
+    /// <summary>Theme on the root element (DESIGN §6.4), the caption buttons to match, and Mica or a solid background.</summary>
+    private void ApplyAppearance()
+    {
+        var settings = _services!.Settings;
+        Root.RequestedTheme = settings.Theme switch
+        {
+            ThemePreference.Light => ElementTheme.Light,
+            ThemePreference.Dark => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
+        AppWindow.TitleBar.PreferredTheme = settings.Theme switch
+        {
+            ThemePreference.Light => TitleBarTheme.Light,
+            ThemePreference.Dark => TitleBarTheme.Dark,
+            _ => TitleBarTheme.UseDefaultAppMode,
+        };
+
+        if (settings.MicaEnabled && SystemBackdrop is not MicaBackdrop)
+        {
+            SystemBackdrop = new MicaBackdrop();
+        }
+        else if (!settings.MicaEnabled && SystemBackdrop is not null)
+        {
+            SystemBackdrop = null;
+        }
+
+        SolidBackground.Visibility = settings.MicaEnabled ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    // The Settings item is made by NavigationView, which names it in the Windows language; DESIGN §2 keeps "Settings".
+    private void OnNavigationLoaded(object sender, RoutedEventArgs e)
+    {
+        if (Navigation.SettingsItem is NavigationViewItem settingsItem)
+        {
+            settingsItem.Content = Loc.Get("Nav.Settings");
+        }
+
+        // DESIGN §10: the hamburger button is named. Its template part is "TogglePaneButton"; NavigationView names it
+        // "Open/Close Navigation" itself, in the system language.
+        if (FindByName(Navigation, "TogglePaneButton") is Button toggle)
+        {
+            AutomationProperties.SetName(toggle, Loc.Get("Nav.TogglePane"));
+        }
+    }
+
+    private static DependencyObject? FindByName(DependencyObject parent, string name)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is FrameworkElement { Name: var childName } && childName == name)
+            {
+                return child;
+            }
+
+            if (FindByName(child, name) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    private void OnNavigationSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        var page = args.IsSettingsSelected ? typeof(SettingsPage)
+            : ReferenceEquals(args.SelectedItem, UpscaleItem) ? typeof(UpscalePage)
+            : ReferenceEquals(args.SelectedItem, ArchitectureItem) ? typeof(ArchitecturePage)
+            : typeof(ConvertPage);
+        if (ContentFrame.CurrentSourcePageType != page)
+        {
+            ContentFrame.Navigate(page, null, args.RecommendedNavigationTransitionInfo);
+        }
+    }
+
+    // AppWindow.Resize takes physical pixels, so scale the design size by the window DPI. A screen smaller than the
+    // design size gets a window that fits its work area.
     private void ResizeToDefault()
     {
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         double scale = GetDpiForWindow(hwnd) / 96.0;
-        AppWindow.Resize(new SizeInt32((int)(DefaultWidth * scale), (int)(DefaultHeight * scale)));
+        var work = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
+        var width = Math.Min((int)(DefaultWidth * scale), work.Width);
+        var height = Math.Min((int)(DefaultHeight * scale), work.Height);
+        AppWindow.Resize(new SizeInt32(width, height));
 
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
-            presenter.PreferredMinimumWidth = (int)(MinimumWidth * scale);
-            presenter.PreferredMinimumHeight = (int)(MinimumHeight * scale);
-        }
-    }
-
-    // The history card normally fills the rest of the window. When there is no room for it (a small
-    // window or large text), the page keeps the card at its minimum height and scrolls instead.
-    // The width is set here too: with only MaxWidth, WinUI centers the content by its desired width
-    // rather than the width it is drawn at, which pushed the 880 wide column off-center.
-    private void UpdatePageSize()
-    {
-        var margin = PageContent.Margin;
-        PageContent.Width = Math.Min(ContentMaxWidth, Math.Max(0, PageScroller.ActualWidth - margin.Left - margin.Right));
-
-        var available = PageScroller.ActualHeight - margin.Top - margin.Bottom;
-        var needed = HeaderPanel.ActualHeight + ConverterCard.ActualHeight + (PageContent.RowSpacing * 2) + HistoryCard.MinHeight;
-        PageContent.Height = Math.Max(available, needed);
-    }
-
-    // Keep keyboard focus on the next useful control when a view is swapped out under it.
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(MainViewModel.State)
-            || (e.PropertyName is nameof(MainViewModel.Source) && ViewModel is { IsInput: true, HasSource: true }))
-        {
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusTarget()?.Focus(FocusState.Programmatic));
-        }
-    }
-
-    private Control? FocusTarget() => ViewModel.State switch
-    {
-        ConverterState.Processing => CancelButton,
-        ConverterState.Done => OpenResultButton,
-        ConverterState.Failed => RetryButton,
-        _ when !ViewModel.HasSource => PickFileButton,
-        _ when ConvertButton.IsEnabled => ConvertButton,
-        _ => FormatComboBox,
-    };
-
-    // A format that needs a missing program stays in the list, captioned "Unavailable", but can't be chosen.
-    // Disabling its ComboBoxItem instead closes the open list when that item has keyboard focus.
-    private void FormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (FormatComboBox.SelectedItem is FormatOption { IsEnabled: false })
-        {
-            FormatComboBox.SelectedItem = e.RemovedItems.OfType<FormatOption>().FirstOrDefault();
-        }
-    }
-
-    private void OnSourceDragOver(object sender, DragEventArgs e)
-    {
-        if (ViewModel.IsInput && e.DataView.Contains(StandardDataFormats.StorageItems))
-        {
-            e.AcceptedOperation = DataPackageOperation.Copy;
-            e.DragUIOverride.Caption = Loc.Get("Drag.Caption");
-        }
-    }
-
-    private async void OnSourceDrop(object sender, DragEventArgs e)
-    {
-        if (!e.DataView.Contains(StandardDataFormats.StorageItems))
-        {
-            return;
-        }
-
-        var deferral = e.GetDeferral();
-        try
-        {
-            var items = await e.DataView.GetStorageItemsAsync();
-            ViewModel.SelectDropped(
-                [.. items.OfType<IStorageFile>().Select(file => file.Path ?? string.Empty)],
-                items.OfType<IStorageFolder>().Count());
-        }
-        catch (Exception)
-        {
-            // An async void handler must not let anything escape; the source app may have gone away.
-            ViewModel.ReportUnreadableDrop();
-        }
-        finally
-        {
-            deferral.Complete();
-        }
-    }
-
-    // HyperlinkButton has no Flyout property of its own, so the confirmation is an attached flyout.
-    private void OnClearHistoryClicked(object sender, RoutedEventArgs e) => FlyoutBase.ShowAttachedFlyout((FrameworkElement)sender);
-
-    private void OnClearHistoryConfirmed(object sender, RoutedEventArgs e) => ClearHistoryFlyout.Hide();
-
-    // Dim the title when the window is inactive, like the system title bar does.
-    private void OnActivated(object sender, WindowActivatedEventArgs args)
-    {
-        if (args.WindowActivationState == WindowActivationState.Deactivated
-            && Application.Current.Resources.TryGetValue("TextFillColorTertiaryBrush", out var brush))
-        {
-            AppTitleText.Foreground = (Brush)brush;
-        }
-        else
-        {
-            AppTitleText.ClearValue(TextBlock.ForegroundProperty);
+            presenter.PreferredMinimumWidth = Math.Min((int)(MinimumWidth * scale), work.Width);
+            presenter.PreferredMinimumHeight = Math.Min((int)(MinimumHeight * scale), work.Height);
         }
     }
 

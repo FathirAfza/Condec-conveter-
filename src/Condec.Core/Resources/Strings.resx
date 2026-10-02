@@ -147,8 +147,6 @@
   <data name="Drag.Caption" xml:space="preserve"><value>Choose this file</value></data>
   <data name="Image.TraceTitle" xml:space="preserve"><value>Images are traced into outlines</value></data>
   <data name="Image.TraceMessage" xml:space="preserve"><value>Condec traces the dark shapes in the image into closed outlines. This works best for drawings, logos and scans; a photo gives only a rough result. The drawing is sized from the image's resolution.</value></data>
-  <data name="Main.Title" xml:space="preserve"><value>Convert files</value></data>
-  <data name="Main.Subtitle" xml:space="preserve"><value>Choose a file, pick the target format, then save.</value></data>
   <data name="Input.DropHere" xml:space="preserve"><value>Drag a file here</value></data>
   <data name="Input.Choose" xml:space="preserve"><value>Choose file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>Source file</value></data>
@@ -198,4 +196,78 @@
   <data name="Duration.Seconds" xml:space="preserve"><value>{0} seconds</value></data>
   <data name="Duration.MinutesSeconds" xml:space="preserve"><value>{0} min {1} sec</value></data>
   <data name="Duration.HoursMinutes" xml:space="preserve"><value>{0} h {1} min</value></data>
+  <data name="Nav.Convert" xml:space="preserve"><value>Convert File</value></data>
+  <data name="Nav.Upscale" xml:space="preserve"><value>Upscale Image</value></data>
+  <data name="Nav.Architecture" xml:space="preserve"><value>Architecture</value></data>
+  <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Page.Convert.Title" xml:space="preserve"><value>Convert File</value></data>
+  <data name="Page.Convert.Subtitle" xml:space="preserve"><value>Choose a file, pick the target format, then save.</value></data>
+  <data name="Page.Upscale.Title" xml:space="preserve"><value>Upscale Image</value></data>
+  <data name="Page.Upscale.Subtitle" xml:space="preserve"><value>Enlarge pictures on this device with the GPU, CPU or NPU.</value></data>
+  <data name="Page.Architecture.Title" xml:space="preserve"><value>Architecture</value></data>
+  <data name="Page.Architecture.Subtitle" xml:space="preserve"><value>Turn pictures, PDFs and DXF files into DWG, or the other way round.</value></data>
+  <data name="Page.Settings.Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Page.Settings.Subtitle" xml:space="preserve"><value>Set the render engine, memory limit, appearance and log.</value></data>
+  <data name="Format.ArchitectureLink" xml:space="preserve"><value>Need DXF or DWG? Open Architecture</value></data>
+  <data name="Input.UseArchitecture" xml:space="preserve"><value>{0} files are handled in Architecture. Open it from the menu.</value></data>
+  <data name="Input.UseConvertFile" xml:space="preserve"><value>{0} files are handled in Convert File. Open it from the menu.</value></data>
+  <data name="Upscale.NotYetTitle" xml:space="preserve"><value>Upscaling isn't available yet</value></data>
+  <data name="Upscale.NotYetMessage" xml:space="preserve"><value>This part of Condec is still being built. The limits of this device can already be seen in Settings.</value></data>
+  <data name="Device.Gigabytes" xml:space="preserve"><value>{0} GB</value></data>
+  <data name="Device.NotDetected" xml:space="preserve"><value>Not detected</value></data>
+  <data name="Device.Detected" xml:space="preserve"><value>Detected</value></data>
+  <data name="Device.GpuIntegrated" xml:space="preserve"><value>Integrated · {0}</value></data>
+  <data name="Device.GpuDedicated" xml:space="preserve"><value>{0} GB VRAM</value></data>
+  <data name="Device.CpuStatus" xml:space="preserve"><value>Always available · slowest</value></data>
+  <data name="Device.GpuStatus" xml:space="preserve"><value>Detected · fastest</value></data>
+  <data name="Settings.TabRender" xml:space="preserve"><value>Render and performance</value></data>
+  <data name="Settings.TabGeneral" xml:space="preserve"><value>General</value></data>
+  <data name="Settings.GroupDevice" xml:space="preserve"><value>This device</value></data>
+  <data name="Settings.GroupAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings.GroupLog" xml:space="preserve"><value>Log</value></data>
+  <data name="Settings.GroupAbout" xml:space="preserve"><value>About</value></data>
+  <data name="Settings.Cpu" xml:space="preserve"><value>Processor</value></data>
+  <data name="Settings.Ram" xml:space="preserve"><value>Installed RAM</value></data>
+  <data name="Settings.Gpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="Settings.Npu" xml:space="preserve"><value>NPU</value></data>
+  <data name="Settings.DeviceLimit" xml:space="preserve"><value>Device upscale limit</value></data>
+  <data name="Settings.RenderMode" xml:space="preserve"><value>Render mode</value></data>
+  <data name="Settings.RenderModeDescription" xml:space="preserve"><value>The engine used for upscaling and tracing. The GPU is the fastest, the CPU is always available.</value></data>
+  <data name="Settings.ScaleLimit" xml:space="preserve"><value>Upscale limit</value></data>
+  <data name="Settings.ScaleLimitDescription" xml:space="preserve"><value>The largest scale that can be chosen in Upscale Image and Architecture. This device can do up to {0}.</value></data>
+  <data name="Settings.ScaleLimitAboveDevice" xml:space="preserve"><value>Above the device limit</value></data>
+  <data name="Settings.MemoryLimit" xml:space="preserve"><value>Memory limit</value></data>
+  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>The most RAM Condec may use. A small limit makes rendering slower, not worse.</value></data>
+  <data name="Settings.MemoryLimitSpoken" xml:space="preserve"><value>Memory limit in GB</value></data>
+  <data name="Settings.RamRequirement" xml:space="preserve"><value>Installed RAM needed for the size of the result: {0}.</value></data>
+  <data name="Settings.Cache" xml:space="preserve"><value>Render dump</value></data>
+  <data name="Settings.CacheClear" xml:space="preserve"><value>Clear cache</value></data>
+  <data name="Settings.CacheDescription" xml:space="preserve"><value>Delete the render cache (tiles and temporary data). Current size: {0}.</value></data>
+  <data name="Settings.CacheEmpty" xml:space="preserve"><value>The cache is empty. Current size: 0 MB.</value></data>
+  <data name="Settings.CacheClearFailed" xml:space="preserve"><value>Some cache files are in use and were not deleted. Current size: {0}.</value></data>
+  <data name="Settings.Theme" xml:space="preserve"><value>App theme</value></data>
+  <data name="Settings.ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings.ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings.ThemeSystem" xml:space="preserve"><value>Use system setting</value></data>
+  <data name="Settings.Mica" xml:space="preserve"><value>Mica background</value></data>
+  <data name="Settings.MicaDescription" xml:space="preserve"><value>The window background takes its colour from the wallpaper (Windows 11).</value></data>
+  <data name="Settings.On" xml:space="preserve"><value>On</value></data>
+  <data name="Settings.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Settings.LogEnabled" xml:space="preserve"><value>Save activity log</value></data>
+  <data name="Settings.LogEnabledDescription" xml:space="preserve"><value>A record of what conversions and upscales did, for finding problems. It holds no file contents and is never sent anywhere.</value></data>
+  <data name="Settings.LogLevel" xml:space="preserve"><value>Log detail level</value></data>
+  <data name="Settings.LogLevelDescription" xml:space="preserve"><value>Debug records the most and can make the log files large.</value></data>
+  <data name="Settings.LogLevelError" xml:space="preserve"><value>Error</value></data>
+  <data name="Settings.LogLevelInfo" xml:space="preserve"><value>Info</value></data>
+  <data name="Settings.LogLevelDebug" xml:space="preserve"><value>Debug</value></data>
+  <data name="Settings.LogFolder" xml:space="preserve"><value>Log folder</value></data>
+  <data name="Settings.LogFolderDescription" xml:space="preserve"><value>Where the activity log is kept on this device.</value></data>
+  <data name="Settings.LogOpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Settings.LogClear" xml:space="preserve"><value>Clear logs</value></data>
+  <data name="Settings.LogCleared" xml:space="preserve"><value>The logs were deleted.</value></data>
+  <data name="Settings.LogClearFailed" xml:space="preserve"><value>Some log files are in use and were not deleted.</value></data>
+  <data name="Settings.AboutDescription" xml:space="preserve"><value>Open source, GPL-3.0-or-later. Everything runs offline on this device.</value></data>
+  <data name="Settings.Licenses" xml:space="preserve"><value>Third-party licenses</value></data>
+  <data name="Settings.LicensesFailed" xml:space="preserve"><value>The license file couldn't be opened.</value></data>
+  <data name="Nav.TogglePane" xml:space="preserve"><value>Open or close the navigation menu</value></data>
 </root>

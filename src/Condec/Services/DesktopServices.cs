@@ -21,6 +21,12 @@ public interface IDesktopServices
     void ShowInFolder(string path);
 
     void OpenFolder(string path);
+
+    /// <summary>Opens a text file in Notepad (the license notes are Markdown, which Windows has no app for by default).</summary>
+    void OpenTextFile(string path);
+
+    /// <summary>Opens the folder in File Explorer through the Windows launcher, creating it first. False when that failed.</summary>
+    Task<bool> LaunchFolderAsync(string path);
 }
 
 public sealed class DesktopServices(WindowId windowId) : IDesktopServices
@@ -66,4 +72,29 @@ public sealed class DesktopServices(WindowId windowId) : IDesktopServices
     public void ShowInFolder(string path) => Process.Start("explorer.exe", $"/select,\"{path}\"");
 
     public void OpenFolder(string path) => Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+
+    public void OpenTextFile(string path)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException("The file isn't there.", path);
+        }
+
+        // Notepad always: with no app set for .md, the shell opens an "Open with" dialog instead of failing.
+        Process.Start("notepad.exe", $"\"{path}\"");
+    }
+
+    public async Task<bool> LaunchFolderAsync(string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(path);
+            var folder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(path);
+            return await Windows.System.Launcher.LaunchFolderAsync(folder);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)
+        {
+            return false;
+        }
+    }
 }

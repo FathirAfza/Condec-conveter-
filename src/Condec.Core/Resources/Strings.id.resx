@@ -147,8 +147,6 @@
   <data name="Drag.Caption" xml:space="preserve"><value>Pilih file ini</value></data>
   <data name="Image.TraceTitle" xml:space="preserve"><value>Gambar ditelusuri menjadi garis tepi</value></data>
   <data name="Image.TraceMessage" xml:space="preserve"><value>Condec menelusuri bentuk gelap di gambar menjadi garis tepi tertutup. Hasil terbaik didapat dari gambar garis, logo, dan hasil scan; foto hanya menghasilkan bentuk kasar. Ukuran gambar mengikuti resolusi gambar sumber.</value></data>
-  <data name="Main.Title" xml:space="preserve"><value>Konversi file</value></data>
-  <data name="Main.Subtitle" xml:space="preserve"><value>Pilih file, tentukan format tujuan, lalu simpan.</value></data>
   <data name="Input.DropHere" xml:space="preserve"><value>Seret file ke sini</value></data>
   <data name="Input.Choose" xml:space="preserve"><value>Pilih file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>File sumber</value></data>
@@ -198,4 +196,78 @@
   <data name="Duration.Seconds" xml:space="preserve"><value>{0} detik</value></data>
   <data name="Duration.MinutesSeconds" xml:space="preserve"><value>{0} menit {1} detik</value></data>
   <data name="Duration.HoursMinutes" xml:space="preserve"><value>{0} jam {1} menit</value></data>
+  <data name="Nav.Convert" xml:space="preserve"><value>Convert File</value></data>
+  <data name="Nav.Upscale" xml:space="preserve"><value>Upscale Image</value></data>
+  <data name="Nav.Architecture" xml:space="preserve"><value>Architecture</value></data>
+  <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Page.Convert.Title" xml:space="preserve"><value>Convert File</value></data>
+  <data name="Page.Convert.Subtitle" xml:space="preserve"><value>Pilih file, tentukan format tujuan, lalu simpan.</value></data>
+  <data name="Page.Upscale.Title" xml:space="preserve"><value>Upscale Image</value></data>
+  <data name="Page.Upscale.Subtitle" xml:space="preserve"><value>Perbesar resolusi gambar di perangkat ini dengan GPU, CPU, atau NPU.</value></data>
+  <data name="Page.Architecture.Title" xml:space="preserve"><value>Architecture</value></data>
+  <data name="Page.Architecture.Subtitle" xml:space="preserve"><value>Ubah gambar, PDF, dan DXF menjadi DWG, atau sebaliknya.</value></data>
+  <data name="Page.Settings.Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Page.Settings.Subtitle" xml:space="preserve"><value>Atur mesin render, batas memori, tampilan, dan log.</value></data>
+  <data name="Format.ArchitectureLink" xml:space="preserve"><value>Butuh DXF atau DWG? Buka Architecture</value></data>
+  <data name="Input.UseArchitecture" xml:space="preserve"><value>File {0} diproses di Architecture. Buka dari menu.</value></data>
+  <data name="Input.UseConvertFile" xml:space="preserve"><value>File {0} diproses di Convert File. Buka dari menu.</value></data>
+  <data name="Upscale.NotYetTitle" xml:space="preserve"><value>Upscale belum tersedia</value></data>
+  <data name="Upscale.NotYetMessage" xml:space="preserve"><value>Bagian ini masih dibangun. Batas perangkat ini sudah bisa dilihat di Settings.</value></data>
+  <data name="Device.Gigabytes" xml:space="preserve"><value>{0} GB</value></data>
+  <data name="Device.NotDetected" xml:space="preserve"><value>Tidak terdeteksi</value></data>
+  <data name="Device.Detected" xml:space="preserve"><value>Terdeteksi</value></data>
+  <data name="Device.GpuIntegrated" xml:space="preserve"><value>Terintegrasi · {0}</value></data>
+  <data name="Device.GpuDedicated" xml:space="preserve"><value>VRAM {0} GB</value></data>
+  <data name="Device.CpuStatus" xml:space="preserve"><value>Selalu tersedia · paling lambat</value></data>
+  <data name="Device.GpuStatus" xml:space="preserve"><value>Terdeteksi · tercepat</value></data>
+  <data name="Settings.TabRender" xml:space="preserve"><value>Render dan performa</value></data>
+  <data name="Settings.TabGeneral" xml:space="preserve"><value>Umum</value></data>
+  <data name="Settings.GroupDevice" xml:space="preserve"><value>Perangkat ini</value></data>
+  <data name="Settings.GroupAppearance" xml:space="preserve"><value>Tampilan</value></data>
+  <data name="Settings.GroupLog" xml:space="preserve"><value>Log</value></data>
+  <data name="Settings.GroupAbout" xml:space="preserve"><value>Tentang</value></data>
+  <data name="Settings.Cpu" xml:space="preserve"><value>Prosesor</value></data>
+  <data name="Settings.Ram" xml:space="preserve"><value>RAM terpasang</value></data>
+  <data name="Settings.Gpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="Settings.Npu" xml:space="preserve"><value>NPU</value></data>
+  <data name="Settings.DeviceLimit" xml:space="preserve"><value>Batas upscale perangkat</value></data>
+  <data name="Settings.RenderMode" xml:space="preserve"><value>Render mode</value></data>
+  <data name="Settings.RenderModeDescription" xml:space="preserve"><value>Mesin yang dipakai untuk upscale dan vektorisasi. GPU paling cepat, CPU selalu tersedia.</value></data>
+  <data name="Settings.ScaleLimit" xml:space="preserve"><value>Batas upscale</value></data>
+  <data name="Settings.ScaleLimitDescription" xml:space="preserve"><value>Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai {0}.</value></data>
+  <data name="Settings.ScaleLimitAboveDevice" xml:space="preserve"><value>Di atas batas perangkat</value></data>
+  <data name="Settings.MemoryLimit" xml:space="preserve"><value>Batas memori</value></data>
+  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>RAM maksimum yang boleh dipakai Condec. Batas kecil membuat render lebih lambat, bukan lebih buruk kualitasnya.</value></data>
+  <data name="Settings.MemoryLimitSpoken" xml:space="preserve"><value>Batas memori dalam GB</value></data>
+  <data name="Settings.RamRequirement" xml:space="preserve"><value>Syarat RAM terpasang menurut resolusi hasil: {0}.</value></data>
+  <data name="Settings.Cache" xml:space="preserve"><value>Render dump</value></data>
+  <data name="Settings.CacheClear" xml:space="preserve"><value>Bersihkan cache</value></data>
+  <data name="Settings.CacheDescription" xml:space="preserve"><value>Hapus cache render (tile dan data sementara). Ukuran sekarang: {0}.</value></data>
+  <data name="Settings.CacheEmpty" xml:space="preserve"><value>Cache kosong. Ukuran sekarang: 0 MB.</value></data>
+  <data name="Settings.CacheClearFailed" xml:space="preserve"><value>Sebagian file cache sedang dipakai dan tidak terhapus. Ukuran sekarang: {0}.</value></data>
+  <data name="Settings.Theme" xml:space="preserve"><value>Tema aplikasi</value></data>
+  <data name="Settings.ThemeLight" xml:space="preserve"><value>Terang</value></data>
+  <data name="Settings.ThemeDark" xml:space="preserve"><value>Gelap</value></data>
+  <data name="Settings.ThemeSystem" xml:space="preserve"><value>Ikuti sistem</value></data>
+  <data name="Settings.Mica" xml:space="preserve"><value>Latar Mica</value></data>
+  <data name="Settings.MicaDescription" xml:space="preserve"><value>Latar jendela ikut warna wallpaper (Windows 11).</value></data>
+  <data name="Settings.On" xml:space="preserve"><value>Aktif</value></data>
+  <data name="Settings.Off" xml:space="preserve"><value>Nonaktif</value></data>
+  <data name="Settings.LogEnabled" xml:space="preserve"><value>Simpan log aktivitas</value></data>
+  <data name="Settings.LogEnabledDescription" xml:space="preserve"><value>Catatan proses konversi dan upscale untuk mencari masalah. Tidak berisi isi file dan tidak pernah dikirim ke mana pun.</value></data>
+  <data name="Settings.LogLevel" xml:space="preserve"><value>Tingkat detail log</value></data>
+  <data name="Settings.LogLevelDescription" xml:space="preserve"><value>Debug mencatat paling banyak dan bisa membuat file log besar.</value></data>
+  <data name="Settings.LogLevelError" xml:space="preserve"><value>Error</value></data>
+  <data name="Settings.LogLevelInfo" xml:space="preserve"><value>Info</value></data>
+  <data name="Settings.LogLevelDebug" xml:space="preserve"><value>Debug</value></data>
+  <data name="Settings.LogFolder" xml:space="preserve"><value>Folder log</value></data>
+  <data name="Settings.LogFolderDescription" xml:space="preserve"><value>Tempat log aktivitas disimpan di perangkat ini.</value></data>
+  <data name="Settings.LogOpenFolder" xml:space="preserve"><value>Buka folder</value></data>
+  <data name="Settings.LogClear" xml:space="preserve"><value>Hapus log</value></data>
+  <data name="Settings.LogCleared" xml:space="preserve"><value>Log sudah dihapus.</value></data>
+  <data name="Settings.LogClearFailed" xml:space="preserve"><value>Sebagian file log sedang dipakai dan tidak terhapus.</value></data>
+  <data name="Settings.AboutDescription" xml:space="preserve"><value>Open source, GPL-3.0-or-later. Semua proses berjalan offline di perangkat ini.</value></data>
+  <data name="Settings.Licenses" xml:space="preserve"><value>Lisensi pihak ketiga</value></data>
+  <data name="Settings.LicensesFailed" xml:space="preserve"><value>File lisensi tidak bisa dibuka.</value></data>
+  <data name="Nav.TogglePane" xml:space="preserve"><value>Buka atau tutup menu navigasi</value></data>
 </root>

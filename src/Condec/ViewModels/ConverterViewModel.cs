@@ -9,6 +9,7 @@ using Condec.Core.Conversion;
 using Condec.Core.Formats;
 using Condec.Core.History;
 using Condec.Core.Localization;
+using Condec.Core.Logging;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 using Condec.Services;
@@ -24,26 +25,43 @@ public enum ConverterState
     Failed,
 }
 
+/// <summary>Which conversions a converter card offers.</summary>
+public enum ConverterScope
+{
+    /// <summary>Convert File: everything that neither starts nor ends as DXF or DWG (DESIGN §6.1).</summary>
+    Files,
+
+    /// <summary>Architecture: everything to or from DXF and DWG (DESIGN §6.3).</summary>
+    Cad,
+}
+
 /// <summary>The converter card (input, processing, done, failed) and the history card.</summary>
-public sealed partial class MainViewModel : ObservableObject
+public sealed partial class ConverterViewModel : ObservableObject
 {
     private readonly ConverterRegistry _registry;
     private readonly ConversionPipeline _pipeline;
     private readonly HistoryStore _history;
     private readonly IDesktopServices _desktop;
+    private readonly ActivityLog _log;
     private CancellationTokenSource? _cancellation;
     private ConversionJob? _lastJob;
     private PipelineStage _lastStage;
     private int _chunkCount;
     private bool _loadingHistory;
 
-    public MainViewModel(ConverterRegistry registry, ConversionPipeline pipeline, HistoryStore history, IDesktopServices desktop)
+    public ConverterViewModel(ConverterScope scope, ConverterRegistry registry, ConversionPipeline pipeline, HistoryStore history, IDesktopServices desktop, ActivityLog log)
     {
+        Scope = scope;
         _registry = registry;
         _pipeline = pipeline;
         _history = history;
         _desktop = desktop;
+        _log = log;
+
+        // Only shows the default: saving it here would write an empty history over the file before it is loaded.
+        _loadingHistory = true;
         IsHistoryEnabled = true;
+        _loadingHistory = false;
         Pdf.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(PdfOptionsViewModel.PageKind) or nameof(PdfOptionsViewModel.HasValidScale))
@@ -53,6 +71,27 @@ public sealed partial class MainViewModel : ObservableObject
             }
         };
     }
+
+    public ConverterScope Scope { get; }
+
+    /// <summary>Convert File links to Architecture for DXF and DWG ("Butuh DXF atau DWG? Buka Architecture").</summary>
+    public bool ShowsArchitectureLink => Scope == ConverterScope.Files;
+
+    /// <summary>Raised by the Architecture link; the window switches pages.</summary>
+    public event EventHandler? ArchitectureRequested;
+
+    [RelayCommand]
+    private void OpenArchitecture() => ArchitectureRequested?.Invoke(this, EventArgs.Empty);
+
+    private static bool IsCad(string extension) => extension is ".dxf" or ".dwg";
+
+    private bool InScope(string source, string target) => (Scope == ConverterScope.Cad) == (IsCad(source) || IsCad(target));
+
+    private List<TargetOption> TargetOptionsFor(string extension) =>
+        [.. _registry.GetTargetOptions(extension).Where(o => InScope(extension, o.Extension))];
+
+    private List<string> SourceExtensions() =>
+        [.. _registry.GetSourceExtensions().Where(e => TargetOptionsFor(e).Count > 0)];
 
     // ---- State ----
 
@@ -192,9 +231,6 @@ public sealed partial class MainViewModel : ObservableObject
             HistoryMessage = Loc.Get("History.LoadFailed");
         }
 
-        _loadingHistory = true;
-        IsHistoryEnabled = _history.IsEnabled;
-        _loadingHistory = false;
         RefreshHistory();
     }
 
@@ -203,7 +239,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task PickSourceAsync()
     {
-        var path = await _desktop.PickSourceFileAsync(_registry.GetSourceExtensions());
+        var path = await _desktop.PickSourceFileAsync(SourceExtensions());
         if (path is not null)
         {
             SelectSource(path);
@@ -243,10 +279,14 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         var extension = FileExtension.FromPath(path);
-        var options = extension.Length == 0 ? [] : _registry.GetTargetOptions(extension);
+        var options = extension.Length == 0 ? [] : TargetOptionsFor(extension);
         if (options.Count == 0)
         {
-            ShowInputMessage(DescribeUnsupported(extension), InfoBarSeverity.Warning);
+            // A DWG dropped on Convert File, or a Word file on Architecture: say where it goes instead.
+            var elsewhere = extension.Length > 0 && _registry.GetTargetOptions(extension).Count > 0;
+            ShowInputMessage(
+                elsewhere ? Loc.Format(Scope == ConverterScope.Files ? "Input.UseArchitecture" : "Input.UseConvertFile", extension) : DescribeUnsupported(extension),
+                elsewhere ? InfoBarSeverity.Informational : InfoBarSeverity.Warning);
             return;
         }
 
@@ -306,7 +346,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private string DescribeUnsupported(string extension)
     {
-        var supported = string.Join(", ", _registry.GetSourceExtensions().Select(extension => FormatCatalog.GetTargetLabel(extension)).Distinct());
+        var supported = string.Join(", ", SourceExtensions().Select(extension => FormatCatalog.GetTargetLabel(extension)).Distinct());
         return extension.Length == 0
             ? Loc.Format("Input.UnsupportedNoExtension", supported)
             : Loc.Format("Input.Unsupported", extension, supported);
@@ -398,23 +438,29 @@ public sealed partial class MainViewModel : ObservableObject
 
         // Created here, on the UI thread, so progress reports come back to it.
         var progress = new Progress<PipelineProgress>(OnProgress);
+        var kind = $"{FileExtension.FromPath(job.SourcePath)} -> {FileExtension.Normalize(job.TargetExtension)}";
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        _log.Info($"Conversion started: {kind}");
         try
         {
             // Hashing and verification run on a worker thread; the window stays responsive.
             var result = await Task.Run(() => _pipeline.RunAsync(job, progress, cancellation.Token), CancellationToken.None);
             Result = result;
             State = ConverterState.Done;
+            _log.Info(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Conversion verified: {kind}, {result.ChunkCount} chunks, {started.Elapsed.TotalSeconds:0.0} s"));
             await RecordHistoryAsync(job, result);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
             State = ConverterState.Input;
             ShowInputMessage(Loc.Get("Input.Cancelled"), InfoBarSeverity.Informational);
+            _log.Info($"Conversion cancelled: {kind}, at {_lastStage}");
         }
         catch (Exception ex)
         {
             ErrorMessage = ErrorMessages.Describe(ex, _lastStage, SelectedTarget?.DisplayName ?? job.TargetExtension);
             State = ConverterState.Failed;
+            _log.Error($"Conversion failed: {kind}, at {_lastStage}: {ex.GetType().Name}: {ex.Message}");
         }
         finally
         {
@@ -436,6 +482,11 @@ public sealed partial class MainViewModel : ObservableObject
         if (State != ConverterState.Processing)
         {
             return;
+        }
+
+        if (progress.Stage != _lastStage)
+        {
+            _log.Debug($"Stage {progress.Stage}");
         }
 
         _lastStage = progress.Stage;
@@ -606,8 +657,13 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    private void RefreshHistory()
+    /// <summary>Re-reads the list; Architecture records conversions into the same history.</summary>
+    public void RefreshHistory()
     {
+        _loadingHistory = true;
+        IsHistoryEnabled = _history.IsEnabled;
+        _loadingHistory = false;
+
         var now = DateTime.Now;
         HistoryItems.Clear();
         foreach (var entry in _history.Entries)

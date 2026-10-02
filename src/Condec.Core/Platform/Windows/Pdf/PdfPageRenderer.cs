@@ -41,16 +41,27 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
         await page.RenderToStreamAsync(rendered, options).AsTask(ct).ConfigureAwait(false);
 
         var decoder = await BitmapDecoder.CreateAsync(rendered).AsTask(ct).ConfigureAwait(false);
+
+        // Some Windows builds render larger than the destination size asked for (seen on 10.0.26340 with the display
+        // at 175%: 1.4×). The page is then scaled to the size that was asked for, so the resolution stays as chosen.
+        var transform = new BitmapTransform();
+        if (decoder.PixelWidth != options.DestinationWidth || decoder.PixelHeight != options.DestinationHeight)
+        {
+            transform.ScaledWidth = options.DestinationWidth;
+            transform.ScaledHeight = options.DestinationHeight;
+            transform.InterpolationMode = BitmapInterpolationMode.Fant;
+        }
+
         var pixels = await decoder.GetPixelDataAsync(
             BitmapPixelFormat.Bgra8,
             BitmapAlphaMode.Straight,
-            new BitmapTransform(),
+            transform,
             ExifOrientationMode.IgnoreExifOrientation,
             ColorManagementMode.DoNotColorManage).AsTask(ct).ConfigureAwait(false);
 
         var bgra = pixels.DetachPixelData();
         Imaging.ImageConverter.FlattenOntoWhite(bgra);
-        return new RenderedPage(bgra, decoder.PixelWidth, decoder.PixelHeight);
+        return new RenderedPage(bgra, options.DestinationWidth, options.DestinationHeight);
     }
 
     async Task<GrayImage> IPdfPageRasterizer.RenderAsync(string path, int pageNumber, double pixelsPerPoint, CancellationToken ct)

@@ -19,7 +19,16 @@
   <ItemGroup>
     <Content Include="Assets\*.png" />
     <Content Include="Assets\Condec.ico" />
+    <!-- Shown by Settings → About → "Third-party licenses". -->
+    <Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" />
   </ItemGroup>
+
+  <!-- One version number: the package's. The assembly gets it too, so the portable build (no package) can show it. -->
+  <Target Name="CondecVersionFromManifest" BeforeTargets="GetAssemblyVersion">
+    <XmlPeek XmlInputPath="Package.appxmanifest" Query="/m:Package/m:Identity/@Version" Namespaces="&lt;Namespace Prefix='m' Uri='http://schemas.microsoft.com/appx/manifest/foundation/windows10' /&gt;">
+      <Output TaskParameter="Result" PropertyName="Version" />
+    </XmlPeek>
+  </Target>
 
   <!-- Portable build (tools\publish-portable.ps1 passes WindowsPackageType=None): there is no package to
        carry the content, so publish copies it next to Condec.exe instead. -->

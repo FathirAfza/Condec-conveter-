@@ -10,20 +10,47 @@ namespace Condec;
 
 /// <summary>
 /// Attached properties that take a string-resource key instead of the text itself:
-/// <c>local:L.Text="Main.Title"</c> sets the TextBlock's text to the "Main.Title" string in the app's language.
+/// <c>local:L.Text="Page.Convert.Title"</c> sets the TextBlock's text to the "Page.Convert.Title" string in the app's language.
 /// Every key is checked against Resources/Strings.resx by the localization tests.
 /// </summary>
 public static class L
 {
     public static readonly DependencyProperty TextProperty = Register("Text", (target, text) =>
     {
-        if (target is TextBlock block)
+        switch (target)
         {
-            block.Text = text;
+            case TextBlock block:
+                block.Text = text;
+                break;
+            case SelectorBarItem item:
+                item.Text = text;
+                break;
+            default:
+                throw Unsupported(target, "Text");
+        }
+    });
+
+    public static readonly DependencyProperty OnContentProperty = Register("OnContent", (target, text) =>
+    {
+        if (target is ToggleSwitch toggle)
+        {
+            toggle.OnContent = text;
         }
         else
         {
-            throw Unsupported(target, "Text");
+            throw Unsupported(target, "OnContent");
+        }
+    });
+
+    public static readonly DependencyProperty OffContentProperty = Register("OffContent", (target, text) =>
+    {
+        if (target is ToggleSwitch toggle)
+        {
+            toggle.OffContent = text;
+        }
+        else
+        {
+            throw Unsupported(target, "OffContent");
         }
     });
 
@@ -100,6 +127,14 @@ public static class L
     public static string GetText(DependencyObject element) => (string)element.GetValue(TextProperty);
 
     public static void SetText(DependencyObject element, string key) => element.SetValue(TextProperty, key);
+
+    public static string GetOnContent(DependencyObject element) => (string)element.GetValue(OnContentProperty);
+
+    public static void SetOnContent(DependencyObject element, string key) => element.SetValue(OnContentProperty, key);
+
+    public static string GetOffContent(DependencyObject element) => (string)element.GetValue(OffContentProperty);
+
+    public static void SetOffContent(DependencyObject element, string key) => element.SetValue(OffContentProperty, key);
 
     public static string GetContent(DependencyObject element) => (string)element.GetValue(ContentProperty);
 

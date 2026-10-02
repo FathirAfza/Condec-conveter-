@@ -8,10 +8,12 @@ using Condec.Core.Documents;
 using Condec.Core.History;
 using Condec.Core.Imaging;
 using Condec.Core.Localization;
+using Condec.Core.Logging;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
+using Condec.Core.Platform.Windows.Devices;
+using Condec.Core.Settings;
 using Condec.Services;
-using Condec.ViewModels;
 using Microsoft.UI.Xaml;
 
 namespace Condec;
@@ -25,10 +27,24 @@ public partial class App : Application
         InitializeComponent();
     }
 
+    public static new App Current => (App)Application.Current;
+
+    /// <summary>Set in <see cref="OnLaunched"/> before the first page is created.</summary>
+    public AppServices Services { get; private set; } = null!;
+
     protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         // Before anything is created: the window and view models read their texts when they are built.
         Loc.Culture = Languages.Pick(UserLanguages.Get());
+
+        // DXCore and the registry answer in well under a second; the limits in Settings need them from the start.
+        var device = await Task.Run(() => new WindowsDeviceProbe().Detect());
+        var packaged = PackageIdentity.IsPackaged();
+        var settings = new AppSettings(PackageIdentity.CreateSettingsStore(CondecPaths.SettingsFile), device);
+        var log = new ActivityLog(CondecPaths.LogDirectory, () => settings.LogEnabled, () => settings.LogLevel);
+        var version = AppVersion.Text;
+        log.Info($"Condec {version} started ({(packaged ? "MSIX" : "portable")}, language {Loc.Culture.Name})");
+        log.Debug($"Device: {device.CpuName}; RAM {device.InstalledRamGb} GB; GPU {device.Gpu?.Name ?? "none"} ({device.GpuMemoryGb} GB, integrated {device.Gpu?.IsIntegrated}); NPU {device.NpuName ?? "none"}");
 
         var registry = new ConverterRegistry(
             [
@@ -48,8 +64,10 @@ public partial class App : Application
         // journal keeps any entry it can't clean up and tries again on the next start.
         _ = Task.Run(journal.CleanupStale);
 
-        _window = new MainWindow(windowId => new MainViewModel(registry, pipeline, history, new DesktopServices(windowId)));
+        _window = new MainWindow();
+        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), version);
+        _window.Start(Services);
         _window.Activate();
-        await _window.ViewModel.InitializeAsync();
+        await Services.Convert.InitializeAsync();
     }
 }

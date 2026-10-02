@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.1 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.2 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -48,9 +48,9 @@ Prinsip:
 ## 3. Shell aplikasi
 
 ### 3.1 Jendela
-- Ukuran awal 1280 × 820. Ukuran minimum `[TERBUKA]` (usulan 900 × 640).
-- `MicaBackdrop`. Title bar kustom: tinggi 32, ikon aplikasi 16, judul "Condec" (CaptionTextBlockStyle). Tombol minimize/maximize/close digambar sistem (46 × 32).
-- Pakai `TitleBar` (tersedia di Windows App SDK versi baru; verifikasi di dokumentasi versi yang terpasang), atau `ExtendsContentIntoTitleBar` + `SetTitleBar`.
+- Ukuran awal 1280 × 820 (dikecilkan seperlunya bila layar lebih kecil). Ukuran minimum 900 × 640 (usulan §13 #6, dipakai sementara; masih `[TERBUKA]`).
+- `MicaBackdrop`, bisa dimatikan di Settings (§6.4); saat mati, latar jendela `SolidBackgroundFillColorBaseBrush`. Title bar kustom: tinggi 32, ikon aplikasi 16, judul "Condec". Tombol minimize/maximize/close digambar sistem (46 × 32).
+- Dipakai kontrol `TitleBar` (Microsoft.WinUI 2.3.9, Windows App SDK 2.5.1; properti `Title`, `IconSource`, `IsBackButtonVisible`, `IsPaneToggleButtonVisible` dicek di metadata; tinggi bawaan `TitleBarCompactHeight` 32, ikon maks 16 `[SRC]`), dipasang lewat `ExtendsContentIntoTitleBar` + `SetTitleBar`. Judulnya meredup sendiri saat jendela tidak aktif. Warna tombol caption mengikuti tema pilihan lewat `AppWindow.TitleBar.PreferredTheme`.
 
 ### 3.2 NavigationView
 
@@ -63,8 +63,10 @@ Prinsip:
 | IsBackButtonVisible | Collapsed |
 | IsSettingsVisible | True (item Settings otomatis di bawah) |
 | Item | Convert File (terpilih awal), Upscale Image, Architecture |
-| Ikon item | `FontIcon` 16, glyph dari Segoe Fluent Icons. Pilih dari tabel resmi, jangan menebak codepoint. |
-| Isi | `Frame`, navigasi dari `ItemInvoked`/`SelectionChanged` |
+| Ikon item | `FontIcon` 16, glyph dari Segoe Fluent Icons. Pilih dari tabel resmi, jangan menebak codepoint. Dipakai (dari enum `Symbol` di `Microsoft.UI.Xaml.winmd`): Convert File `Switch` U+E13C, Upscale Image `FullScreen` U+E1D9, Architecture `Map` U+E1C4. |
+| Isi | `Frame`, navigasi dari `SelectionChanged`. Halaman di-cache (`NavigationCacheMode=Required`) supaya pilihan dan konversi yang sedang berjalan tidak hilang saat pindah halaman. |
+
+Dengan ukuran minimum 900 (§3.1), pane hanya bisa berpindah antara terbuka (≥ 1008) dan kompak (900–1007); mode minimal (≤ 640) tidak tercapai lewat pengubahan ukuran jendela. Nama item Settings diganti aplikasi supaya tetap "Settings" di kedua bahasa (§2).
 
 Metrik bawaan yang dipakai mock `[SRC]`: tinggi item 36, tombol hamburger 40 × 36, indikator pilih 3 × 16 (radius 2), sudut kiri atas area konten 8, lebar kompak 48.
 
@@ -80,6 +82,8 @@ Metrik bawaan yang dipakai mock `[SRC]`: tinggi item 36, tombol hamburger 40 × 
 | Upscale Image | Upscale Image | Perbesar resolusi gambar di perangkat ini dengan GPU, CPU, atau NPU. |
 | Architecture | Architecture | Ubah gambar, PDF, dan DXF menjadi DWG, atau sebaliknya. |
 | Settings | Settings | Atur mesin render, batas memori, tampilan, dan log. |
+
+Selama tahap 3 sampai 6: halaman Upscale Image hanya memuat judul, subjudul, dan satu `InfoBar` Informational "Upscale belum tersedia" (supaya menu tidak tampak rusak; dihapus di tahap 6). Halaman Architecture memuat kartu konverter yang sama dengan Convert File, khusus DXF dan DWG (§6.3); diganti layar §6.3 di tahap 7.
 
 ### 3.4 Wireframe shell
 ```
@@ -189,7 +193,9 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 **Keadaan Input**
 - Kiri: kalau belum ada file, area seret (garis putus-putus, ikon 32, "Seret file ke sini", tombol "Pilih file…"). Kalau sudah ada file: ikon jenis file 40, label "File sumber" (Caption), nama (BodyStrong, terpotong ellipsis), jenis dan ukuran (Caption, mis. "Dokumen Word · 2,4 MB"), `HyperlinkButton` "Ganti".
 - Tengah: ikon panah ke kanan 24.
-- Kanan (padding 24): label "Ubah ke format", `ComboBox` format, teks bantu (Caption), `HyperlinkButton` "Butuh DXF atau DWG? Buka Architecture" (pindah ke halaman Architecture).
+- Kanan (padding 24): label "Ubah ke format", `ComboBox` format, teks bantu (Caption), `HyperlinkButton` "Butuh DXF atau DWG? Buka Architecture" (memilih item Architecture di menu).
+  - Cakupan: Convert File hanya menawarkan konversi yang bukan dari dan bukan ke DXF/DWG. File DXF/DWG yang dipilih atau diseret ke sini mendapat `InfoBar` Informational yang mengarahkan ke Architecture ("File .dxf diproses di Architecture. Buka dari menu."). Sebaliknya di Architecture (§6.3).
+  - Halaman bergulir sebagai satu kesatuan (§3.3): kartu Riwayat tidak lagi mengisi sisa tinggi jendela.
   - Belum ada file: ComboBox nonaktif, teks "Pilih file dulu", bantu "Format muncul setelah file dipilih".
   - Sudah ada file: placeholder "Pilih format", bantu "N format tersedia untuk .ext". Isi daftar diambil dari `ConverterRegistry`, bukan daftar tetap. Format yang tidak didukung mesin tidak muncul.
 - Bawah kartu: kiri teks Caption dengan ikon perisai "Diproses sepenuhnya di perangkat ini. Tidak ada file yang diunggah."; kanan tombol aksen "Konversi dan simpan…", **nonaktif sampai file dan format dipilih**.
@@ -265,6 +271,8 @@ Nama file hasil: `<nama>-<W>x<H>.<ext>`.
 
 ### 6.3 Architecture
 
+> **Sementara (tahap 3–6):** halaman ini memuat kartu konverter §6.1 untuk DXF dan DWG saja: PDF, PNG, JPG, HEIC dan lainnya ke DXF/DWG, serta DXF/DWG ke gambar atau PDF, dengan opsi dan perilaku yang sama seperti sebelum redesign. Layar di bawah dibangun di tahap 7. Riwayatnya masuk ke daftar Riwayat di Convert File (menyentuh §13 #10).
+
 `SelectorBar` di atas dengan dua item: **"Gambar, PDF, DXF → DWG"** dan **"DWG, DXF → Gambar, PDF"**.
 
 #### 6.3.1 Arah "ke CAD"
@@ -336,7 +344,7 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 | Render mode | `Expander` | Header: "Render mode" + deskripsi "Mesin yang dipakai untuk upscale dan vektorisasi. GPU paling cepat, CPU selalu tersedia." + nilai terpilih di kanan. Isi: `RadioButtons` vertikal GPU / CPU / NPU, masing-masing dengan nama perangkat dan status ("Terdeteksi · tercepat", "Selalu tersedia · paling lambat", "Terdeteksi" / "Tidak terdeteksi"). NPU nonaktif bila tidak terdeteksi. |
 | Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
 | Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat render lebih lambat, bukan lebih buruk kualitasnya." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–2K 8 GB · 2K–4K 16 GB · 4K–8K 32 GB · di atas 8K 64 GB." |
-| Render dump | `Button` "Bersihkan cache" | Deskripsi: "Hapus cache render (tile dan data sementara). Ukuran sekarang: 1,8 GB." Setelah dibersihkan: "Cache kosong. Ukuran sekarang: 0 MB." dan tombol nonaktif. |
+| Render dump | `Button` "Bersihkan cache" | Deskripsi: "Hapus cache render (tile dan data sementara). Ukuran sekarang: 1,8 GB." Setelah dibersihkan: "Cache kosong. Ukuran sekarang: 0 MB." dan tombol nonaktif. Folder cache: `%LOCALAPPDATA%\Condec\cache` (belum ada isinya sampai tahap 6). Bila ada file yang sedang dipakai: "Sebagian file cache sedang dipakai dan tidak terhapus. Ukuran sekarang: …". |
 
 #### Tab "Umum"
 
@@ -346,8 +354,14 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 | Tampilan → Latar Mica | `ToggleSwitch` | "Latar jendela ikut warna wallpaper (Windows 11)." Label "Aktif"/"Nonaktif". |
 | Log → Simpan log aktivitas | `ToggleSwitch` | "Catatan proses konversi dan upscale untuk mencari masalah. Tidak berisi isi file dan tidak pernah dikirim ke mana pun." |
 | Log → Tingkat detail log | `ComboBox` | Error, Info, Debug. Nonaktif saat log mati. Deskripsi: "Debug mencatat paling banyak dan bisa membuat file log besar." |
-| Log → Folder log | `Button` "Buka folder", `Button` "Hapus log" | `%LOCALAPPDATA%\Condec\logs`. Buka folder lewat `Launcher.LaunchFolderAsync`. |
-| Tentang | `Button` "Lisensi pihak ketiga" | "Condec 0.1.0" / "Open source, GPL-3.0-or-later. Semua proses berjalan offline di perangkat ini." |
+| Log → Folder log | `Button` "Buka folder", `Button` "Hapus log" | `%LOCALAPPDATA%\Condec\logs`. Buka folder lewat `Launcher.LaunchFolderAsync`. Satu file per hari, `condec-yyyy-MM-dd.log`. Isi log: waktu, tingkat, dan peristiwa (mulai, hasil, tahap, jenis galat); tanpa isi file dan tanpa path file. Hasil "Hapus log" dan galat membuka file ditampilkan di `InfoBar` Informational di atas tab Umum. |
+| Tentang | `Button` "Lisensi pihak ketiga" | "Condec 0.1.0" (versi dari manifest paket, jadi build portable menampilkan angka yang sama) / "Open source, GPL-3.0-or-later. Semua proses berjalan offline di perangkat ini." Tombol membuka `THIRD-PARTY-NOTICES.md` (ikut di paket dan build portable) di Notepad, karena Windows tidak punya aplikasi bawaan untuk `.md`. |
+
+Catatan perilaku Settings yang sudah dipasang (tahap 3):
+- Baris Render mode: item GPU/NPU yang tidak terdeteksi nonaktif dengan status "Tidak terdeteksi". Pilihan tersimpan yang tidak tersedia lagi dibaca sebagai GPU atau CPU (aturan di bawah).
+- Batas upscale: skala di atas kemampuan perangkat tetap ada di daftar, diredupkan dengan keterangan "Di atas batas perangkat", dan tidak bisa dipilih (pilihan dikembalikan). `ComboBoxItem` tidak dinonaktifkan karena itu menutup daftar yang sedang terbuka saat item berfokus.
+- Teks "Syarat RAM terpasang menurut resolusi hasil" dirangkai dari tabel `CapabilityPolicy.RamTiers` (§7.2), bukan ditulis ulang.
+- Perubahan tema berlaku langsung tanpa restart, termasuk warna tombol caption.
 
 #### Nilai awal dan penyimpanan
 Disimpan di `ApplicationData.Current.LocalSettings` bila aplikasi terpasang sebagai MSIX, dan di `%LOCALAPPDATA%\Condec\settings.json` bila dijalankan sebagai build portable (tanpa identitas paket). Kuncinya sama di keduanya.
@@ -464,7 +478,8 @@ Turunan: RAM yang dibutuhkan untuk upscale 2× gambar 1600 × 1200 = 16 GB. Upsc
 
 ## 10. Aksesibilitas
 
-- Semua tombol ikon punya `AutomationProperties.Name` ("Tampilkan di folder", "Buka atau tutup menu navigasi", dll.).
+- Semua tombol ikon punya `AutomationProperties.Name` ("Tampilkan di folder", "Buka atau tutup menu navigasi", dll.). Tombol hamburger diberi nama ini lewat bagian template `TogglePaneButton`; tanpa itu NavigationView memakai nama bawaannya ("Close Navigation") dalam bahasa sistem.
+- Pilihan yang isinya dua baris teks (Render mode, daftar skala) punya nama gabungan yang dibacakan, mis. "NPU, Tidak terdeteksi" dan "4×, Di atas batas perangkat".
 - `ProgressBar` punya nama ("Kemajuan konversi", "Kemajuan upscale"). `Slider` punya nama ("Persentase upscale", "Batas memori dalam GB").
 - Navigasi keyboard penuh. Urutan fokus mengikuti urutan visual, kiri ke kanan, atas ke bawah.
 - Status tidak boleh hanya berupa warna: sukses/peringatan/galat selalu disertai ikon dan teks.
@@ -513,23 +528,33 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 3 | RAM dihitung dari RAM terpasang, bukan RAM yang dipakai Condec | `[ASUMSI]` |
 | 4 | Ukuran thumb `Slider` 20 px | `[ASUMSI]`, tidak ada di source yang dibaca |
 | 5 | Lebar pill `SelectorBar` | `[TERBUKA]` |
-| 6 | Ukuran minimum jendela (usulan 900 × 640) | `[TERBUKA]` |
+| 6 | Ukuran minimum jendela 900 × 640 | `[TERBUKA]`, usulan ini sudah dipakai (tahap 3); konfirmasi atau ganti |
 | 7 | Versi DWG yang ditulis ACadSharp | diputuskan: AC1015 (AutoCAD 2000). ACadSharp 3.8.0 menulis DWG AC1014, AC1015, AC1018, AC1024, AC1027, AC1032 |
 | 8 | Model upscale (lisensi kode dan bobot harus kompatibel GPL-3.0) dan apakah bisa jalan di NPU | `[TERBUKA]`, jangan menebak |
 | 9 | OCR teks gambar: `Windows.Media.Ocr`, bahasa terpasang | `[TERBUKA]`, cek dokumentasi |
-| 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | `[TERBUKA]`, saat ini hanya Convert File |
+| 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | `[TERBUKA]`. Sementara (tahap 3): konversi di Architecture tercatat di daftar yang sama dengan Convert File (satu `history.json`), supaya riwayat konversi DXF/DWG yang sudah ada tidak hilang; daftar hanya ditampilkan di Convert File. |
 | 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`, kalibrasi |
 | 12 | Perkiraan ukuran file (§8) dan hasil DWG → gambar (§6.3.2) | `[ASUMSI]` |
 | 13 | Win2D untuk render DWG | `[TERBUKA]`, hanya kalau kontrol stock tidak cukup |
 | 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
 | 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]` |
-| 18 | DXCore (GPU/NPU) belum terbukti di perangkat nyata; hanya dites di runner CI tanpa GPU | `[TERBUKA]`, cek di perangkat pemilik lewat Settings |
+| 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.2] 2026-10-02 (tahap 3: shell dan Settings)
+- **Ditambah:** shell (§3): `TitleBar` + `NavigationView` (pane 280, mode Auto) + `Frame`, halaman Convert File, Upscale Image, Architecture, Settings. Tema (terang/gelap/ikuti sistem) dan Mica bisa diubah dan berlaku langsung.
+- **Ditambah:** halaman Settings lengkap (§6.4) dengan nilai lewat `AppSettings`; penyimpanan `ApplicationData.LocalSettings` bila ada identitas paket (`GetCurrentPackageFullName`, `APPMODEL_ERROR_NO_PACKAGE` = tanpa paket), selain itu `settings.json`. Log aktivitas (`ActivityLog`), ukuran dan pembersihan cache, tombol lisensi pihak ketiga.
+- **Diubah:** DXF/DWG pindah dari Convert File ke Architecture. Karena layar Architecture baru dibangun di tahap 7, halaman Architecture sementara memuat kartu konverter lama khusus DXF/DWG (§6.3); Convert File memuat tautan ke sana. Keputusan: alur lama dipertahankan di Architecture (lebih aman daripada halaman kosong). Riwayatnya satu daftar dengan Convert File (§13 #10).
+- **Diubah:** halaman bergulir sebagai satu kesatuan; kartu Riwayat tidak lagi mengisi sisa tinggi (§3.3, §6.1). Ukuran jendela awal 1280 × 820, minimum 900 × 640.
+- **Ditambah:** Upscale Image sementara berisi `InfoBar` "Upscale belum tersedia" (§3.3), dihapus di tahap 6.
+- **Diubah:** item Batas upscale yang terkunci diredupkan dan dikembalikan saat dipilih, bukan `ComboBoxItem.IsEnabled=False` (§6.4).
+- **Diperbaiki:** merender halaman PDF menghasilkan ukuran salah (1,4×) pada layar 175% di Windows build 10.0.26340; `PdfPageRenderer` sekarang menskalakan hasil ke ukuran yang diminta.
+- **Dicek:** §13 #18 (DXCore terbukti jalan di laptop pemilik, lihat tabel).
 
 ### [0.2.1] 2026-10-02
 - **Ditambah:** `DeviceProfile`, `CapabilityPolicy` (test vector §9 lulus), estimasi (§8), `AppSettings` dan benchmark di `Condec.Core`. Catatan pembulatan RAM dan memori GPU (§7.1, §7.2), alasan "RAM di bawah 8 GB" (§7.4), waktu render "—" sebelum diukur (§8).
