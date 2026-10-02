@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
+using System.Runtime.InteropServices;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
+using Condec.Core.Localization;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 
@@ -10,7 +12,9 @@ namespace Condec.Core.Imaging;
 
 /// <summary>
 /// JPG, PNG, BMP, GIF and TIFF to each other, plus HEIC and WebP as sources when their Windows
-/// decoders are installed. Multi-frame sources (animated GIF, multi-page TIFF) use the first frame.
+/// decoders are installed. Multi-frame sources (animated GIF, multi-page TIFF) use the first frame, and the result
+/// says so. A source that is cut off (see <see cref="ImageStructure"/>) is converted as far as Windows can read it,
+/// and the result says that too.
 /// </summary>
 public sealed class ImageConverter : IConverter
 {
@@ -34,7 +38,17 @@ public sealed class ImageConverter : IConverter
             ?? throw new NotSupportedException($"'{request.TargetExtension}' is not an image target.");
 
         progress.Report(new ConversionProgress(ConversionStage.Decode, 0));
+        if (ImageStructure.IsComplete(request.SourcePath) == false)
+        {
+            request.Notes.Add(NoteSeverity.Warning, Loc.Get("Note.SourceIncomplete"));
+        }
+
         var image = await DecodeAsync(request.SourcePath, ct).ConfigureAwait(false);
+        if (image.FrameCount > 1)
+        {
+            request.Notes.Add(NoteSeverity.Informational, Loc.Format("Note.FirstFrameOnly", image.FrameCount));
+        }
+
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
 
         if (!target.KeepsTransparency)
@@ -48,16 +62,24 @@ public sealed class ImageConverter : IConverter
         // BitmapEncoder needs a seekable stream, so it writes to memory first. The finished image is then
         // copied to the pipeline's forward-only output in one pass, where it is hashed.
         using var staging = new InMemoryRandomAccessStream();
-        var encoder = await BitmapEncoder.CreateAsync(target.EncoderId, staging).AsTask(ct).ConfigureAwait(false);
-        encoder.SetPixelData(
-            BitmapPixelFormat.Bgra8,
-            target.KeepsTransparency ? BitmapAlphaMode.Straight : BitmapAlphaMode.Ignore,
-            image.Width,
-            image.Height,
-            image.DpiX,
-            image.DpiY,
-            image.Pixels);
-        await encoder.FlushAsync().AsTask(ct).ConfigureAwait(false);
+        try
+        {
+            var encoder = await BitmapEncoder.CreateAsync(target.EncoderId, staging).AsTask(ct).ConfigureAwait(false);
+            encoder.SetPixelData(
+                BitmapPixelFormat.Bgra8,
+                target.KeepsTransparency ? BitmapAlphaMode.Straight : BitmapAlphaMode.Ignore,
+                image.Width,
+                image.Height,
+                image.DpiX,
+                image.DpiY,
+                image.Pixels);
+            await encoder.FlushAsync().AsTask(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsOutOfMemory(ex))
+        {
+            throw new ImageTooLargeException((long)image.Width * image.Height, ex);
+        }
+
         progress.Report(new ConversionProgress(ConversionStage.Encode, 0.6));
 
         using var encoded = staging.GetInputStreamAt(0).AsStreamForRead();
@@ -71,22 +93,41 @@ public sealed class ImageConverter : IConverter
         using var stream = file.AsRandomAccessStream();
         var decoder = await BitmapDecoder.CreateAsync(stream).AsTask(ct).ConfigureAwait(false);
 
-        // Straight alpha keeps the color of semi-transparent pixels intact for FlattenOntoWhite.
-        // EXIF rotation is applied, so photos keep the orientation they are shown with.
-        var pixelData = await decoder.GetPixelDataAsync(
-            BitmapPixelFormat.Bgra8,
-            BitmapAlphaMode.Straight,
-            new BitmapTransform(),
-            ExifOrientationMode.RespectExifOrientation,
-            ColorManagementMode.ColorManageToSRgb).AsTask(ct).ConfigureAwait(false);
+        // The pixels are held as a byte array of 4 bytes each; refuse before asking Windows for more than that can be.
+        var pixels = (long)decoder.OrientedPixelWidth * decoder.OrientedPixelHeight;
+        if (pixels > ImageTooLargeException.MaximumPixels)
+        {
+            throw new ImageTooLargeException(pixels);
+        }
 
-        return new DecodedImage(
-            pixelData.DetachPixelData(),
-            decoder.OrientedPixelWidth,
-            decoder.OrientedPixelHeight,
-            decoder.DpiX,
-            decoder.DpiY);
+        try
+        {
+            // Straight alpha keeps the color of semi-transparent pixels intact for FlattenOntoWhite.
+            // EXIF rotation is applied, so photos keep the orientation they are shown with.
+            var pixelData = await decoder.GetPixelDataAsync(
+                BitmapPixelFormat.Bgra8,
+                BitmapAlphaMode.Straight,
+                new BitmapTransform(),
+                ExifOrientationMode.RespectExifOrientation,
+                ColorManagementMode.ColorManageToSRgb).AsTask(ct).ConfigureAwait(false);
+
+            return new DecodedImage(
+                pixelData.DetachPixelData(),
+                decoder.OrientedPixelWidth,
+                decoder.OrientedPixelHeight,
+                decoder.DpiX,
+                decoder.DpiY,
+                decoder.FrameCount);
+        }
+        catch (Exception ex) when (IsOutOfMemory(ex))
+        {
+            throw new ImageTooLargeException(pixels, ex);
+        }
     }
+
+    /// <summary>E_OUTOFMEMORY (0x8007000E) comes back from Windows as a COMException, not as OutOfMemoryException.</summary>
+    private static bool IsOutOfMemory(Exception ex) =>
+        ex is OutOfMemoryException || (ex is COMException { HResult: unchecked((int)0x8007000E) });
 
     /// <summary>Composites straight-alpha BGRA pixels onto white and makes them opaque.</summary>
     internal static void FlattenOntoWhite(byte[] bgra)
@@ -109,5 +150,5 @@ public sealed class ImageConverter : IConverter
     }
 
     /// <summary>A decoded picture as straight-alpha BGRA, in the orientation it is shown with.</summary>
-    internal sealed record DecodedImage(byte[] Pixels, uint Width, uint Height, double DpiX, double DpiY);
+    internal sealed record DecodedImage(byte[] Pixels, uint Width, uint Height, double DpiX, double DpiY, uint FrameCount = 1);
 }

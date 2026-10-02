@@ -452,6 +452,18 @@
                         Text="{x:Bind ViewModel.ResultIntegrity, Mode=OneWay}" />
                 </Grid>
                 <StackPanel>
+                    <ItemsControl IsTabStop="False" ItemsSource="{x:Bind ViewModel.ResultNotes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ResultNoteItem">
+                                <InfoBar
+                                    Margin="0,0,0,20"
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="{x:Bind Message}"
+                                    Severity="{x:Bind Severity}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <InfoBar
                         Margin="0,0,0,20"
                         IsClosable="False"

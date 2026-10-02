@@ -191,6 +191,9 @@ public sealed partial class ConverterViewModel : ObservableObject
 
     public string ResultIntegrity => Loc.Format("Result.Integrity", Result?.ChunkCount ?? 0);
 
+    /// <summary>What the converter wants the user to know about this result (a cut-off source, dropped frames).</summary>
+    public ObservableCollection<ResultNoteItem> ResultNotes { get; } = [];
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasResultMessage))]
     public partial string? ResultMessage { get; set; }
@@ -416,6 +419,7 @@ public sealed partial class ConverterViewModel : ObservableObject
         SelectedTarget = null;
         Source = null;
         Result = null;
+        ResultNotes.Clear();
         ResultMessage = null;
         InputMessage = null;
         State = ConverterState.Input;
@@ -429,6 +433,7 @@ public sealed partial class ConverterViewModel : ObservableObject
         DestinationPath = job.DestinationPath;
         InputMessage = null;
         ResultMessage = null;
+        ResultNotes.Clear();
         ProgressPercent = 0;
         ResetSteps();
         State = ConverterState.Processing;
@@ -445,6 +450,13 @@ public sealed partial class ConverterViewModel : ObservableObject
         {
             // Hashing and verification run on a worker thread; the window stays responsive.
             var result = await Task.Run(() => _pipeline.RunAsync(job, progress, cancellation.Token), CancellationToken.None);
+            ResultNotes.Clear();
+            foreach (var note in result.Notes ?? [])
+            {
+                ResultNotes.Add(new ResultNoteItem(note.Message, note.Severity == NoteSeverity.Warning ? InfoBarSeverity.Warning : InfoBarSeverity.Informational));
+                _log.Info($"Conversion note ({note.Severity}): {kind}");
+            }
+
             Result = result;
             State = ConverterState.Done;
             _log.Info(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Conversion verified: {kind}, {result.ChunkCount} chunks, {started.Elapsed.TotalSeconds:0.0} s"));

@@ -124,3 +124,6 @@ public sealed class HistoryItemViewModel
 
     public IRelayCommand ShowInFolderCommand { get; }
 }
+
+/// <summary>One thing the converter wants the user to know about a saved result, shown as an InfoBar.</summary>
+public sealed record ResultNoteItem(string Message, Microsoft.UI.Xaml.Controls.InfoBarSeverity Severity);

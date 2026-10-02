@@ -12,7 +12,11 @@ public sealed record ConversionRequest(
     string SourceExtension,
     string TargetExtension,
     Stream Output,
-    ConversionOptions? Options = null);
+    ConversionOptions? Options = null)
+{
+    /// <summary>Remarks about the result; they end up in <c>ConversionResult.Notes</c>.</summary>
+    public ConversionNotes Notes { get; init; } = new();
+}
 
 /// <summary>Format-specific settings, such as the unit and scale for PDF to CAD.</summary>
 public abstract record ConversionOptions;

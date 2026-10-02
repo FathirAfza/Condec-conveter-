@@ -3,6 +3,7 @@
 
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
+using Condec.Core.Imaging;
 using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
@@ -35,6 +36,8 @@ internal static class ErrorMessages
         ArgumentException { ParamName: "job" } =>
             Loc.Get("Error.SameFile"),
         LockedPdfException => LockedPdf,
+        ImageTooLargeException tooLarge =>
+            Loc.Format("Error.ImageTooLarge", tooLarge.Megapixels),
         NothingToTraceException =>
             Loc.Get("Error.NothingToTraceImage"),
         NothingToConvertException =>

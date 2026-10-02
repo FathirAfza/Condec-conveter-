@@ -225,6 +225,53 @@ public sealed class ConversionPipelineTests : IDisposable
         Assert.Equal(32, new FileInfo(_source).Length);
     }
 
+    [Fact]
+    public async Task Notes_FromTheConverter_ComeBackWithTheVerifiedResult()
+    {
+        var pipeline = CreatePipeline(async (request, progress, ct) =>
+        {
+            request.Notes.Add(NoteSeverity.Warning, "terpotong");
+            request.Notes.Add(NoteSeverity.Informational, "frame pertama");
+            await Writing(_payload)(request, progress, ct);
+        });
+
+        var result = await pipeline.RunAsync(Job, null, Ct);
+
+        Assert.Equal(
+            [new ConversionNote(NoteSeverity.Warning, "terpotong"), new ConversionNote(NoteSeverity.Informational, "frame pertama")],
+            result.Notes);
+        Assert.Equal(_payload, File.ReadAllBytes(_destination));
+    }
+
+    [Fact]
+    public async Task Notes_AreEmpty_WhenTheConverterHasNothingToSay()
+    {
+        var result = await CreatePipeline(Writing(_payload)).RunAsync(Job, null, Ct);
+
+        Assert.Empty(result.Notes ?? []);
+    }
+
+    [Fact]
+    public async Task Notes_DoNotCarryOverBetweenRuns()
+    {
+        var calls = 0;
+        var pipeline = CreatePipeline(async (request, progress, ct) =>
+        {
+            if (calls++ == 0)
+            {
+                request.Notes.Add(NoteSeverity.Warning, "hanya sekali");
+            }
+
+            await Writing(_payload)(request, progress, ct);
+        });
+
+        var first = await pipeline.RunAsync(Job, null, Ct);
+        var second = await pipeline.RunAsync(new ConversionJob(_source, ".pdf", _dir.File("lagi.pdf")), null, Ct);
+
+        Assert.Single(first.Notes!);
+        Assert.Empty(second.Notes ?? []);
+    }
+
     private static ConvertBody Writing(byte[] payload) => FakeConverter.Writing(payload);
 
     private ConversionPipeline CreatePipeline(ConvertBody body, FakeValidator? validator = null)

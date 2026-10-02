@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.2 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.3 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -218,13 +218,45 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 **Keadaan Selesai**
 - `InfoBar` Success: judul "Konversi selesai", pesan "File berhasil disimpan dan lolos verifikasi chunk serta cek integritas."
 - Tiga baris detail (label lebar 96, Caption sekunder): Lokasi (path penuh), Format ("DOCX → PDF"), Integritas ("SHA-256 cocok · N chunk terverifikasi").
-- Tombol: "Buka file" (aksen), "Tampilkan di folder", `HyperlinkButton` "Konversi file lain" (kembali ke Input, kosong).
+- Catatan konverter (nol atau lebih), di antara tiga baris detail dan tombol: satu `InfoBar` per catatan (`IsClosable=False`, margin bawah 20), urut seperti dilaporkan konverter. Catatan **bukan kegagalan**: file tetap disimpan dan lolos verifikasi; catatan hanya memberi tahu sesuatu tentang sumbernya.
+
+| Tingkat | Teks (kunci resource) | Kapan |
+|---|---|---|
+| Warning | "File sumber tampak terpotong atau rusak, jadi sebagian gambar bisa hilang atau abu-abu. Periksa hasilnya sebelum dipakai." (`Note.SourceIncomplete`) | PNG, JPEG, GIF, atau WebP yang strukturnya berakhir sebelum penanda akhirnya (§6.1.1) |
+| Informational | "File ini berisi N gambar (frame atau halaman). Hanya yang pertama yang dikonversi." (`Note.FirstFrameOnly`) | Sumber punya lebih dari satu frame (GIF animasi, TIFF banyak halaman) |
+
+  - Catatan dikosongkan saat konversi baru dimulai (termasuk "Coba lagi") dan saat "Konversi file lain". Setiap catatan juga ditulis ke log aktivitas tanpa path: hanya jenis konversi ("`.jpg -> .png`") dan tingkatnya.
+  - "SHA-256 cocok" dan status "Terverifikasi" di Riwayat berarti **keluaran** utuh dan sama dengan yang ditulis, bukan bahwa sumbernya utuh. Untuk sumber yang terpotong, kedua hal itu tampil bersama Warning di atas.
+- Tombol: "Buka file" (aksen), "Tampilkan di folder", `HyperlinkButton` "Konversi file lain" (kembali ke Input, kosong). Kalau "Buka file" atau "Tampilkan di folder" gagal, `InfoBar` Warning dengan pesannya muncul di antara catatan dan tombol.
+
+**Keadaan Gagal**
+- `InfoBar` Error: judul "Konversi gagal", pesan sesuai penyebab dan tahap terakhir (tabel di bawah). Dua baris detail (label lebar 96): File (nama sumber), Format ("PNG → JPG").
+- Tombol: "Coba lagi" (aksen, mengulang pekerjaan yang sama), "Ubah pilihan" (kembali ke Input dengan file dan format yang sama).
+- Tidak ada file setengah jadi yang tersisa di folder tujuan.
+
+| Penyebab | Pesan (kunci) |
+|---|---|
+| Sumber tidak bisa didekode (rusak, atau codec belum terpasang) | "File sumber tidak bisa dibaca. File mungkin rusak, atau codec untuk format ini belum terpasang di Windows." (`Error.Decode`) |
+| Gambar terlalu besar untuk memori (§6.1.1) | "Gambar ini (N MP) terlalu besar untuk dikonversi dengan memori yang tersedia di PC ini. Tutup aplikasi lain lalu coba lagi, atau pakai gambar yang lebih kecil." (`Error.ImageTooLarge`) |
+| Verifikasi gagal, file tidak ditulis, folder, izin, PDF terkunci, dan sebagainya | Teks yang sudah ada di `Strings.resx` (`Error.*`) |
 
 **Riwayat**
-- Header: "Riwayat" (BodyStrong), `HyperlinkButton` "Hapus riwayat".
+- Header: "Riwayat" (BodyStrong), `CheckBox` "Catat riwayat" (nilai awal hidup; disimpan di `history.json`; saat mati konversi baru tidak dicatat, entri lama tetap sampai dihapus, daftar kosong menampilkan "Riwayat sedang tidak dicatat. Konversi berikutnya tidak akan muncul di sini."), `HyperlinkButton` "Hapus riwayat" (membuka `Flyout` konfirmasi: "Hapus semua riwayat? File hasil konversi tidak ikut terhapus.").
 - `ListView` (`SelectionMode=None`): kotak ikon 32, nama, Caption "ASAL → TUJUAN · waktu", status "Terverifikasi" (Caption, warna sukses, ikon centang 12), tombol ikon folder (`AutomationProperties.Name="Tampilkan di folder"`).
 - Kosong: "Belum ada riwayat konversi."
 - Data: `%LOCALAPPDATA%\Condec\history.json` (nama, asal → tujuan, waktu, path, status verifikasi). Tanpa salinan isi file. Konversi baru masuk paling atas.
+
+#### 6.1.1 Konverter gambar (Windows Imaging Component)
+
+Dipakai Convert File untuk JPG, PNG, BMP, GIF, TIFF, serta WebP dan HEIC. Hanya memakai `Windows.Graphics.Imaging`; tanpa pustaka luar.
+
+- **Format.** Sumber: JPG/JPEG, PNG, BMP, GIF, TIF/TIFF; WebP dan HEIC/HEIF hanya bila dekoder Windows-nya terpasang. Tujuan: JPG, PNG, BMP, GIF, TIFF; HEIC hanya bila Windows bisa menulisnya (§13 #15; dicek dengan satu kali tulis lalu baca). Format sumber tidak ditawarkan sebagai tujuan.
+- **Piksel.** Dibaca sebagai Bgra8 (alfa lurus), dengan rotasi EXIF diterapkan dan warna dikonversi ke sRGB. Format tanpa alfa (JPG, BMP, GIF) menerima gambar yang transparansinya dilebur ke **putih** (tidak hitam). PNG dan TIFF mempertahankan transparansi.
+- **Tidak dibawa:** metadata (EXIF, GPS, profil ICC, teks) dan kualitas khusus. Hanya piksel dan DPI yang ditulis; encoder Windows memakai nilai bawaannya, tanpa pengaturan kualitas (§13 #19).
+- **Banyak frame.** Hanya frame pertama yang dikonversi; catatan Informational memberi tahu jumlahnya (§6.1 Selesai).
+- **Sumber terpotong.** Windows mendekode PNG, JPEG, dan GIF yang terpotong **tanpa galat** dan mengisi bagian yang hilang (sering abu-abu), sehingga verifikasi keluaran saja tidak menangkapnya. `ImageStructure` (Core, portabel) menelusuri struktur file: PNG sampai chunk `IEND` (termasuk 4 byte CRC-nya; nilai CRC tidak diperiksa), JPEG sampai `EOI` (`FFD9`), GIF sampai trailer `3B`, WebP sampai panjang RIFF yang dideklarasikan. Kalau berakhir lebih awal, konversi tetap jalan dan hasilnya membawa Warning. File yang terpotong di dalam header juga dihitung terpotong. BMP dan TIFF tidak diperiksa: Windows sendiri menolaknya (galat dekode). Format lain, dan struktur yang tidak bisa diikuti, tidak dinilai (tanpa catatan).
+- **Ukuran.** Gambar dibaca utuh di memori, 4 byte per piksel, dalam satu array .NET. Gambar dengan lebih dari 536.870.911 piksel (`int.MaxValue / 4`, sekitar 537 MP) ditolak sebelum didekode, dibaca dari header. Kehabisan memori (`E_OUTOFMEMORY`, yang datang sebagai `COMException`, bukan `OutOfMemoryException`) saat dekode atau encode juga menjadi galat yang sama. Pesan: `Error.ImageTooLarge` (§6.1 Gagal). Keduanya memakai `ImageTooLargeException`; angka MP dibulatkan ke bilangan bulat terdekat.
+- **Catatan konverter** adalah jalur umum, bukan khusus gambar: `ConversionRequest.Notes` diisi konverter mana pun, dan `ConversionResult.Notes` membawanya ke layar Selesai. Konverter lain boleh memakainya di tahap berikutnya.
 
 ### 6.2 Upscale Image
 
@@ -539,12 +571,22 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
 | 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]` |
 | 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
+| 19 | Konverter gambar tidak membawa metadata (EXIF, GPS, profil ICC); warna dikonversi ke sRGB, transparansi dilebur ke putih untuk format tanpa alfa (§6.1.1) | `[TERBUKA]`. Sementara: tidak dibawa (juga lebih aman untuk privasi). Perlu opsi "pertahankan metadata"? |
+| 20 | Batas gambar 536.870.911 piksel (`int.MaxValue / 4`, §6.1.1) dan kehabisan memori dianggap "terlalu besar" | `[ASUMSI]`. Batas itu adalah batas satu array .NET; batas nyata bergantung memori mesin dan belum diukur untuk gambar di antara 100 dan 537 MP |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.3] 2026-10-02 (tahap 4: Convert File dan konverter gambar)
+- **Ditambah:** catatan konverter di keadaan Selesai (§6.1): `InfoBar` Warning "File sumber tampak terpotong atau rusak…" dan Informational "File ini berisi N gambar… Hanya yang pertama yang dikonversi." Jalurnya umum (`ConversionRequest.Notes` → `ConversionResult.Notes`), dicatat ke log tanpa path.
+- **Ditambah:** `ImageStructure` (Core, portabel) untuk mendeteksi PNG/JPEG/GIF/WebP yang terpotong; Windows mendekodenya tanpa galat, sehingga sebelumnya konversi "terverifikasi" padahal sumbernya rusak. Penyebabnya ditemukan lewat audit konverter gambar (§6.1.1).
+- **Ditambah:** galat `Error.ImageTooLarge` untuk gambar yang terlalu besar bagi memori (§6.1 Gagal, §6.1.1). Sebelumnya `E_OUTOFMEMORY` jatuh ke "Terjadi galat tak terduga (COMException)".
+- **Ditambah (dokumentasi):** keadaan Gagal dan kotak "Catat riwayat" di §6.1, yang sudah ada di aplikasi tetapi belum tercatat; §6.1.1 Konverter gambar (format, piksel, metadata tidak dibawa, banyak frame).
+- **Dicek:** uji langsung pada build portabel: JPEG terpotong → Warning; GIF 3 frame → Informational; PNG rusak → `Error.Decode`; PNG utuh → tanpa catatan; catatan hilang di konversi berikutnya.
+- **Diajukan:** §13 #19 (metadata) dan #20 (batas piksel), untuk keputusan pemilik.
 
 ### [0.2.2] 2026-10-02 (tahap 3: shell dan Settings)
 - **Ditambah:** shell (§3): `TitleBar` + `NavigationView` (pane 280, mode Auto) + `Frame`, halaman Convert File, Upscale Image, Architecture, Settings. Tema (terang/gelap/ikuti sistem) dan Mica bisa diubah dan berlaku langsung.

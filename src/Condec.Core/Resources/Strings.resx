@@ -270,4 +270,7 @@
   <data name="Settings.Licenses" xml:space="preserve"><value>Third-party licenses</value></data>
   <data name="Settings.LicensesFailed" xml:space="preserve"><value>The license file couldn't be opened.</value></data>
   <data name="Nav.TogglePane" xml:space="preserve"><value>Open or close the navigation menu</value></data>
+  <data name="Note.SourceIncomplete" xml:space="preserve"><value>The source file looks cut off or damaged, so parts of the picture may be missing or gray. Check the result before you use it.</value></data>
+  <data name="Note.FirstFrameOnly" xml:space="preserve"><value>This file holds {0} images (frames or pages). Only the first one was converted.</value></data>
+  <data name="Error.ImageTooLarge" xml:space="preserve"><value>This picture ({0} MP) is too large to convert with the memory this PC has available. Close other apps and try again, or use a smaller picture.</value></data>
 </root>

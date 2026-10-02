@@ -14,7 +14,8 @@ public sealed record ConversionJob(
     ConversionOptions? Options = null);
 
 /// <param name="Sha256">SHA-256 of the saved file, as lower-case hex.</param>
-public sealed record ConversionResult(string OutputPath, long Length, int ChunkCount, string Sha256);
+/// <param name="Notes">What the converter wants the user to know about a result that was saved and verified.</param>
+public sealed record ConversionResult(string OutputPath, long Length, int ChunkCount, string Sha256, IReadOnlyList<ConversionNote>? Notes = null);
 
 /// <summary>
 /// Runs one conversion through Decode, Encode, VerifyChunks and VerifyIntegrity. The output goes to a
@@ -83,9 +84,10 @@ public sealed class ConversionPipeline
         try
         {
             reporter.Report(PipelineStage.Decode, 0);
+            var request = new ConversionRequest(sourcePath, sourceExtension, targetExtension, Stream.Null, job.Options);
             var manifest = await EncodeAsync(
                 converter,
-                new ConversionRequest(sourcePath, sourceExtension, targetExtension, Stream.Null, job.Options),
+                request,
                 tempPath,
                 reporter,
                 ct).ConfigureAwait(false);
@@ -114,7 +116,7 @@ public sealed class ConversionPipeline
             moved = true;
             reporter.Report(PipelineStage.VerifyIntegrity, 1, chunkCount: chunkCount);
 
-            return new ConversionResult(destinationPath, manifest.Length, chunkCount, Convert.ToHexStringLower(manifest.FileHash));
+            return new ConversionResult(destinationPath, manifest.Length, chunkCount, Convert.ToHexStringLower(manifest.FileHash), request.Notes.Items);
         }
         finally
         {

@@ -270,4 +270,7 @@
   <data name="Settings.Licenses" xml:space="preserve"><value>Lisensi pihak ketiga</value></data>
   <data name="Settings.LicensesFailed" xml:space="preserve"><value>File lisensi tidak bisa dibuka.</value></data>
   <data name="Nav.TogglePane" xml:space="preserve"><value>Buka atau tutup menu navigasi</value></data>
+  <data name="Note.SourceIncomplete" xml:space="preserve"><value>File sumber tampak terpotong atau rusak, jadi sebagian gambar bisa hilang atau abu-abu. Periksa hasilnya sebelum dipakai.</value></data>
+  <data name="Note.FirstFrameOnly" xml:space="preserve"><value>File ini berisi {0} gambar (frame atau halaman). Hanya yang pertama yang dikonversi.</value></data>
+  <data name="Error.ImageTooLarge" xml:space="preserve"><value>Gambar ini ({0} MP) terlalu besar untuk dikonversi dengan memori yang tersedia di PC ini. Tutup aplikasi lain lalu coba lagi, atau pakai gambar yang lebih kecil.</value></data>
 </root>
