@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
+using System.Text;
+using System.Text.RegularExpressions;
 using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Exceptions;
@@ -23,21 +25,43 @@ internal static class CadFiles
     /// </remarks>
     public static CadDocument Read(string path, string extension)
     {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         try
         {
             if (extension == ".dwg")
             {
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 return DwgReader.Read(stream);
             }
 
-            using var reader = new DxfReader(stream, null) { Configuration = new DxfReaderConfiguration { CreateDefaults = true } };
+            using var dxf = new MemoryStream(AsR12(File.ReadAllBytes(path)));
+            using var reader = new DxfReader(dxf, null) { Configuration = new DxfReaderConfiguration { CreateDefaults = true } };
             return reader.Read();
         }
         catch (CadNotSupportedException ex)
         {
             throw new UnsupportedCadVersionException(ex.Message, ex);
         }
+    }
+
+    private static readonly Regex OldDxfVersion = new(@"\$ACADVER\s+1\s+(AC10(?:0[0-8]))", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Relabels an ASCII DXF saved as AutoCAD R10 or older (AC1006 and below) as R12 (AC1009). ACadSharp 3.8.0 reads
+    /// the POLYLINE of those versions as unusable placeholders, so a drawing of polylines comes out empty or fails to
+    /// write; the same entities in an AC1009 file read correctly, and the entity layout R10 DXF uses is the same.
+    /// The label has the same length, so nothing else in the file moves.
+    /// </summary>
+    internal static byte[] AsR12(byte[] dxf)
+    {
+        // $ACADVER sits in the HEADER section at the top of the file.
+        var head = Encoding.Latin1.GetString(dxf, 0, Math.Min(dxf.Length, 64 * 1024));
+        var match = OldDxfVersion.Match(head);
+        if (match.Success)
+        {
+            Encoding.ASCII.GetBytes("AC1009").CopyTo(dxf, match.Groups[1].Index);
+        }
+
+        return dxf;
     }
 
     /// <summary>

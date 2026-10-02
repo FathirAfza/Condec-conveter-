@@ -267,6 +267,39 @@ public sealed class CadFileConverterTests : IDisposable
         Assert.Equal(2, dwg.Entities.OfType<ACadSharp.Entities.Line>().Count());
     }
 
+    /// <summary>
+    /// An R10 DXF (AC1006) of POLYLINEs, what image-to-DXF tools write. ACadSharp reads an AC1006 POLYLINE as
+    /// placeholders, so Condec relabels the file as R12 before reading it.
+    /// </summary>
+    [Fact]
+    public async Task R10Dxf_Polylines_ConvertToDwg()
+    {
+        const string polyline =
+            "0\nPOLYLINE\n8\n0\n66\n1\n70\n1\n" +
+            "0\nVERTEX\n8\n0\n10\n0.0\n20\n0.0\n42\n0.25\n0\nVERTEX\n8\n0\n10\n5.0\n20\n0.0\n42\n0.0\n" +
+            "0\nVERTEX\n8\n0\n10\n5.0\n20\n5.0\n42\n0.0\n0\nSEQEND\n";
+
+        var dwg = await ConvertAsync(Dxf("AC1006", polyline + polyline), ".dxf", ".dwg");
+
+        Assert.Equal(2, dwg.Entities.OfType<ACadSharp.Entities.Polyline2D>().Count());
+        Assert.All(dwg.Entities.OfType<ACadSharp.Entities.Polyline2D>(), p => Assert.Equal(3, p.Vertices.Count));
+        Assert.Equal(2, dwg.Entities.Count);
+    }
+
+    [Theory]
+    [InlineData("AC1006", "AC1009")]
+    [InlineData("AC1004", "AC1009")]
+    [InlineData("AC1009", "AC1009")]
+    [InlineData("AC1015", "AC1015")]
+    public void AsR12_RelabelsOnlyDxfOlderThanR12(string from, string to)
+    {
+        var bytes = System.Text.Encoding.ASCII.GetBytes(Dxf(from, Line));
+
+        var result = System.Text.Encoding.ASCII.GetString(CadFiles.AsR12(bytes));
+
+        Assert.Equal(Dxf(to, Line), result);
+    }
+
     [Fact]
     public async Task Dwg_ToDxf_KeepsTheDrawing()
     {
