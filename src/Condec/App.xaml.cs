@@ -33,6 +33,7 @@ public partial class App : Application
         var registry = new ConverterRegistry(
             [
                 new ImageConverter(),
+                new ImageToCadConverter(new WicImageRasterizer()),
                 new PdfToImageConverter(),
                 new PdfToCadConverter(new PdfPageRenderer()),
                 new CadFileConverter(),
