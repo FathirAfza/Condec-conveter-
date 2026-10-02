@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
 using Condec.Core.History;
+using Condec.Core.Localization;
 
 namespace Condec.ViewModels;
 
@@ -18,7 +19,9 @@ internal static class FileGlyphs
     private static readonly HashSet<string> ImageExtensions =
         [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".heic", ".heif", ".webp"];
 
-    public static string For(string extension) => ImageExtensions.Contains(extension) ? Photo : Document;
+    public static bool IsImage(string extension) => ImageExtensions.Contains(extension);
+
+    public static string For(string extension) => IsImage(extension) ? Photo : Document;
 }
 
 /// <summary>The file chosen for conversion.</summary>
@@ -27,10 +30,13 @@ public sealed record SourceFile(string Path, string Extension, long Size, int? P
 {
     public string Name => System.IO.Path.GetFileName(Path);
 
-    /// <summary>"Gambar PNG · 2,4 MB", or "Dokumen PDF · 3 halaman · 1,1 MB".</summary>
-    public string Description => PageCount is { } pages
-        ? $"{FormatCatalog.GetKindName(Extension)} · {pages} halaman · {DisplayFormat.FormatFileSize(Size)}"
-        : $"{FormatCatalog.GetKindName(Extension)} · {DisplayFormat.FormatFileSize(Size)}";
+    /// <summary>"PNG image · 2.4 MB", or "PDF document · 3 pages · 1.1 MB".</summary>
+    public string Description => PageCount switch
+    {
+        1 => Loc.Format("Source.WithOnePage", FormatCatalog.GetKindName(Extension), DisplayFormat.FormatFileSize(Size)),
+        { } pages => Loc.Format("Source.WithPages", FormatCatalog.GetKindName(Extension), pages, DisplayFormat.FormatFileSize(Size)),
+        _ => Loc.Format("Source.Plain", FormatCatalog.GetKindName(Extension), DisplayFormat.FormatFileSize(Size)),
+    };
 
     public string Glyph => FileGlyphs.For(Extension);
 }
@@ -44,10 +50,10 @@ public sealed record FormatOption(TargetOption Option)
 
     public bool IsEnabled => Option.IsEnabled;
 
-    /// <summary>The extension, or "Tidak tersedia" so a disabled format isn't told apart by color alone.</summary>
-    public string Caption => Option.IsEnabled ? Extension : "Tidak tersedia";
+    /// <summary>The extension, or "Unavailable" so a disabled format isn't told apart by color alone.</summary>
+    public string Caption => Option.IsEnabled ? Extension : Loc.Get("Format.Unavailable");
 
-    public override string ToString() => Option.IsEnabled ? $"{DisplayName} ({Extension})" : $"{DisplayName}, tidak tersedia";
+    public override string ToString() => Option.IsEnabled ? $"{DisplayName} ({Extension})" : Loc.Format("Format.UnavailableSpoken", DisplayName);
 }
 
 public enum StepState
@@ -63,7 +69,7 @@ public sealed partial class ConversionStepViewModel : ObservableObject
     public ConversionStepViewModel(string label)
     {
         Label = label;
-        Detail = "Menunggu";
+        Detail = Loc.Get("Step.Waiting");
     }
 
     public string Label { get; }
@@ -104,17 +110,17 @@ public sealed class HistoryItemViewModel
 
     public string Name => Entry.SourceFileName;
 
-    /// <summary>"PNG → JPG · Kemarin, 19.40".</summary>
+    /// <summary>"PNG → JPG · Yesterday, 7:40 PM".</summary>
     public string Summary { get; }
 
     public bool IsVerified => Entry.Verification == VerificationStatus.Verified;
 
     public string Glyph => FileGlyphs.For(Entry.SourceExtension);
 
-    public string AutomationName => IsVerified ? $"{Name}, {Summary}, terverifikasi" : $"{Name}, {Summary}";
+    public string AutomationName => Loc.Format(IsVerified ? "History.VerifiedSpoken" : "History.PlainSpoken", Name, Summary);
 
     /// <summary>Screen readers need the file name: every row has the same folder button.</summary>
-    public string ShowInFolderName => $"Tampilkan {Name} di folder";
+    public string ShowInFolderName => Loc.Format("History.ShowInFolderFor", Name);
 
     public IRelayCommand ShowInFolderCommand { get; }
 }

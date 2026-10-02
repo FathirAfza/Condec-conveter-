@@ -65,7 +65,7 @@ public sealed class ImageConverter : IConverter
         progress.Report(new ConversionProgress(ConversionStage.Encode, 1));
     }
 
-    private static async Task<DecodedImage> DecodeAsync(string path, CancellationToken ct)
+    internal static async Task<DecodedImage> DecodeAsync(string path, CancellationToken ct)
     {
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous);
         using var stream = file.AsRandomAccessStream();
@@ -108,5 +108,6 @@ public sealed class ImageConverter : IConverter
         }
     }
 
-    private sealed record DecodedImage(byte[] Pixels, uint Width, uint Height, double DpiX, double DpiY);
+    /// <summary>A decoded picture as straight-alpha BGRA, in the orientation it is shown with.</summary>
+    internal sealed record DecodedImage(byte[] Pixels, uint Width, uint Height, double DpiX, double DpiY);
 }

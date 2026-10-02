@@ -9,7 +9,7 @@ Bangun aplikasi desktop Windows bernama **Condec**: konverter file native, open 
 2. Tidak boleh ada koneksi jaringan sama sekali: tanpa telemetry, analytics, update checker, atau upload. Semua proses berjalan di perangkat.
 3. Tidak boleh ada fitur yang membuka proteksi DRM atau membongkar password PDF. PDF terkunci cukup ditolak dengan pesan yang jelas.
 4. Setiap tahap baru dianggap selesai kalau `dotnet build` dan semua test lulus.
-5. Identifier kode berbahasa Inggris. Semua teks UI berbahasa Indonesia, dengan sentence case.
+5. Identifier kode berbahasa Inggris. Teks UI memakai sentence case. *(Diubah pemilik, 2 Okt 2026: semula "Semua teks UI berbahasa Indonesia". Kini bahasa aplikasi mengikuti bahasa Windows: Inggris dan Indonesia, selain itu Inggris. Teks ada di `src/Condec.Core/Resources/Strings*.resx`.)*
 
 ## Stack
 - WinUI 3 (Windows App SDK versi stabil terbaru), C#, .NET LTS terbaru yang terpasang, aplikasi packaged (MSIX).

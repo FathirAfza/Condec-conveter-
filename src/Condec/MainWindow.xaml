@@ -57,8 +57,8 @@
                     <TextBlock
                         AutomationProperties.HeadingLevel="Level1"
                         Style="{StaticResource TitleTextBlockStyle}"
-                        Text="Konversi file" />
-                    <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" Text="Pilih file, tentukan format tujuan, lalu simpan." />
+                        local:L.Text="Main.Title" />
+                    <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" local:L.Text="Main.Subtitle" />
                 </StackPanel>
 
                 <!--  Converter card: one of four views is visible at a time.  -->
@@ -120,12 +120,12 @@
                                             <TextBlock
                                                 HorizontalAlignment="Center"
                                                 Style="{StaticResource BodyTextBlockStyle}"
-                                                Text="Seret file ke sini" />
+                                                local:L.Text="Input.DropHere" />
                                             <Button
                                                 x:Name="PickFileButton"
                                                 HorizontalAlignment="Center"
                                                 Command="{x:Bind ViewModel.PickSourceCommand}"
-                                                Content="Pilih file…" />
+                                                local:L.Content="Input.Choose" />
                                         </StackPanel>
                                     </Grid>
 
@@ -149,7 +149,7 @@
                                                 Grid.Column="1"
                                                 VerticalAlignment="Center"
                                                 Spacing="2">
-                                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="File sumber" />
+                                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Source.Label" />
                                                 <TextBlock
                                                     Style="{StaticResource BodyStrongTextBlockStyle}"
                                                     Text="{x:Bind ViewModel.Source.Name, Mode=OneWay, FallbackValue=''}"
@@ -161,9 +161,9 @@
                                             <HyperlinkButton
                                                 Grid.Column="2"
                                                 VerticalAlignment="Center"
-                                                AutomationProperties.Name="Ganti file sumber"
+                                                local:L.AutomationName="Source.ChangeSpoken"
                                                 Command="{x:Bind ViewModel.PickSourceCommand}"
-                                                Content="Ganti" />
+                                                local:L.Content="Source.Change" />
                                         </Grid>
                                     </Border>
                                 </Grid>
@@ -187,7 +187,7 @@
                                             x:Name="FormatComboBox"
                                             SelectionChanged="FormatComboBox_SelectionChanged"
                                             HorizontalAlignment="Stretch"
-                                            Header="Ubah ke format"
+                                            local:L.Header="Format.Header"
                                             IsEnabled="{x:Bind ViewModel.HasSource, Mode=OneWay}"
                                             ItemsSource="{x:Bind ViewModel.TargetOptions}"
                                             PlaceholderText="{x:Bind ViewModel.FormatPlaceholder, Mode=OneWay}"
@@ -214,6 +214,17 @@
                                 </Border>
                             </Grid>
 
+                            <!--  Pictures going to CAD are traced, which suits line art best.  -->
+                            <InfoBar
+                                Grid.Row="2"
+                                Margin="0,20,0,0"
+                                IsClosable="False"
+                                IsOpen="True"
+                                Severity="Informational"
+                                local:L.Message="Image.TraceMessage"
+                                local:L.Title="Image.TraceTitle"
+                                Visibility="{x:Bind ViewModel.ShowsImageTraceNotice, Mode=OneWay}" />
+
                             <!--  PDF options: the page for image and CAD targets; unit, scale and switches for CAD only.  -->
                             <StackPanel
                                 Grid.Row="2"
@@ -230,7 +241,7 @@
                                     <InfoBar.ActionButton>
                                         <Button
                                             Command="{x:Bind ViewModel.PickSourceCommand}"
-                                            Content="Pilih file lain"
+                                            local:L.Content="Pdf.ChooseAnother"
                                             Visibility="{x:Bind ViewModel.Pdf.IsScan, Mode=OneWay}" />
                                     </InfoBar.ActionButton>
                                 </InfoBar>
@@ -243,7 +254,7 @@
                                     </Grid.ColumnDefinitions>
                                     <ComboBox
                                         HorizontalAlignment="Stretch"
-                                        Header="Satuan gambar"
+                                        local:L.Header="Cad.UnitHeader"
                                         ItemsSource="{x:Bind ViewModel.Pdf.Units}"
                                         SelectedItem="{x:Bind ViewModel.Pdf.SelectedUnit, Mode=TwoWay}"
                                         Visibility="{x:Bind ViewModel.ShowsCadOptions, Mode=OneWay}" />
@@ -253,14 +264,14 @@
                                         Visibility="{x:Bind ViewModel.ShowsCadOptions, Mode=OneWay}">
                                         <ComboBox
                                             HorizontalAlignment="Stretch"
-                                            Header="Skala gambar"
+                                            local:L.Header="Cad.ScaleHeader"
                                             ItemsSource="{x:Bind ViewModel.Pdf.Scales}"
                                             SelectedItem="{x:Bind ViewModel.Pdf.SelectedScale, Mode=TwoWay}" />
                                         <NumberBox
-                                            AutomationProperties.Name="Skala kustom, 1 banding"
-                                            Header="Skala kustom, 1 : n"
+                                            local:L.AutomationName="Cad.CustomScaleSpoken"
+                                            local:L.Header="Cad.CustomScaleHeader"
                                             Minimum="1"
-                                            PlaceholderText="1 : n"
+                                            local:L.PlaceholderText="Cad.CustomScalePlaceholder"
                                             SpinButtonPlacementMode="Compact"
                                             Value="{x:Bind ViewModel.Pdf.CustomDenominator, Mode=TwoWay}"
                                             Visibility="{x:Bind ViewModel.Pdf.IsCustomScale, Mode=OneWay}" />
@@ -268,7 +279,7 @@
                                     <ComboBox
                                         Grid.Column="{x:Bind PageColumn(ViewModel.ShowsCadOptions), Mode=OneWay}"
                                         HorizontalAlignment="Stretch"
-                                        Header="Halaman"
+                                        local:L.Header="Cad.PageHeader"
                                         ItemsSource="{x:Bind ViewModel.Pdf.Pages, Mode=OneWay}"
                                         SelectedItem="{x:Bind ViewModel.Pdf.SelectedPage, Mode=TwoWay}" />
                                 </Grid>
@@ -280,13 +291,13 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" Text="Pertahankan teks sebagai teks" />
+                                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Cad.KeepText" />
                                             <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.Pdf.KeepTextNote, Mode=OneWay}" />
                                         </StackPanel>
                                         <ToggleSwitch
                                             Grid.Column="1"
                                             MinWidth="0"
-                                            AutomationProperties.Name="Pertahankan teks sebagai teks"
+                                            local:L.AutomationName="Cad.KeepText"
                                             IsEnabled="{x:Bind ViewModel.Pdf.CanKeepText, Mode=OneWay}"
                                             IsOn="{x:Bind ViewModel.Pdf.KeepText, Mode=TwoWay}"
                                             OffContent=""
@@ -298,13 +309,13 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" Text="Gabungkan garis bersambung" />
-                                            <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="Menjadi satu polyline" />
+                                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Cad.JoinLines" />
+                                            <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Cad.JoinLinesNote" />
                                         </StackPanel>
                                         <ToggleSwitch
                                             Grid.Column="1"
                                             MinWidth="0"
-                                            AutomationProperties.Name="Gabungkan garis bersambung"
+                                            local:L.AutomationName="Cad.JoinLines"
                                             IsOn="{x:Bind ViewModel.Pdf.JoinLines, Mode=TwoWay}"
                                             OffContent=""
                                             OnContent="" />
@@ -332,7 +343,7 @@
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         Style="{StaticResource SecondaryCaptionTextStyle}"
-                                        Text="Diproses sepenuhnya di perangkat ini. Tidak ada file yang diunggah." />
+                                        local:L.Text="Privacy.Note" />
                                 </StackPanel>
                                 <Button
                                     x:Name="ConvertButton"
@@ -368,7 +379,7 @@
                                     Grid.Column="1"
                                     VerticalAlignment="Top"
                                     Command="{x:Bind ViewModel.CancelCommand}"
-                                    Content="Batal">
+                                    local:L.Content="Processing.Cancel">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="Escape" />
                                     </Button.KeyboardAccelerators>
@@ -382,7 +393,7 @@
                                 </Grid.ColumnDefinitions>
                                 <ProgressBar
                                     VerticalAlignment="Center"
-                                    AutomationProperties.Name="Kemajuan konversi"
+                                    local:L.AutomationName="Processing.ProgressSpoken"
                                     Maximum="100"
                                     Value="{x:Bind ViewModel.ProgressPercent, Mode=OneWay}" />
                                 <TextBlock
@@ -449,9 +460,9 @@
                             <InfoBar
                                 IsClosable="False"
                                 IsOpen="True"
-                                Message="File berhasil disimpan dan lolos verifikasi chunk serta cek integritas."
+                                local:L.Message="Done.Message"
                                 Severity="Success"
-                                Title="Konversi selesai" />
+                                local:L.Title="Done.Title" />
                             <Grid ColumnSpacing="16" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="96" />
@@ -462,7 +473,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" Text="Lokasi" />
+                                <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" local:L.Text="Done.Location" />
                                 <TextBlock
                                     Grid.Column="1"
                                     IsTextSelectionEnabled="True"
@@ -474,7 +485,7 @@
                                 <TextBlock
                                     Grid.Row="1"
                                     Style="{StaticResource SecondaryBodyTextStyle}"
-                                    Text="Format" />
+                                    local:L.Text="Done.Format" />
                                 <TextBlock
                                     Grid.Row="1"
                                     Grid.Column="1"
@@ -483,7 +494,7 @@
                                 <TextBlock
                                     Grid.Row="2"
                                     Style="{StaticResource SecondaryBodyTextStyle}"
-                                    Text="Integritas" />
+                                    local:L.Text="Done.Integrity" />
                                 <TextBlock
                                     Grid.Row="2"
                                     Grid.Column="1"
@@ -502,10 +513,10 @@
                                     <Button
                                         x:Name="OpenResultButton"
                                         Command="{x:Bind ViewModel.OpenResultCommand}"
-                                        Content="Buka file"
+                                        local:L.Content="Done.OpenFile"
                                         Style="{StaticResource AccentButtonStyle}" />
-                                    <Button Command="{x:Bind ViewModel.ShowResultInFolderCommand}" Content="Tampilkan di folder" />
-                                    <HyperlinkButton Command="{x:Bind ViewModel.ConvertAnotherCommand}" Content="Konversi file lain" />
+                                    <Button Command="{x:Bind ViewModel.ShowResultInFolderCommand}" local:L.Content="Done.ShowInFolder" />
+                                    <HyperlinkButton Command="{x:Bind ViewModel.ConvertAnotherCommand}" local:L.Content="Done.ConvertAnother" />
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -517,7 +528,7 @@
                                 IsOpen="True"
                                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                                 Severity="Error"
-                                Title="Konversi gagal" />
+                                local:L.Title="Failed.Title" />
                             <Grid ColumnSpacing="16" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="96" />
@@ -527,7 +538,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" Text="File" />
+                                <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" local:L.Text="Failed.File" />
                                 <TextBlock
                                     Grid.Column="1"
                                     Style="{StaticResource BodyTextBlockStyle}"
@@ -537,7 +548,7 @@
                                 <TextBlock
                                     Grid.Row="1"
                                     Style="{StaticResource SecondaryBodyTextStyle}"
-                                    Text="Format" />
+                                    local:L.Text="Done.Format" />
                                 <TextBlock
                                     Grid.Row="1"
                                     Grid.Column="1"
@@ -548,9 +559,9 @@
                                 <Button
                                     x:Name="RetryButton"
                                     Command="{x:Bind ViewModel.RetryCommand}"
-                                    Content="Coba lagi"
+                                    local:L.Content="Failed.TryAgain"
                                     Style="{StaticResource AccentButtonStyle}" />
-                                <Button Command="{x:Bind ViewModel.BackToInputCommand}" Content="Ubah pilihan" />
+                                <Button Command="{x:Bind ViewModel.BackToInputCommand}" local:L.Content="Failed.ChangeChoice" />
                             </StackPanel>
                         </StackPanel>
                     </Grid>
@@ -579,25 +590,25 @@
                                 VerticalAlignment="Center"
                                 AutomationProperties.HeadingLevel="Level2"
                                 Style="{StaticResource BodyStrongTextBlockStyle}"
-                                Text="Riwayat" />
+                                local:L.Text="History.Title" />
                             <CheckBox
                                 Grid.Column="1"
                                 MinWidth="0"
-                                Content="Catat riwayat"
+                                local:L.Content="History.Record"
                                 IsChecked="{x:Bind ViewModel.IsHistoryEnabled, Mode=TwoWay}" />
                             <HyperlinkButton
                                 Grid.Column="2"
                                 Click="OnClearHistoryClicked"
-                                Content="Hapus riwayat"
+                                local:L.Content="History.Clear"
                                 IsEnabled="{x:Bind ViewModel.HasHistory, Mode=OneWay}">
                                 <FlyoutBase.AttachedFlyout>
                                     <Flyout x:Name="ClearHistoryFlyout">
                                         <StackPanel MaxWidth="280" Spacing="12">
-                                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" Text="Hapus semua riwayat? File hasil konversi tidak ikut terhapus." />
+                                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="History.ClearConfirm" />
                                             <Button
                                                 Click="OnClearHistoryConfirmed"
                                                 Command="{x:Bind ViewModel.ClearHistoryCommand}"
-                                                Content="Hapus" />
+                                                local:L.Content="History.ClearConfirmButton" />
                                         </StackPanel>
                                     </Flyout>
                                 </FlyoutBase.AttachedFlyout>
@@ -663,7 +674,7 @@
                                                 <TextBlock
                                                     Foreground="{ThemeResource SystemFillColorSuccessBrush}"
                                                     Style="{StaticResource CaptionTextBlockStyle}"
-                                                    Text="Terverifikasi" />
+                                                    local:L.Text="History.Verified" />
                                             </StackPanel>
                                             <Button
                                                 Grid.Column="3"
@@ -673,7 +684,7 @@
                                                 AutomationProperties.Name="{x:Bind ShowInFolderName}"
                                                 Command="{x:Bind ShowInFolderCommand}"
                                                 Style="{StaticResource SubtleButtonStyle}"
-                                                ToolTipService.ToolTip="Tampilkan di folder">
+                                                local:L.ToolTip="Done.ShowInFolder">
                                                 <FontIcon FontSize="16" Glyph="&#xE838;" />
                                             </Button>
                                         </Grid>

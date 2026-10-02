@@ -115,7 +115,7 @@ public static class ScanVectorizer
         // Points are stored doubled (so edge midpoints are integers) and packed into one long.
         static long Key(int x2, int y2) => ((long)x2 << 32) | (uint)y2;
 
-        var neighbours = new Dictionary<long, (long A, long B)>();
+        var neighbours = new Dictionary<long, (long A, long B)>(PointKeyComparer.Instance);
         void Link(long from, long to)
         {
             neighbours[from] = neighbours.TryGetValue(from, out var n) ? (n.A, to) : (to, long.MinValue);
@@ -153,7 +153,7 @@ public static class ScanVectorizer
         }
 
         var contours = new List<List<(double X, double Y)>>();
-        var visited = new HashSet<long>();
+        var visited = new HashSet<long>(PointKeyComparer.Instance);
         foreach (var start in neighbours.Keys)
         {
             if (!visited.Add(start))
@@ -177,6 +177,20 @@ public static class ScanVectorizer
         return contours;
 
         static (double X, double Y) Unpack(long key) => ((key >> 32) / 2.0, (int)(uint)key / 2.0);
+    }
+
+    /// <summary>
+    /// Hashes a packed point so nearby points spread out. The default hash of a long is its two halves XORed,
+    /// which puts every point with the same x2 ^ y2 in one bucket; on a large noisy picture that made tracing
+    /// quadratic (a 1200 × 800 speckled picture took 37 seconds).
+    /// </summary>
+    private sealed class PointKeyComparer : IEqualityComparer<long>
+    {
+        public static readonly PointKeyComparer Instance = new();
+
+        public bool Equals(long x, long y) => x == y;
+
+        public int GetHashCode(long key) => (int)(((ulong)key * 0x9E3779B97F4A7C15UL) >> 32);
     }
 
     /// <summary>Ramer–Douglas–Peucker for a closed outline: split at the point farthest from the first, simplify both halves.</summary>

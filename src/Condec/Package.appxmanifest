@@ -10,7 +10,7 @@
   <Identity
     Name="Condec"
     Publisher="CN=Condec"
-    Version="0.1.0.2" />
+    Version="0.1.0.3" />
 
   <Properties>
     <DisplayName>Condec</DisplayName>
@@ -23,8 +23,10 @@
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
 
+  <!-- The languages Condec has strings for; see Condec.Core Resources/Strings.*.resx. -->
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="en-US" />
+    <Resource Language="id-ID" />
   </Resources>
 
   <Applications>
@@ -33,7 +35,7 @@
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="Condec"
-        Description="Konversi file sepenuhnya di perangkat ini."
+        Description="Convert files entirely on this device."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

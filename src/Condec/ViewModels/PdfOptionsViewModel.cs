@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Condec.Core.Conversion;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Microsoft.UI.Xaml.Controls;
 
@@ -20,7 +20,7 @@ public sealed record Choice<T>(T Value, string Label)
 /// </summary>
 public sealed partial class PdfOptionsViewModel : ObservableObject
 {
-    /// <summary>A custom scale is entered in a NumberBox; this marks the "Kustom" entry.</summary>
+    /// <summary>A custom scale is entered in a NumberBox; this marks the "Custom" entry.</summary>
     private const double CustomScale = 0;
 
     private string? _path;
@@ -28,10 +28,10 @@ public sealed partial class PdfOptionsViewModel : ObservableObject
 
     public IReadOnlyList<Choice<CadUnit>> Units { get; } =
     [
-        new(CadUnit.Millimeters, "Milimeter (mm)"),
-        new(CadUnit.Centimeters, "Sentimeter (cm)"),
-        new(CadUnit.Meters, "Meter (m)"),
-        new(CadUnit.Inches, "Inci (in)"),
+        new(CadUnit.Millimeters, Loc.Get("Unit.Mm")),
+        new(CadUnit.Centimeters, Loc.Get("Unit.Cm")),
+        new(CadUnit.Meters, Loc.Get("Unit.M")),
+        new(CadUnit.Inches, Loc.Get("Unit.In")),
     ];
 
     public IReadOnlyList<Choice<double>> Scales { get; } =
@@ -40,7 +40,7 @@ public sealed partial class PdfOptionsViewModel : ObservableObject
         new(50, "1 : 50"),
         new(100, "1 : 100"),
         new(200, "1 : 200"),
-        new(CustomScale, "Kustom"),
+        new(CustomScale, Loc.Get("Scale.Custom")),
     ];
 
     public List<Choice<int>> Pages { get; private set; } = [];
@@ -84,20 +84,20 @@ public sealed partial class PdfOptionsViewModel : ObservableObject
 
     public bool CanKeepText => !IsScan;
 
-    public string KeepTextNote => IsScan ? "Tidak tersedia untuk PDF hasil scan" : "Disimpan sebagai entitas TEXT, bukan garis";
+    public string KeepTextNote => Loc.Get(IsScan ? "Pdf.KeepTextNoteScan" : "Pdf.KeepTextNote");
 
     public string KindTitle => PageKind switch
     {
-        PdfPageKind.Scan => "PDF hasil scan terdeteksi",
-        PdfPageKind.Empty => "Halaman ini kosong",
-        _ => "PDF vektor terdeteksi",
+        PdfPageKind.Scan => Loc.Get("Pdf.KindScanTitle"),
+        PdfPageKind.Empty => Loc.Get("Pdf.KindEmptyTitle"),
+        _ => Loc.Get("Pdf.KindVectorTitle"),
     };
 
     public string KindMessage => PageKind switch
     {
-        PdfPageKind.Scan => "Isinya gambar piksel, bukan garis. Hasil DXF berupa jejak garis perkiraan dan tidak presisi untuk ukuran.",
-        PdfPageKind.Empty => "Tidak ada garis, teks, atau gambar yang bisa diubah. Pilih halaman lain.",
-        _ => "Garis, busur, dan teks akan diubah menjadi objek CAD.",
+        PdfPageKind.Scan => Loc.Get("Pdf.KindScanMessage"),
+        PdfPageKind.Empty => Loc.Get("Pdf.KindEmptyMessage"),
+        _ => Loc.Get("Pdf.KindVectorMessage"),
     };
 
     public InfoBarSeverity KindSeverity => PageKind switch
@@ -110,7 +110,7 @@ public sealed partial class PdfOptionsViewModel : ObservableObject
     public void Load(string path, int pageCount)
     {
         _path = path;
-        Pages = [.. Enumerable.Range(1, pageCount).Select(n => new Choice<int>(n, string.Create(CultureInfo.InvariantCulture, $"Halaman {n} dari {pageCount}")))];
+        Pages = [.. Enumerable.Range(1, pageCount).Select(n => new Choice<int>(n, Loc.Format("Pdf.PageOf", n, pageCount)))];
         OnPropertyChanged(nameof(Pages));
         SelectedUnit ??= Units[0];
         SelectedScale ??= Scales[0];

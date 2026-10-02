@@ -1,120 +1,137 @@
 # Condec
 
-Condec adalah aplikasi konverter file untuk Windows: gambar, dokumen, PDF, dan gambar CAD, semuanya diproses di perangkat Anda sendiri. Tidak ada file yang diunggah, tidak ada koneksi internet yang dipakai, dan tidak ada telemetri.
+Condec is a file converter for Windows: images, documents, PDFs and CAD drawings, all processed on your own device. No file is uploaded, no internet connection is used, and there is no telemetry.
 
-Dibangun dengan WinUI 3 (Windows App SDK), .NET 10, dan dipaketkan sebagai MSIX. Lisensi: GPL-3.0-or-later.
+Built with WinUI 3 (Windows App SDK) and .NET 10, packaged as MSIX. License: GPL-3.0-or-later.
 
-## Fitur utama
+## Features
 
-- **Verifikasi hasil.** Setiap konversi melewati empat tahap: dekode, encode, verifikasi chunk (SHA-256 per 1 MiB yang dibaca ulang dari disk), dan cek integritas (SHA-256 seluruh file lalu file dibuka ulang dengan decoder yang sesuai). File hanya disimpan kalau semua tahap lulus, jadi tidak pernah ada file setengah jadi.
-- **Riwayat lokal.** Nama file, format, waktu, lokasi output, dan status verifikasi disimpan di `%LOCALAPPDATA%\Condec\history.json`. Tidak ada salinan isi file. Riwayat bisa dihapus atau dimatikan.
-- **PDF → DXF/DWG.** Garis, busur, lingkaran, kurva, dan teks PDF vektor menjadi objek CAD yang bisa disunting, dengan pilihan satuan, skala, dan halaman. PDF hasil scan ditelusuri menjadi polyline.
-- **Tampilan Fluent.** Mengikuti tema terang, gelap, dan kontras tinggi Windows 11.
+- **Verified results.** Every conversion goes through four stages: decode, encode, chunk verification (SHA-256 of each 1 MiB, read back from disk) and an integrity check (SHA-256 of the whole file, then the file is reopened with the matching decoder). A file is saved only when every stage passes, so there is never a half-written file.
+- **Local history.** File name, format, time, output location and verification status are kept in `%LOCALAPPDATA%\Condec\history.json`. No copy of any file's contents is kept. History can be cleared or switched off.
+- **PDF → DXF/DWG.** Lines, arcs, circles, curves and text of a vector PDF become editable CAD objects, with a choice of unit, scale and page. A scanned PDF is traced into polylines.
+- **Picture → DXF/DWG.** PNG, JPG, HEIC and other pictures are traced into closed outlines, sized in millimeters from the picture's resolution. A DWG is made from the DXF, the same steps as converting the DXF yourself.
+- **Your language.** The app follows the Windows language list: English and Indonesian today, English for any other language.
+- **Fluent look.** Follows the Windows 11 light, dark and high-contrast themes.
 
-## Format yang didukung
+## Supported formats
 
-Daftar format di aplikasi diambil dari mesin pengguna secara dinamis. Format yang codec-nya tidak ada tidak ditampilkan.
+The format list in the app is built from what the machine can actually do. A format whose codec is missing is not offered.
 
-| Sumber | Tujuan | Mesin |
+| Source | Target | Engine |
 |---|---|---|
 | JPG, PNG, BMP, GIF, TIFF | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | Windows Imaging Component (`Windows.Graphics.Imaging`) |
 | HEIC, HEIF, WebP² | JPG, PNG, BMP, GIF, TIFF | Windows Imaging Component |
-| PDF (satu halaman) | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | `Windows.Data.Pdf` |
-| PDF (satu halaman) | DXF, DWG (AutoCAD 2000) | PdfPig + ACadSharp |
-| PDF | DOCX, DOC, ODT, PPTX, PPT, ODP | LibreOffice (impor PDF ke Writer atau Impress) |
+| JPG, PNG, BMP, GIF, TIFF, HEIC², WebP² | DXF, DWG (AutoCAD 2000) | Windows Imaging Component, outline tracing, ACadSharp |
+| PDF (one page) | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | `Windows.Data.Pdf` |
+| PDF (one page) | DXF, DWG (AutoCAD 2000) | PdfPig + ACadSharp |
+| PDF | DOCX, DOC, ODT, PPTX, PPT, ODP | LibreOffice (PDF import into Writer or Impress) |
 | DOCX, DOC, ODT, RTF, TXT | PDF, DOCX, DOC, ODT, RTF | LibreOffice |
 | XLSX, XLS, ODS | PDF, XLSX, XLS, ODS | LibreOffice |
 | PPTX, PPT, ODP | PDF, PPTX, PPT, ODP | LibreOffice |
-| DXF, DWG | PDF | ACadSharp (DWG → DXF) lalu LibreOffice Draw |
+| DXF, DWG | PDF | ACadSharp (DWG → DXF), then LibreOffice Draw |
 | DXF ↔ DWG | DWG, DXF | ACadSharp |
 
-¹ HEIC hanya ditawarkan kalau codec HEVC terpasang dan terbukti bisa dipakai.
-² Hanya kalau decoder HEIF atau WebP terpasang di Windows (ekstensi dari Microsoft Store).
+¹ HEIC is offered only when the HEVC codec is installed and has been proven to work.
+² Only when the HEIF or WebP decoder is installed in Windows (extensions from the Microsoft Store).
 
-Konversi audio/video (`Windows.Media.Transcoding`) sedang dikerjakan.
+Audio and video conversion (`Windows.Media.Transcoding`) is still being worked on.
 
-LibreOffice dibawa di dalam paket Condec x64, jadi tidak perlu memasang aplikasi lain. Kalau LibreOffice sudah terpasang di sistem, versi itulah yang dipakai.
+LibreOffice ships inside the x64 Condec package, so no other app needs to be installed. If LibreOffice is already installed on the system, that copy is used.
 
 ### PDF → DXF/DWG
 
-- Garis menjadi LINE atau LWPOLYLINE (garis bersambung digabung, juga kalau digambar terpisah di PDF). Bézier yang membentuk lingkaran menjadi ARC atau CIRCLE, kurva lain menjadi satu SPLINE per rangkaian.
-- Isian padat yang dipecah produser PDF menjadi segitiga digabung kembali menjadi satu outline tertutup, sehingga tidak ada diagonal palsu. Cat putih di atas kertas (latar, penutup) dibuang.
-- Teks menjadi TEXT per baris, bukan per kata. Teks tersembunyi (lapisan OCR) dibuang, kecuali yang menjadi pasangan huruf yang digambar sebagai outline; outline-nya diganti TEXT yang bisa disunting.
-- Geometri di luar halaman dan di luar jendela clipping PDF (viewport) dipotong, sehingga objek yang tidak terlihat di viewer tidak ikut masuk.
-- Warna PDF dipetakan ke indeks warna AutoCAD terdekat.
-- Satuan: 1 point PDF = 1/72 inci, dikali skala yang dipilih. `$INSUNITS` diisi sesuai satuan.
-- PDF terenkripsi (termasuk yang hanya dibatasi izinnya) ditolak. Condec tidak membuka proteksi apa pun.
+- Lines become LINE or LWPOLYLINE (connected lines are joined, even when the PDF draws them separately). Béziers that form a circle become ARC or CIRCLE; other curves become one SPLINE per run.
+- Solid fills that the PDF producer split into triangles are merged back into one closed outline, so there are no false diagonals. White paint over paper (backgrounds, masks) is dropped.
+- Text becomes one TEXT per line, not per word. Hidden text (an OCR layer) is dropped, except where it pairs with letters drawn as outlines; those outlines are replaced with editable TEXT.
+- Geometry outside the page and outside the PDF's clipping window (viewport) is cut off, so objects that aren't visible in a viewer don't come along.
+- PDF colors are mapped to the nearest AutoCAD color index.
+- Units: 1 PDF point = 1/72 inch, times the chosen scale. `$INSUNITS` is set to match.
+- Encrypted PDFs (including ones that only restrict permissions) are refused. Condec doesn't remove any protection.
 
-## Privasi
+### Picture → DXF/DWG
 
-- Tidak ada kode jaringan di Condec. Ada unit test yang memastikan `Condec.Core` tidak mereferensikan assembly `System.Net.*`.
-- Manifest MSIX tidak mendeklarasikan capability `internetClient`.
-- LibreOffice yang dibawa dijalankan dalam mode headless dengan pengecekan update dimatikan.
-- Keterbatasan verifikasi: pembacaan ulang file untuk verifikasi chunk bisa dilayani cache sistem operasi, jadi verifikasi ini menangkap kesalahan tulis di sisi aplikasi, bukan kerusakan media penyimpanan.
+- The dark shapes are found with Otsu thresholding and traced into closed LWPOLYLINE outlines (marching squares, then Ramer–Douglas–Peucker simplification). Light shapes on a dark background are flipped first, so the shapes are traced and not the background.
+- This works best for drawings, logos and scans. A photo gives only a rough result.
+- The drawing is in millimeters, sized from the picture's resolution (96 dpi when the file doesn't state one). A picture larger than 3000 pixels is averaged down before tracing.
+- For DWG, the traced drawing is written as DXF first, read back, and converted to DWG.
+- Old DXF files (AutoCAD R10 and older, which many image-to-DXF tools write) are read as R12, so their polylines come through.
 
-## Unduh dan pasang
+## Privacy
 
-Setiap rilis di halaman [Releases](../../releases) menyediakan dua bentuk.
+- There is no network code in Condec. A unit test makes sure `Condec.Core` doesn't reference the `System.Net.*` assemblies.
+- The MSIX manifest doesn't declare the `internetClient` capability.
+- The bundled LibreOffice runs headless with its update check switched off.
+- A limit of the verification: the read-back for chunk verification can be served from the operating system's cache, so it catches write mistakes made by the app, not damage to the storage medium.
 
-**Portable (paling cepat untuk dicoba).** Unduh `Condec_<versi>_x64_portable.zip`, ekstrak ke folder mana saja, lalu jalankan `Condec.exe`. Tidak ada yang dipasang. Karena berkasnya belum ditandatangani penerbit tepercaya, SmartScreen mungkin bertanya sekali: pilih "More info" lalu "Run anyway".
+## Download and install
 
-**MSIX (terpasang, ada di Start menu).** Versi pra-rilis ditandatangani sertifikat uji, jadi sekali saja sertifikat `Condec.cer` perlu diimpor dari PowerShell administrator:
+Every release on the [Releases](../../releases) page offers two forms.
+
+**Portable (the quickest way to try it).** Download `Condec_<version>_x64_portable.zip`, extract it to any folder, and run `Condec.exe`. Nothing is installed. Because the files aren't signed by a trusted publisher yet, SmartScreen may ask once: choose "More info" and then "Run anyway".
+
+**MSIX (installed, in the Start menu).** Pre-release builds are signed with a test certificate, and each build has its own, so import the certificate of the build you install. In PowerShell as administrator, one command at a time:
 
 ```powershell
-Import-Certificate -FilePath .\Condec.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
-Add-AppxPackage -Path .\Condec_<versi>_x64.msix
+cd "$env:USERPROFILE\Downloads"
+Export-Certificate -Cert (Get-AuthenticodeSignature .\Condec_<version>_x64.msix).SignerCertificate -FilePath .\condec-signer.cer
+Import-Certificate -FilePath .\condec-signer.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+Add-AppxPackage -Path .\Condec_<version>_x64.msix
 ```
 
-Prasyarat: Windows 10 1809 atau lebih baru, 64-bit. MSIX juga membutuhkan Windows App Runtime 2.5 (App Installer biasanya mengunduhnya sendiri); versi portable sudah membawanya. Rilis dibuat oleh workflow `.github/workflows/release.yml` di runner Windows setiap kali tag `v*` dipush: build, semua test, unduh dan pangkas LibreOffice, pack dan tanda tangan MSIX, publish portable, lalu unggah `.msix`, `.cer`, `_portable.zip`, dan `SHA256SUMS.txt`.
+Close Condec before updating it. Requirements: Windows 10 1809 or later, 64-bit. The MSIX also needs the Windows App Runtime 2.5 (App Installer usually downloads it); the portable build already includes it.
 
-## Cara build
+Releases are built by the workflow `.github/workflows/release.yml` on a Windows runner whenever a `v*` tag is pushed: build, all tests, download and trim LibreOffice, pack and sign the MSIX, publish the portable build, then upload the `.msix`, `.cer`, `_portable.zip` and `SHA256SUMS.txt`.
 
-Prasyarat di Windows 10 1809 atau lebih baru:
+## Building
+
+Prerequisites on Windows 10 1809 or later:
 
 - .NET 10 SDK.
-- Windows App Runtime 2.5 (`Microsoft.WindowsAppRuntime.2`) untuk menjalankan aplikasi. Untuk men-deploy dari IDE, Visual Studio dengan workload WinUI/Windows App SDK dan Developer Mode aktif.
-- PowerShell untuk skrip di `tools\`.
+- Windows App Runtime 2.5 (`Microsoft.WindowsAppRuntime.2`) to run the app. To deploy from an IDE, Visual Studio with the WinUI / Windows App SDK workload and Developer Mode on.
+- PowerShell for the scripts in `tools\`.
 
 ```powershell
-# Sekali: mengunduh MSI LibreOffice resmi (SHA-256 dipin), mengekstraknya tanpa memasang,
-# dan memangkasnya ke third_party\libreoffice (diabaikan git).
+# Once: download the official LibreOffice MSI (SHA-256 pinned), extract it without installing,
+# and trim it into third_party\libreoffice (ignored by git).
 tools\fetch-libreoffice.ps1
 
 dotnet build Condec.sln
 dotnet test --solution Condec.sln
 
-# Paket untuk dibagikan: MSIX bertanda tangan uji, dan zip portable dengan Condec.exe.
+# Packages to share: an MSIX signed with a test certificate, and a portable zip with Condec.exe.
 tools\pack-test-msix.ps1
 tools\publish-portable.ps1
-
-# MSIX Release x64 yang ditandatangani sertifikat uji, di dist\
-tools\pack-test-msix.ps1
 ```
 
-Jalankan test dari PowerShell dengan `--solution` atau `--project`; runner Microsoft.Testing.Platform menganggap argumen posisi sebagai argumen untuk test host.
+Run the tests from PowerShell with `--solution` or `--project`; the Microsoft.Testing.Platform runner treats a positional argument as an argument for the test host.
 
-Di Linux atau macOS hanya `Condec.Core` dan test lintas-platform yang bisa di-build:
+On Linux or macOS only `Condec.Core` and the cross-platform tests can be built:
 
 ```sh
 dotnet build Condec.Portable.slnf
 dotnet test --solution Condec.Portable.slnf
 ```
 
-Output build di mesin non-Windows diarahkan ke `~/.cache/condec-artifacts`.
+Build output on non-Windows machines goes to `~/.cache/condec-artifacts`.
 
-## Struktur
+## Languages
+
+All texts are string resources in `src/Condec.Core/Resources`: `Strings.resx` is English (the neutral language) and `Strings.<language>.resx` is a translation. To add a language, copy `Strings.resx` to `Strings.<language code>.resx`, translate the values, and add the code to `Languages.Supported`. The tests check that every language has the same keys and placeholders as English.
+
+## Layout
 
 ```
-src/Condec/          aplikasi WinUI 3 (MVVM dengan CommunityToolkit.Mvvm), MSIX
-src/Condec.Core/     kontrak konverter, pipeline 4 tahap, verifikasi, riwayat, PDF → CAD
-                     Platform/Windows/: konverter yang memakai API WinRT dan LibreOffice
-tests/Condec.Tests/  xUnit v3; Windows/ hanya jalan di Windows
-tools/               skrip PowerShell untuk LibreOffice dan MSIX
-docs/                spesifikasi, rencana, dan catatan serah terima
+src/Condec/          the WinUI 3 app (MVVM with CommunityToolkit.Mvvm), MSIX
+src/Condec.Core/     converter contracts, the 4-stage pipeline, verification, history, PDF and picture → CAD
+                     Platform/Windows/: converters that use WinRT APIs and LibreOffice
+                     Resources/: the strings in each language
+tests/Condec.Tests/  xUnit v3; Windows/ runs only on Windows
+tools/               PowerShell scripts for LibreOffice and MSIX
+docs/                specification, plan and handoff notes
 ```
 
-## Lisensi
+## License
 
-Condec berlisensi [GNU GPL versi 3 atau yang lebih baru](LICENSE), dengan [izin tambahan](LICENSE-ADDITIONAL-PERMISSION.md) (GPLv3 pasal 7) untuk menggabungkannya dengan Windows App SDK dan komponen Windows lain. Daftar dependensi beserta lisensinya ada di [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Condec is licensed under the [GNU GPL version 3 or later](LICENSE), with an [additional permission](LICENSE-ADDITIONAL-PERMISSION.md) (GPLv3 section 7) to combine it with the Windows App SDK and other Windows components. The list of dependencies and their licenses is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 Copyright (C) 2026 Condec contributors

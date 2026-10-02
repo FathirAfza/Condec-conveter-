@@ -9,6 +9,7 @@ using ACadSharp.Exceptions;
 using ACadSharp.IO;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
+using Condec.Core.Localization;
 
 namespace Condec.Core.Cad;
 
@@ -33,8 +34,22 @@ internal static class CadFiles
                 return DwgReader.Read(stream);
             }
 
-            using var dxf = new MemoryStream(AsR12(File.ReadAllBytes(path)));
-            using var reader = new DxfReader(dxf, null) { Configuration = new DxfReaderConfiguration { CreateDefaults = true } };
+            return ReadDxf(File.ReadAllBytes(path));
+        }
+        catch (CadNotSupportedException ex)
+        {
+            throw new UnsupportedCadVersionException(ex.Message, ex);
+        }
+    }
+
+    /// <summary>Reads a DXF held in memory; see <see cref="Read(string, string)"/>.</summary>
+    /// <remarks>The bytes are relabelled in place when the file is an R10 or older DXF (see <see cref="AsR12"/>).</remarks>
+    internal static CadDocument ReadDxf(byte[] dxf)
+    {
+        try
+        {
+            using var stream = new MemoryStream(AsR12(dxf));
+            using var reader = new DxfReader(stream, null) { Configuration = new DxfReaderConfiguration { CreateDefaults = true } };
             return reader.Read();
         }
         catch (CadNotSupportedException ex)
@@ -161,7 +176,7 @@ public sealed class CadFileConverter : IConverter
 
     public async Task ConvertAsync(ConversionRequest request, IProgress<ConversionProgress> progress, CancellationToken ct)
     {
-        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, "Membaca gambar CAD"));
+        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Get("Progress.ReadingCad")));
         var document = await Task.Run(() => CadFiles.Read(request.SourcePath, FileExtension.Normalize(request.SourceExtension)), ct).ConfigureAwait(false);
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
 

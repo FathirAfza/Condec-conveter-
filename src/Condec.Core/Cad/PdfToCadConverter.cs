@@ -7,6 +7,7 @@ using ACadSharp.IO;
 using ACadSharp.Types.Units;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using CSMath;
 using UglyToad.PdfPig.Content;
@@ -18,7 +19,10 @@ using UglyToad.PdfPig.Graphics.Colors;
 namespace Condec.Core.Cad;
 
 /// <summary>The chosen PDF page has nothing that can become a drawing: no lines, curves, text or scanned ink.</summary>
-public sealed class NothingToConvertException(string message) : Exception(message);
+public class NothingToConvertException(string message) : Exception(message);
+
+/// <summary>The image has no dark shapes to trace: it is blank, or a single flat color.</summary>
+public sealed class NothingToTraceException(string message) : NothingToConvertException(message);
 
 /// <summary>
 /// One PDF page to a DXF or DWG drawing. Vector pages keep their geometry: lines become LINE or LWPOLYLINE,
@@ -65,7 +69,7 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         var target = FileExtension.Normalize(request.TargetExtension);
         var options = request.Options as CadOptions ?? new CadOptions(1);
 
-        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, "Membaca halaman PDF"));
+        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Get("Progress.ReadingPdfPage")));
         var cad = new CadDocument(OutputVersion);
         cad.Header.InsUnits = options.Unit switch
         {
@@ -104,7 +108,7 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         SetExtents(cad);
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
         ct.ThrowIfCancellationRequested();
-        progress.Report(new ConversionProgress(ConversionStage.Encode, 0, $"Menulis {entityCount} objek CAD"));
+        progress.Report(new ConversionProgress(ConversionStage.Encode, 0, Loc.Format("Progress.WritingCadObjects", entityCount)));
 
         var bytes = CadFiles.Write(cad, target);
         await request.Output.WriteAsync(bytes, ct).ConfigureAwait(false);

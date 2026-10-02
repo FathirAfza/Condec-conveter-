@@ -5,7 +5,11 @@
   <PropertyGroup>
     <TargetFrameworks>net10.0;$(CondecWindowsTargetFramework)</TargetFrameworks>
     <RootNamespace>Condec.Core</RootNamespace>
+    <!-- The strings in Resources/Strings.resx are English; other languages are satellite assemblies. -->
+    <NeutralLanguage>en</NeutralLanguage>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- The generated P/Invoke and COM code (LibraryImport, GeneratedComInterface) in Platform/Windows/Devices. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">

@@ -7,6 +7,7 @@ using Condec.Core.Conversion;
 using Condec.Core.Documents;
 using Condec.Core.History;
 using Condec.Core.Imaging;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 using Condec.Services;
@@ -26,9 +27,13 @@ public partial class App : Application
 
     protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
+        // Before anything is created: the window and view models read their texts when they are built.
+        Loc.Culture = Languages.Pick(UserLanguages.Get());
+
         var registry = new ConverterRegistry(
             [
                 new ImageConverter(),
+                new ImageToCadConverter(new WicImageRasterizer()),
                 new PdfToImageConverter(),
                 new PdfToCadConverter(new PdfPageRenderer()),
                 new CadFileConverter(),
