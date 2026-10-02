@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.0 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.1 · diubah terakhir 2026-10-02 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -41,8 +41,8 @@ Prinsip:
 - WPF bawaan tidak punya NavigationView, InfoBar, ToggleSwitch, dan SelectorBar. Dokumen ini hanya valid untuk WinUI 3.
 - Warna dan style teks lewat `ThemeResource` dan style bawaan. Dilarang hardcode hex, kecuali tiga warna gambar pratinjau di §6.3.
 - Margin dan padding layout boleh angka literal.
-- Teks UI berbahasa Indonesia, sentence case. Nama menu tetap: "Convert File", "Upscale Image", "Architecture", "Settings".
-- Format angka (locale Indonesia): desimal pakai koma ("0,9 MP", "23,9 MB"), dimensi "1280 × 720" (spasi di kedua sisi ×), skala "4×", persen "400%", perkiraan diawali "± ".
+- Bahasa UI mengikuti daftar bahasa Windows: Indonesia dan Inggris, bahasa lain jatuh ke Inggris. Semua teks UI adalah resource di `Condec.Core/Resources`. Teks di dokumen ini adalah versi Indonesia dan jadi acuan terjemahan Inggrisnya. Sentence case. Nama menu sama di kedua bahasa: "Convert File", "Upscale Image", "Architecture", "Settings".
+- Format angka (versi Indonesia; versi Inggris memakai titik desimal): desimal pakai koma ("0,9 MP", "23,9 MB"), dimensi "1280 × 720" (spasi di kedua sisi ×), skala "4×", persen "400%", perkiraan diawali "± ".
 - Preview vektor DWG: coba `Canvas`/`Polyline`/`Path` stock dulu. Win2D hanya kalau performa tidak cukup, dan minta persetujuan dulu `[TERBUKA]`.
 
 ## 3. Shell aplikasi
@@ -350,7 +350,7 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 | Tentang | `Button` "Lisensi pihak ketiga" | "Condec 0.1.0" / "Open source, GPL-3.0-or-later. Semua proses berjalan offline di perangkat ini." |
 
 #### Nilai awal dan penyimpanan
-Disimpan di `ApplicationData.Current.LocalSettings`.
+Disimpan di `ApplicationData.Current.LocalSettings` bila aplikasi terpasang sebagai MSIX, dan di `%LOCALAPPDATA%\Condec\settings.json` bila dijalankan sebagai build portable (tanpa identitas paket). Kuncinya sama di keduanya.
 
 | Kunci | Nilai awal |
 |---|---|
@@ -383,8 +383,10 @@ Nilai awal, ganti setelah benchmark. Diambil dari memori adapter lewat DXCore.
 
 Batas yang sama berlaku untuk mode CPU dan NPU (batas perangkat, bukan batas mesin).
 
+Memori adapter dibulatkan ke GB terdekat sebelum dibandingkan (kartu 12 GB melapor 11,99 GB). Tanpa GPU yang terdeteksi, batasnya 2×, sama dengan GPU terintegrasi `[ASUMSI]`. Adapter perangkat lunak (Microsoft Basic Render Driver) tidak dihitung sebagai GPU.
+
 ### 7.2 Syarat RAM menurut resolusi hasil
-Dihitung dari **RAM terpasang**, bukan RAM yang dipakai Condec.
+Dihitung dari **RAM terpasang**, bukan RAM yang dipakai Condec. Nilainya dari `GetPhysicallyInstalledSystemMemory` (tabel firmware), dibulatkan ke GB terdekat; bila Windows tidak bisa menjawab (mis. mesin virtual), dari `GlobalMemoryStatusEx` yang sedikit lebih kecil (laptop 8 GB melapor ±7,7 GB, jadi pembulatan itu perlu).
 
 | Resolusi hasil (piksel) | RAM terpasang minimal | Label | Tag |
 |---|---|---|---|
@@ -413,6 +415,7 @@ tersedia     = efektif >= 1.5
 - Batas GPU menjadi penentu: "Batas perangkat N×"
 - Batas di Settings menjadi penentu dan lebih kecil dari batas GPU: "Batas di Settings N×"
 - Syarat RAM menjadi penentu: "RAM X GB: hasil maksimal `<label>`" (label dari tabel §7.2)
+- RAM terpasang di bawah 8 GB: "RAM X GB: butuh minimal 8 GB"
 
 "Menjadi penentu" = nilainya sama dengan `raw`. Beberapa alasan bisa muncul bersamaan.
 
@@ -427,10 +430,10 @@ Tidak menutup akses skala. Batas kecil memperlambat render karena tile lebih kec
 | Ukuran file PNG | piksel × 1,7 byte | `[ASUMSI]` |
 | Ukuran file JPG | piksel × 0,4 byte | `[ASUMSI]` |
 | Waktu render | `MP hasil ÷ throughput(mesin) × faktorMemori` | |
-| Throughput | hasil benchmark singkat pada eksekusi pertama (tile kecil per mesin), disimpan | |
+| Throughput | hasil benchmark singkat pada eksekusi pertama (tile kecil per mesin), disimpan per mesin dan nama perangkat; ganti GPU atau NPU berarti diukur ulang. Protokol: 1 tile pemanasan tanpa hitung waktu, lalu 3 tile diukur | protokol `[ASUMSI]` |
 | Format waktu | < 1 dtk: "< 1 detik"; < 60: "N detik"; < 60 mnt: "N menit M detik"; selain itu "N jam M menit" | |
 
-Selalu tampil dengan awalan "± ". Angka throughput di mock hanya contoh dan tidak boleh dipakai di aplikasi nyata.
+Selalu tampil dengan awalan "± ". Angka throughput di mock hanya contoh dan tidak boleh dipakai di aplikasi nyata. Sebelum ada hasil benchmark untuk mesin terpilih, "Perkiraan waktu render" menampilkan "—" dan keterangan "Belum diukur", bukan angka karangan.
 
 ## 9. Perangkat contoh dan test vector
 
@@ -511,17 +514,28 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 4 | Ukuran thumb `Slider` 20 px | `[ASUMSI]`, tidak ada di source yang dibaca |
 | 5 | Lebar pill `SelectorBar` | `[TERBUKA]` |
 | 6 | Ukuran minimum jendela (usulan 900 × 640) | `[TERBUKA]` |
-| 7 | Versi DWG yang ditulis ACadSharp | `[TERBUKA]`: cek README ACadSharp, pilih default paling aman |
+| 7 | Versi DWG yang ditulis ACadSharp | diputuskan: AC1015 (AutoCAD 2000). ACadSharp 3.8.0 menulis DWG AC1014, AC1015, AC1018, AC1024, AC1027, AC1032 |
 | 8 | Model upscale (lisensi kode dan bobot harus kompatibel GPL-3.0) dan apakah bisa jalan di NPU | `[TERBUKA]`, jangan menebak |
 | 9 | OCR teks gambar: `Windows.Media.Ocr`, bahasa terpasang | `[TERBUKA]`, cek dokumentasi |
 | 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | `[TERBUKA]`, saat ini hanya Convert File |
 | 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`, kalibrasi |
 | 12 | Perkiraan ukuran file (§8) dan hasil DWG → gambar (§6.3.2) | `[ASUMSI]` |
 | 13 | Win2D untuk render DWG | `[TERBUKA]`, hanya kalau kontrol stock tidak cukup |
+| 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
+| 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]` |
+| 18 | DXCore (GPU/NPU) belum terbukti di perangkat nyata; hanya dites di runner CI tanpa GPU | `[TERBUKA]`, cek di perangkat pemilik lewat Settings |
+| 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
+| 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.1] 2026-10-02
+- **Ditambah:** `DeviceProfile`, `CapabilityPolicy` (test vector §9 lulus), estimasi (§8), `AppSettings` dan benchmark di `Condec.Core`. Catatan pembulatan RAM dan memori GPU (§7.1, §7.2), alasan "RAM di bawah 8 GB" (§7.4), waktu render "—" sebelum diukur (§8).
+- **Diubah:** bahasa UI mengikuti bahasa Windows (Indonesia, Inggris; lainnya Inggris), bukan hanya Indonesia (§2). Keputusan pemilik.
+- **Diubah:** penyimpanan Settings memakai `settings.json` di `%LOCALAPPDATA%\Condec` untuk build portable (§6.4).
+- **Diputuskan:** LibreOffice tetap dibundel; HEIC tetap boleh jadi tujuan; versi DWG AC1015 (§13 #7, #14, #15).
 
 ### [0.2.0] 2026-10-02
 - **Ditambah:** menu hamburger (NavigationView) dengan halaman Upscale Image, Architecture, dan Settings; aturan batas perangkat (§7); estimasi (§8); test vector (§9).

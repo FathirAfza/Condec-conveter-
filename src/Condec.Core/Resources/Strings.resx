@@ -186,4 +186,16 @@
   <data name="History.ClearConfirm" xml:space="preserve"><value>Clear all history? Converted files aren't deleted.</value></data>
   <data name="History.ClearConfirmButton" xml:space="preserve"><value>Clear</value></data>
   <data name="History.Verified" xml:space="preserve"><value>Verified</value></data>
+  <data name="Limit.Device" xml:space="preserve"><value>Device limit {0}</value></data>
+  <data name="Limit.Settings" xml:space="preserve"><value>Limit in Settings {0}</value></data>
+  <data name="Limit.Ram" xml:space="preserve"><value>{0} GB of RAM: results up to {1}</value></data>
+  <data name="Limit.RamTooLow" xml:space="preserve"><value>{0} GB of RAM: at least {1} GB is needed</value></data>
+  <data name="Ram.Tier.HdTo2K" xml:space="preserve"><value>HD–2K</value></data>
+  <data name="Ram.Tier.2KTo4K" xml:space="preserve"><value>2K–4K</value></data>
+  <data name="Ram.Tier.4KTo8K" xml:space="preserve"><value>4K–8K</value></data>
+  <data name="Ram.Tier.Above8K" xml:space="preserve"><value>above 8K</value></data>
+  <data name="Duration.LessThanSecond" xml:space="preserve"><value>&lt; 1 second</value></data>
+  <data name="Duration.Seconds" xml:space="preserve"><value>{0} seconds</value></data>
+  <data name="Duration.MinutesSeconds" xml:space="preserve"><value>{0} min {1} sec</value></data>
+  <data name="Duration.HoursMinutes" xml:space="preserve"><value>{0} h {1} min</value></data>
 </root>

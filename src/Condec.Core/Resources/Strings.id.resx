@@ -186,4 +186,16 @@
   <data name="History.ClearConfirm" xml:space="preserve"><value>Hapus semua riwayat? File hasil konversi tidak ikut terhapus.</value></data>
   <data name="History.ClearConfirmButton" xml:space="preserve"><value>Hapus</value></data>
   <data name="History.Verified" xml:space="preserve"><value>Terverifikasi</value></data>
+  <data name="Limit.Device" xml:space="preserve"><value>Batas perangkat {0}</value></data>
+  <data name="Limit.Settings" xml:space="preserve"><value>Batas di Settings {0}</value></data>
+  <data name="Limit.Ram" xml:space="preserve"><value>RAM {0} GB: hasil maksimal {1}</value></data>
+  <data name="Limit.RamTooLow" xml:space="preserve"><value>RAM {0} GB: butuh minimal {1} GB</value></data>
+  <data name="Ram.Tier.HdTo2K" xml:space="preserve"><value>HD–2K</value></data>
+  <data name="Ram.Tier.2KTo4K" xml:space="preserve"><value>2K–4K</value></data>
+  <data name="Ram.Tier.4KTo8K" xml:space="preserve"><value>4K–8K</value></data>
+  <data name="Ram.Tier.Above8K" xml:space="preserve"><value>di atas 8K</value></data>
+  <data name="Duration.LessThanSecond" xml:space="preserve"><value>&lt; 1 detik</value></data>
+  <data name="Duration.Seconds" xml:space="preserve"><value>{0} detik</value></data>
+  <data name="Duration.MinutesSeconds" xml:space="preserve"><value>{0} menit {1} detik</value></data>
+  <data name="Duration.HoursMinutes" xml:space="preserve"><value>{0} jam {1} menit</value></data>
 </root>

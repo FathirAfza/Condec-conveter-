@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Condec contributors
+
+namespace Condec.Core.Upscale;
+
+public enum UpscaleFormat
+{
+    Png,
+    Jpg,
+}
+
+/// <summary>The size of the result and the guesses printed beside it (DESIGN §8). Every figure here is shown with "± ".</summary>
+public static class UpscaleEstimator
+{
+    // Bytes per output pixel. Assumptions (DESIGN §13 #12) until measured on real results.
+    private const double PngBytesPerPixel = 1.7;
+    private const double JpgBytesPerPixel = 0.4;
+
+    /// <summary><c>round(W × scale) × round(H × scale)</c>.</summary>
+    public static (int Width, int Height) OutputSize(int width, int height, double scale) =>
+        (Scaled(width, scale), Scaled(height, scale));
+
+    public static long OutputPixels(int width, int height, double scale)
+    {
+        var (w, h) = OutputSize(width, height, scale);
+        return (long)w * h;
+    }
+
+    /// <summary>The expected size of the saved file, in bytes.</summary>
+    public static long EstimatedFileBytes(long outputPixels, UpscaleFormat format) =>
+        (long)Math.Round(outputPixels * (format == UpscaleFormat.Png ? PngBytesPerPixel : JpgBytesPerPixel), MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// Render time: result megapixels ÷ how many megapixels per second the engine measured, times the slowdown of a
+    /// small memory limit. Null when the engine hasn't been measured yet, because the app never shows an invented speed.
+    /// </summary>
+    public static double? EstimatedSeconds(long outputPixels, double? megapixelsPerSecond, int memoryLimitGb)
+    {
+        if (megapixelsPerSecond is not > 0)
+        {
+            return null;
+        }
+
+        return outputPixels / 1_000_000d / megapixelsPerSecond.Value * Devices.CapabilityPolicy.MemoryTimeFactor(memoryLimitGb);
+    }
+
+    private static int Scaled(int value, double scale) => (int)Math.Round(value * scale, MidpointRounding.AwayFromZero);
+}
