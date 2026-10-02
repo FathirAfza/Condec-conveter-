@@ -9,6 +9,7 @@ using ACadSharp.Exceptions;
 using ACadSharp.IO;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
+using Condec.Core.Localization;
 
 namespace Condec.Core.Cad;
 
@@ -161,7 +162,7 @@ public sealed class CadFileConverter : IConverter
 
     public async Task ConvertAsync(ConversionRequest request, IProgress<ConversionProgress> progress, CancellationToken ct)
     {
-        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, "Membaca gambar CAD"));
+        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Get("Progress.ReadingCad")));
         var document = await Task.Run(() => CadFiles.Read(request.SourcePath, FileExtension.Normalize(request.SourceExtension)), ct).ConfigureAwait(false);
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
 

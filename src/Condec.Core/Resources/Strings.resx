@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Label.Dxf" xml:space="preserve"><value>DXF (CAD drawing)</value></data>
+  <data name="Label.Dwg" xml:space="preserve"><value>DWG (CAD drawing)</value></data>
+  <data name="Kind.Image" xml:space="preserve"><value>{0} image</value></data>
+  <data name="Kind.Audio" xml:space="preserve"><value>{0} audio</value></data>
+  <data name="Kind.Video" xml:space="preserve"><value>{0} video</value></data>
+  <data name="Kind.Pdf" xml:space="preserve"><value>PDF document</value></data>
+  <data name="Kind.Word" xml:space="preserve"><value>Word document</value></data>
+  <data name="Kind.OpenDocumentText" xml:space="preserve"><value>OpenDocument text</value></data>
+  <data name="Kind.Rtf" xml:space="preserve"><value>RTF document</value></data>
+  <data name="Kind.PlainText" xml:space="preserve"><value>Plain text</value></data>
+  <data name="Kind.WebPage" xml:space="preserve"><value>Web page</value></data>
+  <data name="Kind.Markdown" xml:space="preserve"><value>Markdown document</value></data>
+  <data name="Kind.Excel" xml:space="preserve"><value>Excel spreadsheet</value></data>
+  <data name="Kind.OpenDocumentSheet" xml:space="preserve"><value>OpenDocument spreadsheet</value></data>
+  <data name="Kind.PowerPoint" xml:space="preserve"><value>PowerPoint presentation</value></data>
+  <data name="Kind.OpenDocumentPresentation" xml:space="preserve"><value>OpenDocument presentation</value></data>
+  <data name="Kind.Cad" xml:space="preserve"><value>{0} CAD drawing</value></data>
+  <data name="Kind.Unknown" xml:space="preserve"><value>{0} file</value></data>
+  <data name="Time.JustNow" xml:space="preserve"><value>Just now</value></data>
+  <data name="Time.Today" xml:space="preserve"><value>Today, {0}</value></data>
+  <data name="Time.Yesterday" xml:space="preserve"><value>Yesterday, {0}</value></data>
+  <data name="Time.ClockPattern" xml:space="preserve"><value>h:mm tt</value></data>
+  <data name="Time.Months" xml:space="preserve"><value>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec</value></data>
+  <data name="Time.DayMonth" xml:space="preserve"><value>{1} {0}</value></data>
+  <data name="Time.DayMonthYear" xml:space="preserve"><value>{1} {0}, {2}</value></data>
+  <data name="Time.WithTime" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Size.Bytes" xml:space="preserve"><value>{0} bytes</value></data>
+  <data name="Size.DecimalSeparator" xml:space="preserve"><value>.</value></data>
+  <data name="Progress.ReadingCad" xml:space="preserve"><value>Reading the CAD drawing</value></data>
+  <data name="Progress.ReadingPdfPage" xml:space="preserve"><value>Reading the PDF page</value></data>
+  <data name="Progress.WritingCadObjects" xml:space="preserve"><value>Writing {0} CAD objects</value></data>
+  <data name="Progress.OpeningLibreOffice" xml:space="preserve"><value>Opening the document in LibreOffice</value></data>
+  <data name="Progress.RenderingPage" xml:space="preserve"><value>Rendering page {0}</value></data>
+  <data name="Progress.ReadingImage" xml:space="preserve"><value>Reading the image</value></data>
+  <data name="Progress.TracingOutlines" xml:space="preserve"><value>Tracing outlines</value></data>
+  <data name="Progress.WritingDxf" xml:space="preserve"><value>Writing {0} outlines to DXF</value></data>
+  <data name="Progress.ConvertingDxfToDwg" xml:space="preserve"><value>Converting the DXF to DWG</value></data>
+  <data name="LibreOffice.Missing" xml:space="preserve"><value>This format needs LibreOffice, which isn't installed on this computer. Install LibreOffice, then choose the file again.</value></data>
+  <data name="Error.TryAnotherDrive" xml:space="preserve"><value>Try again, or save to another drive.</value></data>
+  <data name="Error.LockedPdf" xml:space="preserve"><value>This PDF is locked with a password or permission restrictions. Condec doesn't remove PDF protection, so this file can't be converted.</value></data>
+  <data name="Error.ChunkMismatch" xml:space="preserve"><value>Chunk {0} differed when read back from disk, so the file wasn't saved. {1}</value></data>
+  <data name="Error.LengthMismatch" xml:space="preserve"><value>The file size on disk doesn't match what was written, so the file wasn't saved. {0}</value></data>
+  <data name="Error.HashMismatch" xml:space="preserve"><value>The SHA-256 of the file on disk doesn't match what was written, so the file wasn't saved. {0}</value></data>
+  <data name="Error.CannotReopen" xml:space="preserve"><value>The result can't be reopened as {0}, so the file wasn't saved.</value></data>
+  <data name="Error.SourceMissing" xml:space="preserve"><value>The source file wasn't found. It may have been moved or deleted.</value></data>
+  <data name="Error.FolderMissing" xml:space="preserve"><value>The destination folder wasn't found. Choose another place to save.</value></data>
+  <data name="Error.NoWriteAccess" xml:space="preserve"><value>Condec doesn't have permission to write to the destination folder. Choose another place to save.</value></data>
+  <data name="Error.SameFile" xml:space="preserve"><value>The destination is the same as the source file. Save with another name.</value></data>
+  <data name="Error.NothingToConvertPdf" xml:space="preserve"><value>This page has no lines, text or scanned content that can become a CAD drawing. Choose another page.</value></data>
+  <data name="Error.NothingToTraceImage" xml:space="preserve"><value>Condec found no shapes to trace in this image. It works best on drawings, logos and scans with dark lines on a light background.</value></data>
+  <data name="Error.UnsupportedCad" xml:space="preserve"><value>This CAD drawing version isn't supported yet. Condec reads DWG from AutoCAD R14 and DXF from R12. Save the file again in a newer version from your CAD program, then try again.</value></data>
+  <data name="Error.ExternalTool" xml:space="preserve"><value>{0} couldn't convert this file. The file may be damaged or password protected.</value></data>
+  <data name="Error.Decode" xml:space="preserve"><value>The source file can't be read. It may be damaged, or the codec for this format isn't installed in Windows.</value></data>
+  <data name="Error.Io" xml:space="preserve"><value>The file can't be written. Make sure the disk isn't full and the destination file isn't open in another app.</value></data>
+  <data name="Error.Unexpected" xml:space="preserve"><value>An unexpected error occurred ({0}), so the file wasn't saved.</value></data>
+  <data name="Format.Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Format.UnavailableSpoken" xml:space="preserve"><value>{0}, unavailable</value></data>
+  <data name="Source.WithPages" xml:space="preserve"><value>{0} · {1} pages · {2}</value></data>
+  <data name="Source.WithOnePage" xml:space="preserve"><value>{0} · 1 page · {1}</value></data>
+  <data name="Source.Plain" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Step.Waiting" xml:space="preserve"><value>Waiting</value></data>
+  <data name="History.VerifiedSpoken" xml:space="preserve"><value>{0}, {1}, verified</value></data>
+  <data name="History.PlainSpoken" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="History.ShowInFolderFor" xml:space="preserve"><value>Show {0} in folder</value></data>
+  <data name="Unit.Mm" xml:space="preserve"><value>Millimeters (mm)</value></data>
+  <data name="Unit.Cm" xml:space="preserve"><value>Centimeters (cm)</value></data>
+  <data name="Unit.M" xml:space="preserve"><value>Meters (m)</value></data>
+  <data name="Unit.In" xml:space="preserve"><value>Inches (in)</value></data>
+  <data name="Scale.Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Pdf.KeepTextNoteScan" xml:space="preserve"><value>Not available for scanned PDFs</value></data>
+  <data name="Pdf.KeepTextNote" xml:space="preserve"><value>Saved as TEXT entities, not lines</value></data>
+  <data name="Pdf.KindScanTitle" xml:space="preserve"><value>Scanned PDF detected</value></data>
+  <data name="Pdf.KindEmptyTitle" xml:space="preserve"><value>This page is empty</value></data>
+  <data name="Pdf.KindVectorTitle" xml:space="preserve"><value>Vector PDF detected</value></data>
+  <data name="Pdf.KindScanMessage" xml:space="preserve"><value>It contains pixels, not lines. The DXF will be an approximate trace of the lines and isn't precise in size.</value></data>
+  <data name="Pdf.KindEmptyMessage" xml:space="preserve"><value>There are no lines, text or images that can be converted. Choose another page.</value></data>
+  <data name="Pdf.KindVectorMessage" xml:space="preserve"><value>Lines, arcs and text will become CAD objects.</value></data>
+  <data name="Pdf.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Convert.Label" xml:space="preserve"><value>Convert and save…</value></data>
+  <data name="Convert.LabelAnyway" xml:space="preserve"><value>Convert anyway…</value></data>
+  <data name="Format.Placeholder" xml:space="preserve"><value>Choose a format</value></data>
+  <data name="Format.PlaceholderNoFile" xml:space="preserve"><value>Choose a file first</value></data>
+  <data name="Format.HelpNone" xml:space="preserve"><value>Formats appear after you choose a file</value></data>
+  <data name="Format.HelpCount" xml:space="preserve"><value>{0} formats available for {1}</value></data>
+  <data name="Format.HelpOne" xml:space="preserve"><value>1 format available for {0}</value></data>
+  <data name="Processing.Title" xml:space="preserve"><value>Converting {0}</value></data>
+  <data name="Processing.Caption" xml:space="preserve"><value>To {0} · saving as {1}</value></data>
+  <data name="Result.Integrity" xml:space="preserve"><value>SHA-256 matches · {0} chunks verified</value></data>
+  <data name="History.Empty" xml:space="preserve"><value>No conversion history yet.</value></data>
+  <data name="History.EmptyDisabled" xml:space="preserve"><value>History isn't being recorded. Later conversions won't appear here.</value></data>
+  <data name="History.LoadFailed" xml:space="preserve"><value>History can't be read. You can still convert files.</value></data>
+  <data name="History.SaveSettingFailed" xml:space="preserve"><value>The history setting can't be saved.</value></data>
+  <data name="History.RecordFailed" xml:space="preserve"><value>The conversion succeeded, but its history entry can't be saved.</value></data>
+  <data name="History.ClearFailed" xml:space="preserve"><value>History can't be cleared.</value></data>
+  <data name="History.FileGone" xml:space="preserve"><value>{0} is no longer at its original location. Its destination folder was opened instead.</value></data>
+  <data name="History.FileAndFolderGone" xml:space="preserve"><value>{0} and its folder no longer exist.</value></data>
+  <data name="Input.DropFolder" xml:space="preserve"><value>Drag a file, not a folder.</value></data>
+  <data name="Input.DropMany" xml:space="preserve"><value>Drag a single file. Condec converts files one at a time.</value></data>
+  <data name="Input.DropUnreadable" xml:space="preserve"><value>The dragged file can't be read from where it is. Copy it to a folder on this computer first, then try again.</value></data>
+  <data name="Input.Unsupported" xml:space="preserve"><value>Files of type {0} can't be converted yet. Formats you can choose: {1}.</value></data>
+  <data name="Input.UnsupportedNoExtension" xml:space="preserve"><value>A file without an extension can't be converted. Formats you can choose: {0}.</value></data>
+  <data name="Input.CannotOpen" xml:space="preserve"><value>This file can't be opened. Check that it still exists and can be read.</value></data>
+  <data name="Input.PdfUnreadable" xml:space="preserve"><value>This PDF can't be read. It may be damaged or not fully downloaded.</value></data>
+  <data name="Input.Cancelled" xml:space="preserve"><value>Conversion cancelled. No file was saved.</value></data>
+  <data name="Step.Decode" xml:space="preserve"><value>Decoding the source file</value></data>
+  <data name="Step.Encode" xml:space="preserve"><value>Writing to {0} format</value></data>
+  <data name="Step.VerifyChunks" xml:space="preserve"><value>Verifying chunks</value></data>
+  <data name="Step.VerifyIntegrity" xml:space="preserve"><value>Checking file integrity</value></data>
+  <data name="Step.Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Step.ChunksMatch" xml:space="preserve"><value>{0} chunks match</value></data>
+  <data name="Step.HashMatches" xml:space="preserve"><value>Hash matches</value></data>
+  <data name="Step.Reading" xml:space="preserve"><value>Reading {0}</value></data>
+  <data name="Step.Encoding" xml:space="preserve"><value>Encoding to {0}</value></data>
+  <data name="Step.ChunkOf" xml:space="preserve"><value>Chunk {0} of {1}</value></data>
+  <data name="Step.RereadingFromDisk" xml:space="preserve"><value>Reading back from disk</value></data>
+  <data name="Step.ComputingHash" xml:space="preserve"><value>Computing SHA-256</value></data>
+  <data name="Step.Reopening" xml:space="preserve"><value>Reopening the result</value></data>
+  <data name="Shell.NoApp" xml:space="preserve"><value>The file was saved, but no app can open it.</value></data>
+  <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer can't be opened.</value></data>
+  <data name="Drag.Caption" xml:space="preserve"><value>Choose this file</value></data>
+  <data name="Image.TraceTitle" xml:space="preserve"><value>Images are traced into outlines</value></data>
+  <data name="Image.TraceMessage" xml:space="preserve"><value>Condec traces the dark shapes in the image into closed outlines. This works best for drawings, logos and scans; a photo gives only a rough result. The drawing is sized from the image's resolution.</value></data>
+  <data name="Main.Title" xml:space="preserve"><value>Convert files</value></data>
+  <data name="Main.Subtitle" xml:space="preserve"><value>Choose a file, pick the target format, then save.</value></data>
+  <data name="Input.DropHere" xml:space="preserve"><value>Drag a file here</value></data>
+  <data name="Input.Choose" xml:space="preserve"><value>Choose file…</value></data>
+  <data name="Source.Label" xml:space="preserve"><value>Source file</value></data>
+  <data name="Source.ChangeSpoken" xml:space="preserve"><value>Change source file</value></data>
+  <data name="Source.Change" xml:space="preserve"><value>Change</value></data>
+  <data name="Format.Header" xml:space="preserve"><value>Convert to</value></data>
+  <data name="Pdf.ChooseAnother" xml:space="preserve"><value>Choose another file</value></data>
+  <data name="Cad.UnitHeader" xml:space="preserve"><value>Drawing unit</value></data>
+  <data name="Cad.ScaleHeader" xml:space="preserve"><value>Drawing scale</value></data>
+  <data name="Cad.CustomScaleSpoken" xml:space="preserve"><value>Custom scale, 1 to</value></data>
+  <data name="Cad.CustomScaleHeader" xml:space="preserve"><value>Custom scale, 1 : n</value></data>
+  <data name="Cad.CustomScalePlaceholder" xml:space="preserve"><value>1 : n</value></data>
+  <data name="Cad.PageHeader" xml:space="preserve"><value>Page</value></data>
+  <data name="Cad.KeepText" xml:space="preserve"><value>Keep text as text</value></data>
+  <data name="Cad.JoinLines" xml:space="preserve"><value>Join connected lines</value></data>
+  <data name="Cad.JoinLinesNote" xml:space="preserve"><value>Into a single polyline</value></data>
+  <data name="Privacy.Note" xml:space="preserve"><value>Processed entirely on this device. No files are uploaded.</value></data>
+  <data name="Processing.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Processing.ProgressSpoken" xml:space="preserve"><value>Conversion progress</value></data>
+  <data name="Done.Message" xml:space="preserve"><value>The file was saved and passed chunk verification and the integrity check.</value></data>
+  <data name="Done.Title" xml:space="preserve"><value>Conversion complete</value></data>
+  <data name="Done.Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Done.Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Done.Integrity" xml:space="preserve"><value>Integrity</value></data>
+  <data name="Done.OpenFile" xml:space="preserve"><value>Open file</value></data>
+  <data name="Done.ShowInFolder" xml:space="preserve"><value>Show in folder</value></data>
+  <data name="Done.ConvertAnother" xml:space="preserve"><value>Convert another file</value></data>
+  <data name="Failed.Title" xml:space="preserve"><value>Conversion failed</value></data>
+  <data name="Failed.File" xml:space="preserve"><value>File</value></data>
+  <data name="Failed.TryAgain" xml:space="preserve"><value>Try again</value></data>
+  <data name="Failed.ChangeChoice" xml:space="preserve"><value>Change choices</value></data>
+  <data name="History.Title" xml:space="preserve"><value>History</value></data>
+  <data name="History.Record" xml:space="preserve"><value>Record history</value></data>
+  <data name="History.Clear" xml:space="preserve"><value>Clear history</value></data>
+  <data name="History.ClearConfirm" xml:space="preserve"><value>Clear all history? Converted files aren't deleted.</value></data>
+  <data name="History.ClearConfirmButton" xml:space="preserve"><value>Clear</value></data>
+  <data name="History.Verified" xml:space="preserve"><value>Verified</value></data>
+</root>

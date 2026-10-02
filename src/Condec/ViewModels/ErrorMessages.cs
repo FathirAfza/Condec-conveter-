@@ -3,6 +3,7 @@
 
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 
@@ -11,43 +12,42 @@ namespace Condec.ViewModels;
 /// <summary>Turns a failed conversion into a sentence that says what happened and what to do next.</summary>
 internal static class ErrorMessages
 {
-    private const string TryAnotherDrive = "Coba lagi, atau simpan ke drive lain.";
-
-    public const string LockedPdf =
-        "PDF ini dikunci dengan kata sandi atau pembatasan izin. Condec tidak membuka proteksi PDF, jadi file ini tidak bisa dikonversi.";
+    public static string LockedPdf => Loc.Get("Error.LockedPdf");
 
     /// <param name="stage">The last stage the pipeline reported before failing.</param>
     public static string Describe(Exception exception, PipelineStage stage, string targetLabel) => exception switch
     {
         VerificationFailedException { Failure: VerificationFailure.ChunkMismatch } v =>
-            $"Chunk {v.ChunkNumber} berbeda saat dibaca ulang dari disk, jadi file tidak disimpan. {TryAnotherDrive}",
+            Loc.Format("Error.ChunkMismatch", v.ChunkNumber, Loc.Get("Error.TryAnotherDrive")),
         VerificationFailedException { Failure: VerificationFailure.LengthMismatch } =>
-            $"Ukuran file di disk tidak sama dengan yang ditulis, jadi file tidak disimpan. {TryAnotherDrive}",
+            Loc.Format("Error.LengthMismatch", Loc.Get("Error.TryAnotherDrive")),
         VerificationFailedException { Failure: VerificationFailure.FileHashMismatch } =>
-            $"SHA-256 file di disk tidak cocok dengan yang ditulis, jadi file tidak disimpan. {TryAnotherDrive}",
+            Loc.Format("Error.HashMismatch", Loc.Get("Error.TryAnotherDrive")),
         VerificationFailedException =>
-            $"Hasilnya tidak bisa dibuka ulang sebagai {targetLabel}, jadi file tidak disimpan.",
+            Loc.Format("Error.CannotReopen", targetLabel),
         FileNotFoundException =>
-            "File sumber tidak ditemukan. Mungkin sudah dipindah atau dihapus.",
+            Loc.Get("Error.SourceMissing"),
         DirectoryNotFoundException =>
-            "Folder tujuan tidak ditemukan. Pilih lokasi simpan lain.",
+            Loc.Get("Error.FolderMissing"),
         UnauthorizedAccessException =>
-            "Condec tidak punya izin menulis ke folder tujuan. Pilih lokasi simpan lain.",
+            Loc.Get("Error.NoWriteAccess"),
         // The pipeline's only ArgumentException for a job: the output would overwrite the source.
         ArgumentException { ParamName: "job" } =>
-            "File tujuan sama dengan file sumber. Simpan dengan nama lain.",
+            Loc.Get("Error.SameFile"),
         LockedPdfException => LockedPdf,
+        NothingToTraceException =>
+            Loc.Get("Error.NothingToTraceImage"),
         NothingToConvertException =>
-            "Halaman ini tidak berisi garis, teks, atau hasil scan yang bisa diubah menjadi gambar CAD. Pilih halaman lain.",
+            Loc.Get("Error.NothingToConvertPdf"),
         UnsupportedCadVersionException =>
-            "Versi gambar CAD ini belum didukung. Condec membaca DWG mulai AutoCAD R14 dan DXF mulai R12. Simpan ulang file dengan versi yang lebih baru di aplikasi CAD-nya, lalu coba lagi.",
+            Loc.Get("Error.UnsupportedCad"),
         ExternalToolException tool =>
-            $"{tool.ToolName} tidak bisa mengonversi file ini. File mungkin rusak atau dilindungi kata sandi.",
+            Loc.Format("Error.ExternalTool", tool.ToolName),
         _ when stage == PipelineStage.Decode =>
-            "File sumber tidak bisa dibaca. File mungkin rusak, atau codec untuk format ini belum terpasang di Windows.",
+            Loc.Get("Error.Decode"),
         IOException =>
-            "File tidak bisa ditulis. Pastikan disk tidak penuh dan file tujuan tidak sedang dibuka aplikasi lain.",
+            Loc.Get("Error.Io"),
         _ =>
-            $"Terjadi kesalahan yang tidak terduga ({exception.GetType().Name}), jadi file tidak disimpan.",
+            Loc.Format("Error.Unexpected", exception.GetType().Name),
     };
 }

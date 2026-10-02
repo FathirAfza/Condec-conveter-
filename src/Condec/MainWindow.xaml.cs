@@ -3,6 +3,7 @@
 
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Condec.Core.Localization;
 using Condec.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -111,7 +112,7 @@ public sealed partial class MainWindow : Window
         _ => FormatComboBox,
     };
 
-    // A format that needs a missing program stays in the list, captioned "Tidak tersedia", but can't be chosen.
+    // A format that needs a missing program stays in the list, captioned "Unavailable", but can't be chosen.
     // Disabling its ComboBoxItem instead closes the open list when that item has keyboard focus.
     private void FormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -126,7 +127,7 @@ public sealed partial class MainWindow : Window
         if (ViewModel.IsInput && e.DataView.Contains(StandardDataFormats.StorageItems))
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
-            e.DragUIOverride.Caption = "Pilih file ini";
+            e.DragUIOverride.Caption = Loc.Get("Drag.Caption");
         }
     }
 

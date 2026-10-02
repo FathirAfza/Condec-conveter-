@@ -3,6 +3,7 @@
 
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
+using Condec.Core.Localization;
 using Condec.Core.Imaging;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
@@ -27,7 +28,7 @@ public sealed class PdfToImageConverter : IConverter
             ?? throw new NotSupportedException($"'{request.TargetExtension}' is not an image target.");
         var pageNumber = (request.Options as PdfPageOptions)?.PageNumber ?? 1;
 
-        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, $"Merender halaman {pageNumber}"));
+        progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Format("Progress.RenderingPage", pageNumber)));
 
         // PdfPig refuses every encrypted PDF, including ones Windows would render without a password.
         var pageCount = PdfInspector.CountPages(request.SourcePath);

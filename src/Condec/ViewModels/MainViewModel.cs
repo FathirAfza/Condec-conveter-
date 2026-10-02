@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
 using Condec.Core.History;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 using Condec.Services;
@@ -71,7 +72,7 @@ public sealed partial class MainViewModel : ObservableObject
     // ---- Input ----
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSource), nameof(HasNoSource), nameof(FormatPlaceholder), nameof(FormatHelpText), nameof(ProcessingTitle), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ConvertLabel))]
+    [NotifyPropertyChangedFor(nameof(HasSource), nameof(HasNoSource), nameof(FormatPlaceholder), nameof(FormatHelpText), nameof(ProcessingTitle), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ShowsImageTraceNotice), nameof(ConvertLabel))]
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     public partial SourceFile? Source { get; set; }
 
@@ -82,7 +83,7 @@ public sealed partial class MainViewModel : ObservableObject
     public ObservableCollection<FormatOption> TargetOptions { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ConversionFormat), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ConvertLabel))]
+    [NotifyPropertyChangedFor(nameof(ConversionFormat), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ShowsImageTraceNotice), nameof(ConvertLabel))]
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     public partial FormatOption? SelectedTarget { get; set; }
 
@@ -96,13 +97,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool ShowsCadOptions => IsPdfSource && SelectedTarget?.Extension is ".dxf" or ".dwg";
 
-    public string ConvertLabel => ShowsCadOptions && Pdf.IsScan ? "Tetap konversi…" : "Konversi dan simpan…";
+    /// <summary>A picture going to DXF/DWG is traced into outlines, which suits line art better than photos.</summary>
+    public bool ShowsImageTraceNotice => Source is { } source && FileGlyphs.IsImage(source.Extension) && SelectedTarget?.Extension is ".dxf" or ".dwg";
 
-    public string FormatPlaceholder => HasSource ? "Pilih format" : "Pilih file dulu";
+    public string ConvertLabel => Loc.Get(ShowsCadOptions && Pdf.IsScan ? "Convert.LabelAnyway" : "Convert.Label");
 
-    public string FormatHelpText => Source is null
-        ? "Format muncul setelah file dipilih"
-        : $"{TargetOptions.Count(o => o.IsEnabled)} format tersedia untuk {Source.Extension}";
+    public string FormatPlaceholder => Loc.Get(HasSource ? "Format.Placeholder" : "Format.PlaceholderNoFile");
+
+    public string FormatHelpText => Source is null ? Loc.Get("Format.HelpNone") : DescribeAvailableFormats(Source.Extension);
+
+    private string DescribeAvailableFormats(string extension)
+    {
+        var count = TargetOptions.Count(o => o.IsEnabled);
+        return count == 1 ? Loc.Format("Format.HelpOne", extension) : Loc.Format("Format.HelpCount", count, extension);
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasInputMessage))]
@@ -115,13 +123,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---- Processing ----
 
-    public string ProcessingTitle => $"Mengonversi {Source?.Name}";
+    public string ProcessingTitle => Loc.Format("Processing.Title", Source?.Name ?? string.Empty);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ProcessingCaption))]
     public partial string? DestinationPath { get; set; }
 
-    public string ProcessingCaption => $"Ke {SelectedTarget?.DisplayName} · disimpan sebagai {DestinationPath}";
+    public string ProcessingCaption => Loc.Format("Processing.Caption", SelectedTarget?.DisplayName ?? string.Empty, DestinationPath ?? string.Empty);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ProgressText))]
@@ -142,7 +150,7 @@ public sealed partial class MainViewModel : ObservableObject
         ? string.Empty
         : $"{FileExtension.ToCode(Source.Extension)} → {SelectedTarget.DisplayName}";
 
-    public string ResultIntegrity => $"SHA-256 cocok · {Result?.ChunkCount} chunk terverifikasi";
+    public string ResultIntegrity => Loc.Format("Result.Integrity", Result?.ChunkCount ?? 0);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasResultMessage))]
@@ -165,9 +173,7 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HistoryEmptyText))]
     public partial bool IsHistoryEnabled { get; set; }
 
-    public string HistoryEmptyText => IsHistoryEnabled
-        ? "Belum ada riwayat konversi."
-        : "Riwayat sedang tidak dicatat. Konversi berikutnya tidak akan muncul di sini.";
+    public string HistoryEmptyText => Loc.Get(IsHistoryEnabled ? "History.Empty" : "History.EmptyDisabled");
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasHistoryMessage))]
@@ -183,7 +189,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            HistoryMessage = "Riwayat tidak bisa dibaca. Konversi tetap bisa dilakukan.";
+            HistoryMessage = Loc.Get("History.LoadFailed");
         }
 
         _loadingHistory = true;
@@ -210,11 +216,11 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (folderCount > 0 && filePaths.Count == 0)
         {
-            ShowInputMessage("Seret file, bukan folder.", InfoBarSeverity.Warning);
+            ShowInputMessage(Loc.Get("Input.DropFolder"), InfoBarSeverity.Warning);
         }
         else if (filePaths.Count + folderCount > 1)
         {
-            ShowInputMessage("Seret satu file saja. Condec mengonversi file satu per satu.", InfoBarSeverity.Warning);
+            ShowInputMessage(Loc.Get("Input.DropMany"), InfoBarSeverity.Warning);
         }
         else if (filePaths.Count == 1 && filePaths[0].Length == 0)
         {
@@ -227,7 +233,7 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     public void ReportUnreadableDrop() =>
-        ShowInputMessage("File yang diseret tidak bisa dibaca dari tempatnya. Salin dulu ke folder di komputer ini, lalu coba lagi.", InfoBarSeverity.Warning);
+        ShowInputMessage(Loc.Get("Input.DropUnreadable"), InfoBarSeverity.Warning);
 
     public void SelectSource(string path)
     {
@@ -251,7 +257,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            ShowInputMessage("File ini tidak bisa dibuka. Periksa apakah file masih ada dan bisa dibaca.", InfoBarSeverity.Warning);
+            ShowInputMessage(Loc.Get("Input.CannotOpen"), InfoBarSeverity.Warning);
             return;
         }
 
@@ -270,7 +276,7 @@ public sealed partial class MainViewModel : ObservableObject
             catch (Exception ex) when (ex is not OutOfMemoryException)
             {
                 // PdfPig throws its own exception types for damaged files.
-                ShowInputMessage("PDF ini tidak bisa dibaca. File mungkin rusak atau belum selesai diunduh.", InfoBarSeverity.Warning);
+                ShowInputMessage(Loc.Get("Input.PdfUnreadable"), InfoBarSeverity.Warning);
                 return;
             }
 
@@ -301,8 +307,9 @@ public sealed partial class MainViewModel : ObservableObject
     private string DescribeUnsupported(string extension)
     {
         var supported = string.Join(", ", _registry.GetSourceExtensions().Select(FormatCatalog.GetTargetLabel).Distinct());
-        var file = extension.Length == 0 ? "File tanpa ekstensi" : $"File {extension}";
-        return $"{file} belum bisa dikonversi. Format yang bisa dipilih: {supported}.";
+        return extension.Length == 0
+            ? Loc.Format("Input.UnsupportedNoExtension", supported)
+            : Loc.Format("Input.Unsupported", extension, supported);
     }
 
     private void ShowInputMessage(string message, InfoBarSeverity severity)
@@ -402,7 +409,7 @@ public sealed partial class MainViewModel : ObservableObject
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
             State = ConverterState.Input;
-            ShowInputMessage("Konversi dibatalkan. Tidak ada file yang disimpan.", InfoBarSeverity.Informational);
+            ShowInputMessage(Loc.Get("Input.Cancelled"), InfoBarSeverity.Informational);
         }
         catch (Exception ex)
         {
@@ -418,10 +425,10 @@ public sealed partial class MainViewModel : ObservableObject
     private void ResetSteps()
     {
         Steps.Clear();
-        Steps.Add(new ConversionStepViewModel("Mendekode file sumber"));
-        Steps.Add(new ConversionStepViewModel($"Menulis ke format {SelectedTarget?.DisplayName}"));
-        Steps.Add(new ConversionStepViewModel("Verifikasi chunk"));
-        Steps.Add(new ConversionStepViewModel("Cek integritas file"));
+        Steps.Add(new ConversionStepViewModel(Loc.Get("Step.Decode")));
+        Steps.Add(new ConversionStepViewModel(Loc.Format("Step.Encode", SelectedTarget?.DisplayName ?? string.Empty)));
+        Steps.Add(new ConversionStepViewModel(Loc.Get("Step.VerifyChunks")));
+        Steps.Add(new ConversionStepViewModel(Loc.Get("Step.VerifyIntegrity")));
     }
 
     private void OnProgress(PipelineProgress progress)
@@ -458,25 +465,25 @@ public sealed partial class MainViewModel : ObservableObject
             else
             {
                 step.State = StepState.Waiting;
-                step.Detail = "Menunggu";
+                step.Detail = Loc.Get("Step.Waiting");
             }
         }
     }
 
     private string DoneDetail(PipelineStage stage) => stage switch
     {
-        PipelineStage.VerifyChunks => $"{_chunkCount} chunk cocok",
-        PipelineStage.VerifyIntegrity => "Hash cocok",
-        _ => "Selesai",
+        PipelineStage.VerifyChunks => Loc.Format("Step.ChunksMatch", _chunkCount),
+        PipelineStage.VerifyIntegrity => Loc.Get("Step.HashMatches"),
+        _ => Loc.Get("Step.Done"),
     };
 
     private string ActiveDetail(PipelineProgress progress) => progress.Stage switch
     {
-        PipelineStage.Decode => progress.Detail ?? $"Membaca {Source?.Name}",
-        PipelineStage.Encode => progress.Detail ?? $"Encode ke {SelectedTarget?.Extension}",
-        PipelineStage.VerifyChunks when progress.ChunkNumber > 0 => $"Chunk {progress.ChunkNumber} dari {progress.ChunkCount}",
-        PipelineStage.VerifyChunks => "Membaca ulang dari disk",
-        _ => progress.StageFraction < 0.5 ? "Menghitung SHA-256" : "Membuka ulang hasil",
+        PipelineStage.Decode => progress.Detail ?? Loc.Format("Step.Reading", Source?.Name ?? string.Empty),
+        PipelineStage.Encode => progress.Detail ?? Loc.Format("Step.Encoding", SelectedTarget?.Extension ?? string.Empty),
+        PipelineStage.VerifyChunks when progress.ChunkNumber > 0 => Loc.Format("Step.ChunkOf", progress.ChunkNumber, progress.ChunkCount),
+        PipelineStage.VerifyChunks => Loc.Get("Step.RereadingFromDisk"),
+        _ => Loc.Get(progress.StageFraction < 0.5 ? "Step.ComputingHash" : "Step.Reopening"),
     };
 
     // ---- Done actions ----
@@ -486,7 +493,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (Result is not null)
         {
-            RunShellAction(() => _desktop.OpenFile(Result.OutputPath), "File tersimpan, tetapi tidak ada aplikasi yang bisa membukanya.");
+            RunShellAction(() => _desktop.OpenFile(Result.OutputPath), Loc.Get("Shell.NoApp"));
         }
     }
 
@@ -495,7 +502,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (Result is not null)
         {
-            RunShellAction(() => _desktop.ShowInFolder(Result.OutputPath), "File Explorer tidak bisa dibuka.");
+            RunShellAction(() => _desktop.ShowInFolder(Result.OutputPath), Loc.Get("Shell.ExplorerFailed"));
         }
     }
 
@@ -530,7 +537,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            HistoryMessage = "Pengaturan riwayat tidak bisa disimpan.";
+            HistoryMessage = Loc.Get("History.SaveSettingFailed");
         }
     }
 
@@ -549,7 +556,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            HistoryMessage = "Konversi berhasil, tetapi riwayatnya tidak bisa disimpan.";
+            HistoryMessage = Loc.Get("History.RecordFailed");
         }
     }
 
@@ -563,7 +570,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            HistoryMessage = "Riwayat tidak bisa dihapus.";
+            HistoryMessage = Loc.Get("History.ClearFailed");
         }
 
         RefreshHistory();
@@ -585,17 +592,17 @@ public sealed partial class MainViewModel : ObservableObject
             }
             else if (folder is not null && Directory.Exists(folder))
             {
-                HistoryMessage = $"{Path.GetFileName(path)} sudah tidak ada di lokasi semula. Folder tujuannya yang dibuka.";
+                HistoryMessage = Loc.Format("History.FileGone", Path.GetFileName(path));
                 _desktop.OpenFolder(folder);
             }
             else
             {
-                HistoryMessage = $"{Path.GetFileName(path)} dan foldernya sudah tidak ada.";
+                HistoryMessage = Loc.Format("History.FileAndFolderGone", Path.GetFileName(path));
             }
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
-            HistoryMessage = "File Explorer tidak bisa dibuka.";
+            HistoryMessage = Loc.Get("Shell.ExplorerFailed");
         }
     }
 

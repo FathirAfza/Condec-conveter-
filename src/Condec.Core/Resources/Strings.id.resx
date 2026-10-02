@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Label.Dxf" xml:space="preserve"><value>DXF (gambar CAD)</value></data>
+  <data name="Label.Dwg" xml:space="preserve"><value>DWG (gambar CAD)</value></data>
+  <data name="Kind.Image" xml:space="preserve"><value>Gambar {0}</value></data>
+  <data name="Kind.Audio" xml:space="preserve"><value>Audio {0}</value></data>
+  <data name="Kind.Video" xml:space="preserve"><value>Video {0}</value></data>
+  <data name="Kind.Pdf" xml:space="preserve"><value>Dokumen PDF</value></data>
+  <data name="Kind.Word" xml:space="preserve"><value>Dokumen Word</value></data>
+  <data name="Kind.OpenDocumentText" xml:space="preserve"><value>Dokumen OpenDocument</value></data>
+  <data name="Kind.Rtf" xml:space="preserve"><value>Dokumen RTF</value></data>
+  <data name="Kind.PlainText" xml:space="preserve"><value>Teks biasa</value></data>
+  <data name="Kind.WebPage" xml:space="preserve"><value>Halaman web</value></data>
+  <data name="Kind.Markdown" xml:space="preserve"><value>Dokumen Markdown</value></data>
+  <data name="Kind.Excel" xml:space="preserve"><value>Lembar kerja Excel</value></data>
+  <data name="Kind.OpenDocumentSheet" xml:space="preserve"><value>Lembar kerja OpenDocument</value></data>
+  <data name="Kind.PowerPoint" xml:space="preserve"><value>Presentasi PowerPoint</value></data>
+  <data name="Kind.OpenDocumentPresentation" xml:space="preserve"><value>Presentasi OpenDocument</value></data>
+  <data name="Kind.Cad" xml:space="preserve"><value>Gambar CAD {0}</value></data>
+  <data name="Kind.Unknown" xml:space="preserve"><value>File {0}</value></data>
+  <data name="Time.JustNow" xml:space="preserve"><value>Baru saja</value></data>
+  <data name="Time.Today" xml:space="preserve"><value>Hari ini, {0}</value></data>
+  <data name="Time.Yesterday" xml:space="preserve"><value>Kemarin, {0}</value></data>
+  <data name="Time.ClockPattern" xml:space="preserve"><value>HH.mm</value></data>
+  <data name="Time.Months" xml:space="preserve"><value>Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des</value></data>
+  <data name="Time.DayMonth" xml:space="preserve"><value>{0} {1}</value></data>
+  <data name="Time.DayMonthYear" xml:space="preserve"><value>{0} {1} {2}</value></data>
+  <data name="Time.WithTime" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Size.Bytes" xml:space="preserve"><value>{0} byte</value></data>
+  <data name="Size.DecimalSeparator" xml:space="preserve"><value>,</value></data>
+  <data name="Progress.ReadingCad" xml:space="preserve"><value>Membaca gambar CAD</value></data>
+  <data name="Progress.ReadingPdfPage" xml:space="preserve"><value>Membaca halaman PDF</value></data>
+  <data name="Progress.WritingCadObjects" xml:space="preserve"><value>Menulis {0} objek CAD</value></data>
+  <data name="Progress.OpeningLibreOffice" xml:space="preserve"><value>Membuka dokumen di LibreOffice</value></data>
+  <data name="Progress.RenderingPage" xml:space="preserve"><value>Merender halaman {0}</value></data>
+  <data name="Progress.ReadingImage" xml:space="preserve"><value>Membaca gambar</value></data>
+  <data name="Progress.TracingOutlines" xml:space="preserve"><value>Menelusuri garis tepi</value></data>
+  <data name="Progress.WritingDxf" xml:space="preserve"><value>Menulis {0} garis tepi ke DXF</value></data>
+  <data name="Progress.ConvertingDxfToDwg" xml:space="preserve"><value>Mengubah DXF menjadi DWG</value></data>
+  <data name="LibreOffice.Missing" xml:space="preserve"><value>Format ini perlu LibreOffice, yang belum terpasang di komputer ini. Pasang LibreOffice, lalu pilih file lagi.</value></data>
+  <data name="Error.TryAnotherDrive" xml:space="preserve"><value>Coba lagi, atau simpan ke drive lain.</value></data>
+  <data name="Error.LockedPdf" xml:space="preserve"><value>PDF ini dikunci dengan kata sandi atau pembatasan izin. Condec tidak membuka proteksi PDF, jadi file ini tidak bisa dikonversi.</value></data>
+  <data name="Error.ChunkMismatch" xml:space="preserve"><value>Chunk {0} berbeda saat dibaca ulang dari disk, jadi file tidak disimpan. {1}</value></data>
+  <data name="Error.LengthMismatch" xml:space="preserve"><value>Ukuran file di disk tidak sama dengan yang ditulis, jadi file tidak disimpan. {0}</value></data>
+  <data name="Error.HashMismatch" xml:space="preserve"><value>SHA-256 file di disk tidak cocok dengan yang ditulis, jadi file tidak disimpan. {0}</value></data>
+  <data name="Error.CannotReopen" xml:space="preserve"><value>Hasilnya tidak bisa dibuka ulang sebagai {0}, jadi file tidak disimpan.</value></data>
+  <data name="Error.SourceMissing" xml:space="preserve"><value>File sumber tidak ditemukan. Mungkin sudah dipindah atau dihapus.</value></data>
+  <data name="Error.FolderMissing" xml:space="preserve"><value>Folder tujuan tidak ditemukan. Pilih lokasi simpan lain.</value></data>
+  <data name="Error.NoWriteAccess" xml:space="preserve"><value>Condec tidak punya izin menulis ke folder tujuan. Pilih lokasi simpan lain.</value></data>
+  <data name="Error.SameFile" xml:space="preserve"><value>File tujuan sama dengan file sumber. Simpan dengan nama lain.</value></data>
+  <data name="Error.NothingToConvertPdf" xml:space="preserve"><value>Halaman ini tidak berisi garis, teks, atau hasil scan yang bisa diubah menjadi gambar CAD. Pilih halaman lain.</value></data>
+  <data name="Error.NothingToTraceImage" xml:space="preserve"><value>Condec tidak menemukan bentuk yang bisa ditelusuri di gambar ini. Hasil terbaik didapat dari gambar garis, logo, dan hasil scan dengan garis gelap di latar terang.</value></data>
+  <data name="Error.UnsupportedCad" xml:space="preserve"><value>Versi gambar CAD ini belum didukung. Condec membaca DWG mulai AutoCAD R14 dan DXF mulai R12. Simpan ulang file dengan versi yang lebih baru di aplikasi CAD-nya, lalu coba lagi.</value></data>
+  <data name="Error.ExternalTool" xml:space="preserve"><value>{0} tidak bisa mengonversi file ini. File mungkin rusak atau dilindungi kata sandi.</value></data>
+  <data name="Error.Decode" xml:space="preserve"><value>File sumber tidak bisa dibaca. File mungkin rusak, atau codec untuk format ini belum terpasang di Windows.</value></data>
+  <data name="Error.Io" xml:space="preserve"><value>File tidak bisa ditulis. Pastikan disk tidak penuh dan file tujuan tidak sedang dibuka aplikasi lain.</value></data>
+  <data name="Error.Unexpected" xml:space="preserve"><value>Terjadi kesalahan yang tidak terduga ({0}), jadi file tidak disimpan.</value></data>
+  <data name="Format.Unavailable" xml:space="preserve"><value>Tidak tersedia</value></data>
+  <data name="Format.UnavailableSpoken" xml:space="preserve"><value>{0}, tidak tersedia</value></data>
+  <data name="Source.WithPages" xml:space="preserve"><value>{0} · {1} halaman · {2}</value></data>
+  <data name="Source.WithOnePage" xml:space="preserve"><value>{0} · 1 halaman · {1}</value></data>
+  <data name="Source.Plain" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Step.Waiting" xml:space="preserve"><value>Menunggu</value></data>
+  <data name="History.VerifiedSpoken" xml:space="preserve"><value>{0}, {1}, terverifikasi</value></data>
+  <data name="History.PlainSpoken" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="History.ShowInFolderFor" xml:space="preserve"><value>Tampilkan {0} di folder</value></data>
+  <data name="Unit.Mm" xml:space="preserve"><value>Milimeter (mm)</value></data>
+  <data name="Unit.Cm" xml:space="preserve"><value>Sentimeter (cm)</value></data>
+  <data name="Unit.M" xml:space="preserve"><value>Meter (m)</value></data>
+  <data name="Unit.In" xml:space="preserve"><value>Inci (in)</value></data>
+  <data name="Scale.Custom" xml:space="preserve"><value>Kustom</value></data>
+  <data name="Pdf.KeepTextNoteScan" xml:space="preserve"><value>Tidak tersedia untuk PDF hasil scan</value></data>
+  <data name="Pdf.KeepTextNote" xml:space="preserve"><value>Disimpan sebagai entitas TEXT, bukan garis</value></data>
+  <data name="Pdf.KindScanTitle" xml:space="preserve"><value>PDF hasil scan terdeteksi</value></data>
+  <data name="Pdf.KindEmptyTitle" xml:space="preserve"><value>Halaman ini kosong</value></data>
+  <data name="Pdf.KindVectorTitle" xml:space="preserve"><value>PDF vektor terdeteksi</value></data>
+  <data name="Pdf.KindScanMessage" xml:space="preserve"><value>Isinya gambar piksel, bukan garis. Hasil DXF berupa jejak garis perkiraan dan tidak presisi untuk ukuran.</value></data>
+  <data name="Pdf.KindEmptyMessage" xml:space="preserve"><value>Tidak ada garis, teks, atau gambar yang bisa diubah. Pilih halaman lain.</value></data>
+  <data name="Pdf.KindVectorMessage" xml:space="preserve"><value>Garis, busur, dan teks akan diubah menjadi objek CAD.</value></data>
+  <data name="Pdf.PageOf" xml:space="preserve"><value>Halaman {0} dari {1}</value></data>
+  <data name="Convert.Label" xml:space="preserve"><value>Konversi dan simpan…</value></data>
+  <data name="Convert.LabelAnyway" xml:space="preserve"><value>Tetap konversi…</value></data>
+  <data name="Format.Placeholder" xml:space="preserve"><value>Pilih format</value></data>
+  <data name="Format.PlaceholderNoFile" xml:space="preserve"><value>Pilih file dulu</value></data>
+  <data name="Format.HelpNone" xml:space="preserve"><value>Format muncul setelah file dipilih</value></data>
+  <data name="Format.HelpCount" xml:space="preserve"><value>{0} format tersedia untuk {1}</value></data>
+  <data name="Format.HelpOne" xml:space="preserve"><value>1 format tersedia untuk {0}</value></data>
+  <data name="Processing.Title" xml:space="preserve"><value>Mengonversi {0}</value></data>
+  <data name="Processing.Caption" xml:space="preserve"><value>Ke {0} · disimpan sebagai {1}</value></data>
+  <data name="Result.Integrity" xml:space="preserve"><value>SHA-256 cocok · {0} chunk terverifikasi</value></data>
+  <data name="History.Empty" xml:space="preserve"><value>Belum ada riwayat konversi.</value></data>
+  <data name="History.EmptyDisabled" xml:space="preserve"><value>Riwayat sedang tidak dicatat. Konversi berikutnya tidak akan muncul di sini.</value></data>
+  <data name="History.LoadFailed" xml:space="preserve"><value>Riwayat tidak bisa dibaca. Konversi tetap bisa dilakukan.</value></data>
+  <data name="History.SaveSettingFailed" xml:space="preserve"><value>Pengaturan riwayat tidak bisa disimpan.</value></data>
+  <data name="History.RecordFailed" xml:space="preserve"><value>Konversi berhasil, tetapi riwayatnya tidak bisa disimpan.</value></data>
+  <data name="History.ClearFailed" xml:space="preserve"><value>Riwayat tidak bisa dihapus.</value></data>
+  <data name="History.FileGone" xml:space="preserve"><value>{0} sudah tidak ada di lokasi semula. Folder tujuannya yang dibuka.</value></data>
+  <data name="History.FileAndFolderGone" xml:space="preserve"><value>{0} dan foldernya sudah tidak ada.</value></data>
+  <data name="Input.DropFolder" xml:space="preserve"><value>Seret file, bukan folder.</value></data>
+  <data name="Input.DropMany" xml:space="preserve"><value>Seret satu file saja. Condec mengonversi file satu per satu.</value></data>
+  <data name="Input.DropUnreadable" xml:space="preserve"><value>File yang diseret tidak bisa dibaca dari tempatnya. Salin dulu ke folder di komputer ini, lalu coba lagi.</value></data>
+  <data name="Input.Unsupported" xml:space="preserve"><value>File {0} belum bisa dikonversi. Format yang bisa dipilih: {1}.</value></data>
+  <data name="Input.UnsupportedNoExtension" xml:space="preserve"><value>File tanpa ekstensi belum bisa dikonversi. Format yang bisa dipilih: {0}.</value></data>
+  <data name="Input.CannotOpen" xml:space="preserve"><value>File ini tidak bisa dibuka. Periksa apakah file masih ada dan bisa dibaca.</value></data>
+  <data name="Input.PdfUnreadable" xml:space="preserve"><value>PDF ini tidak bisa dibaca. File mungkin rusak atau belum selesai diunduh.</value></data>
+  <data name="Input.Cancelled" xml:space="preserve"><value>Konversi dibatalkan. Tidak ada file yang disimpan.</value></data>
+  <data name="Step.Decode" xml:space="preserve"><value>Mendekode file sumber</value></data>
+  <data name="Step.Encode" xml:space="preserve"><value>Menulis ke format {0}</value></data>
+  <data name="Step.VerifyChunks" xml:space="preserve"><value>Verifikasi chunk</value></data>
+  <data name="Step.VerifyIntegrity" xml:space="preserve"><value>Cek integritas file</value></data>
+  <data name="Step.Done" xml:space="preserve"><value>Selesai</value></data>
+  <data name="Step.ChunksMatch" xml:space="preserve"><value>{0} chunk cocok</value></data>
+  <data name="Step.HashMatches" xml:space="preserve"><value>Hash cocok</value></data>
+  <data name="Step.Reading" xml:space="preserve"><value>Membaca {0}</value></data>
+  <data name="Step.Encoding" xml:space="preserve"><value>Encode ke {0}</value></data>
+  <data name="Step.ChunkOf" xml:space="preserve"><value>Chunk {0} dari {1}</value></data>
+  <data name="Step.RereadingFromDisk" xml:space="preserve"><value>Membaca ulang dari disk</value></data>
+  <data name="Step.ComputingHash" xml:space="preserve"><value>Menghitung SHA-256</value></data>
+  <data name="Step.Reopening" xml:space="preserve"><value>Membuka ulang hasil</value></data>
+  <data name="Shell.NoApp" xml:space="preserve"><value>File tersimpan, tetapi tidak ada aplikasi yang bisa membukanya.</value></data>
+  <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer tidak bisa dibuka.</value></data>
+  <data name="Drag.Caption" xml:space="preserve"><value>Pilih file ini</value></data>
+  <data name="Image.TraceTitle" xml:space="preserve"><value>Gambar ditelusuri menjadi garis tepi</value></data>
+  <data name="Image.TraceMessage" xml:space="preserve"><value>Condec menelusuri bentuk gelap di gambar menjadi garis tepi tertutup. Hasil terbaik didapat dari gambar garis, logo, dan hasil scan; foto hanya menghasilkan bentuk kasar. Ukuran gambar mengikuti resolusi gambar sumber.</value></data>
+  <data name="Main.Title" xml:space="preserve"><value>Konversi file</value></data>
+  <data name="Main.Subtitle" xml:space="preserve"><value>Pilih file, tentukan format tujuan, lalu simpan.</value></data>
+  <data name="Input.DropHere" xml:space="preserve"><value>Seret file ke sini</value></data>
+  <data name="Input.Choose" xml:space="preserve"><value>Pilih file…</value></data>
+  <data name="Source.Label" xml:space="preserve"><value>File sumber</value></data>
+  <data name="Source.ChangeSpoken" xml:space="preserve"><value>Ganti file sumber</value></data>
+  <data name="Source.Change" xml:space="preserve"><value>Ganti</value></data>
+  <data name="Format.Header" xml:space="preserve"><value>Ubah ke format</value></data>
+  <data name="Pdf.ChooseAnother" xml:space="preserve"><value>Pilih file lain</value></data>
+  <data name="Cad.UnitHeader" xml:space="preserve"><value>Satuan gambar</value></data>
+  <data name="Cad.ScaleHeader" xml:space="preserve"><value>Skala gambar</value></data>
+  <data name="Cad.CustomScaleSpoken" xml:space="preserve"><value>Skala kustom, 1 banding</value></data>
+  <data name="Cad.CustomScaleHeader" xml:space="preserve"><value>Skala kustom, 1 : n</value></data>
+  <data name="Cad.CustomScalePlaceholder" xml:space="preserve"><value>1 : n</value></data>
+  <data name="Cad.PageHeader" xml:space="preserve"><value>Halaman</value></data>
+  <data name="Cad.KeepText" xml:space="preserve"><value>Pertahankan teks sebagai teks</value></data>
+  <data name="Cad.JoinLines" xml:space="preserve"><value>Gabungkan garis bersambung</value></data>
+  <data name="Cad.JoinLinesNote" xml:space="preserve"><value>Menjadi satu polyline</value></data>
+  <data name="Privacy.Note" xml:space="preserve"><value>Diproses sepenuhnya di perangkat ini. Tidak ada file yang diunggah.</value></data>
+  <data name="Processing.Cancel" xml:space="preserve"><value>Batal</value></data>
+  <data name="Processing.ProgressSpoken" xml:space="preserve"><value>Kemajuan konversi</value></data>
+  <data name="Done.Message" xml:space="preserve"><value>File berhasil disimpan dan lolos verifikasi chunk serta cek integritas.</value></data>
+  <data name="Done.Title" xml:space="preserve"><value>Konversi selesai</value></data>
+  <data name="Done.Location" xml:space="preserve"><value>Lokasi</value></data>
+  <data name="Done.Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Done.Integrity" xml:space="preserve"><value>Integritas</value></data>
+  <data name="Done.OpenFile" xml:space="preserve"><value>Buka file</value></data>
+  <data name="Done.ShowInFolder" xml:space="preserve"><value>Tampilkan di folder</value></data>
+  <data name="Done.ConvertAnother" xml:space="preserve"><value>Konversi file lain</value></data>
+  <data name="Failed.Title" xml:space="preserve"><value>Konversi gagal</value></data>
+  <data name="Failed.File" xml:space="preserve"><value>File</value></data>
+  <data name="Failed.TryAgain" xml:space="preserve"><value>Coba lagi</value></data>
+  <data name="Failed.ChangeChoice" xml:space="preserve"><value>Ubah pilihan</value></data>
+  <data name="History.Title" xml:space="preserve"><value>Riwayat</value></data>
+  <data name="History.Record" xml:space="preserve"><value>Catat riwayat</value></data>
+  <data name="History.Clear" xml:space="preserve"><value>Hapus riwayat</value></data>
+  <data name="History.ClearConfirm" xml:space="preserve"><value>Hapus semua riwayat? File hasil konversi tidak ikut terhapus.</value></data>
+  <data name="History.ClearConfirmButton" xml:space="preserve"><value>Hapus</value></data>
+  <data name="History.Verified" xml:space="preserve"><value>Terverifikasi</value></data>
+</root>

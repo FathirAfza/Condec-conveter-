@@ -6,6 +6,7 @@ using System.Xml;
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 
 namespace Condec.Core.Documents;
@@ -45,7 +46,7 @@ public sealed class LibreOfficeConverter : IExternalToolConverter
     public ExternalToolStatus GetToolStatus() =>
         _locate() is not null
             ? ExternalToolStatus.Available
-            : ExternalToolStatus.Unavailable("Format ini perlu LibreOffice, yang belum terpasang di komputer ini. Pasang LibreOffice, lalu pilih file lagi.");
+            : ExternalToolStatus.Unavailable(Loc.Get("LibreOffice.Missing"));
 
     public IReadOnlyList<string> GetTargets(string sourceExtension) =>
         DocumentFormats.GetTargets(FileExtension.Normalize(sourceExtension));
@@ -64,7 +65,7 @@ public sealed class LibreOfficeConverter : IExternalToolConverter
 
         try
         {
-            progress.Report(new ConversionProgress(ConversionStage.Decode, 0, "Membuka dokumen di LibreOffice"));
+            progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Get("Progress.OpeningLibreOffice")));
 
             var input = await PrepareInputAsync(request.SourcePath, source, inputDirectory, ct).ConfigureAwait(false);
             var arguments = BuildArguments(input, target, outputDirectory, _profileDirectory, DocumentFormats.GetImportFilter(source, target));

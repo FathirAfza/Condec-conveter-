@@ -18,6 +18,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- Tests that read the sources (resource files, XAML) find the repository through this. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepoRoot</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
     <Compile Remove="Windows\**" />
   </ItemGroup>

@@ -2,56 +2,58 @@
 // Copyright (C) 2026 Condec contributors
 
 using System.Globalization;
+using Condec.Core.Localization;
 
 namespace Condec.Core.Formats;
 
 /// <summary>
-/// Times and sizes in Indonesian ("Kemarin, 19.40", "2,4 MB"), formatted explicitly so the text is the
+/// Times and sizes in the app's language ("Yesterday, 7:40 PM" and "2.4 MB", or "Kemarin, 19.40" and "2,4 MB").
+/// The patterns live in the string resources and are applied with the invariant culture, so the text is the
 /// same whatever culture data (ICU or NLS) the machine has.
 /// </summary>
 public static class DisplayFormat
 {
-    private static readonly string[] MonthAbbreviations =
-        ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-
     private static readonly string[] SizeUnits = ["KB", "MB", "GB", "TB"];
 
-    /// <summary>"Baru saja", "Hari ini, 08.05", "Kemarin, 19.40", "22 Sep, 15.12" or "31 Des 2025, 23.59".</summary>
+    /// <summary>"Just now", "Today, 8:05 AM", "Yesterday, 7:40 PM", "Sep 22, 3:12 PM" or "Dec 31, 2025, 11:59 PM".</summary>
     /// <param name="local">The moment to describe, in local time.</param>
     /// <param name="nowLocal">The current local time.</param>
-    public static string FormatTimestamp(DateTime local, DateTime nowLocal)
+    /// <param name="culture">The language to write in; the app's language when null.</param>
+    public static string FormatTimestamp(DateTime local, DateTime nowLocal, CultureInfo? culture = null)
     {
         var elapsed = nowLocal - local;
         if (elapsed.Duration() < TimeSpan.FromMinutes(1))
         {
-            return "Baru saja";
+            return Loc.Get("Time.JustNow", culture);
         }
 
-        var time = string.Create(CultureInfo.InvariantCulture, $"{local.Hour:D2}.{local.Minute:D2}");
+        var time = local.ToString(Loc.Get("Time.ClockPattern", culture), CultureInfo.InvariantCulture);
         if (local.Date == nowLocal.Date)
         {
-            return $"Hari ini, {time}";
+            return Loc.Format(culture, "Time.Today", time);
         }
 
         if (local.Date == nowLocal.Date.AddDays(-1))
         {
-            return $"Kemarin, {time}";
+            return Loc.Format(culture, "Time.Yesterday", time);
         }
 
-        var day = string.Create(CultureInfo.InvariantCulture, $"{local.Day} {MonthAbbreviations[local.Month - 1]}");
-        return local.Year == nowLocal.Year
-            ? $"{day}, {time}"
-            : string.Create(CultureInfo.InvariantCulture, $"{day} {local.Year}, {time}");
+        var month = Loc.Get("Time.Months", culture).Split('|')[local.Month - 1];
+        var date = local.Year == nowLocal.Year
+            ? Loc.Format(culture, "Time.DayMonth", local.Day, month)
+            : Loc.Format(culture, "Time.DayMonthYear", local.Day, month, local.Year);
+        return Loc.Format(culture, "Time.WithTime", date, time);
     }
 
-    /// <summary>"512 byte", "2,4 MB", "245 MB" (1 KB = 1024 byte, as in File Explorer).</summary>
-    public static string FormatFileSize(long bytes)
+    /// <summary>"512 bytes", "2.4 MB", "245 MB" (1 KB = 1024 bytes, as in File Explorer).</summary>
+    /// <param name="culture">The language to write in; the app's language when null.</param>
+    public static string FormatFileSize(long bytes, CultureInfo? culture = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(bytes);
 
         if (bytes < 1024)
         {
-            return string.Create(CultureInfo.InvariantCulture, $"{bytes} byte");
+            return Loc.Format(culture, "Size.Bytes", bytes);
         }
 
         double value = bytes;
@@ -72,7 +74,7 @@ public static class DisplayFormat
         }
 
         var number = rounded < 100
-            ? rounded.ToString("0.0", CultureInfo.InvariantCulture).Replace('.', ',')
+            ? rounded.ToString("0.0", CultureInfo.InvariantCulture).Replace(".", Loc.Get("Size.DecimalSeparator", culture))
             : rounded.ToString("0", CultureInfo.InvariantCulture);
 
         return $"{number} {SizeUnits[unit]}";
