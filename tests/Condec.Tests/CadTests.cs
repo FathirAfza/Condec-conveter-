@@ -245,6 +245,61 @@ public sealed class CadFileConverterTests : IDisposable
         Assert.Equal("Halo", Assert.Single(dwg.Entities.OfType<ACadSharp.Entities.TextEntity>()).Value);
     }
 
+    /// <summary>
+    /// An INSERT with ATTRIBs closed by a SEQEND, a common DXF layout. ACadSharp's reader leaves the SEQEND in the
+    /// drawing as an entity, which its writers reject with NotImplementedException ("Entity not implemented: Seqend").
+    /// </summary>
+    [Theory]
+    [InlineData("AC1009")]
+    [InlineData("AC1015")]
+    [InlineData("AC1027")]
+    public async Task Dxf_WithAStraySeqend_ConvertsToDwg(string version)
+    {
+        const string entities =
+            "0\nLINE\n8\n0\n10\n0\n20\n0\n11\n10\n21\n10\n" +
+            "0\nINSERT\n8\n0\n2\nB\n66\n1\n10\n0\n20\n0\n" +
+            "0\nATTRIB\n8\n0\n10\n0\n20\n0\n40\n1\n1\nX\n2\nT\n70\n0\n0\nSEQEND\n8\n0\n" +
+            "0\nLINE\n8\n0\n10\n0\n20\n0\n11\n1\n21\n1\n0\nSEQEND\n8\n0\n";
+
+        var dwg = await ConvertAsync(Dxf(version, entities), ".dxf", ".dwg");
+
+        Assert.DoesNotContain(dwg.Entities, e => e is ACadSharp.Entities.Seqend);
+        Assert.Equal(2, dwg.Entities.OfType<ACadSharp.Entities.Line>().Count());
+    }
+
+    /// <summary>
+    /// An R10 DXF (AC1006) of POLYLINEs, what image-to-DXF tools write. ACadSharp reads an AC1006 POLYLINE as
+    /// placeholders, so Condec relabels the file as R12 before reading it.
+    /// </summary>
+    [Fact]
+    public async Task R10Dxf_Polylines_ConvertToDwg()
+    {
+        const string polyline =
+            "0\nPOLYLINE\n8\n0\n66\n1\n70\n1\n" +
+            "0\nVERTEX\n8\n0\n10\n0.0\n20\n0.0\n42\n0.25\n0\nVERTEX\n8\n0\n10\n5.0\n20\n0.0\n42\n0.0\n" +
+            "0\nVERTEX\n8\n0\n10\n5.0\n20\n5.0\n42\n0.0\n0\nSEQEND\n";
+
+        var dwg = await ConvertAsync(Dxf("AC1006", polyline + polyline), ".dxf", ".dwg");
+
+        Assert.Equal(2, dwg.Entities.OfType<ACadSharp.Entities.Polyline2D>().Count());
+        Assert.All(dwg.Entities.OfType<ACadSharp.Entities.Polyline2D>(), p => Assert.Equal(3, p.Vertices.Count));
+        Assert.Equal(2, dwg.Entities.Count);
+    }
+
+    [Theory]
+    [InlineData("AC1006", "AC1009")]
+    [InlineData("AC1004", "AC1009")]
+    [InlineData("AC1009", "AC1009")]
+    [InlineData("AC1015", "AC1015")]
+    public void AsR12_RelabelsOnlyDxfOlderThanR12(string from, string to)
+    {
+        var bytes = System.Text.Encoding.ASCII.GetBytes(Dxf(from, Line));
+
+        var result = System.Text.Encoding.ASCII.GetString(CadFiles.AsR12(bytes));
+
+        Assert.Equal(Dxf(to, Line), result);
+    }
+
     [Fact]
     public async Task Dwg_ToDxf_KeepsTheDrawing()
     {

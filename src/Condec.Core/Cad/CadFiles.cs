@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
+using System.Text;
+using System.Text.RegularExpressions;
 using ACadSharp;
+using ACadSharp.Entities;
 using ACadSharp.Exceptions;
 using ACadSharp.IO;
 using Condec.Core.Conversion;
@@ -22,21 +25,43 @@ internal static class CadFiles
     /// </remarks>
     public static CadDocument Read(string path, string extension)
     {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         try
         {
             if (extension == ".dwg")
             {
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 return DwgReader.Read(stream);
             }
 
-            using var reader = new DxfReader(stream, null) { Configuration = new DxfReaderConfiguration { CreateDefaults = true } };
+            using var dxf = new MemoryStream(AsR12(File.ReadAllBytes(path)));
+            using var reader = new DxfReader(dxf, null) { Configuration = new DxfReaderConfiguration { CreateDefaults = true } };
             return reader.Read();
         }
         catch (CadNotSupportedException ex)
         {
             throw new UnsupportedCadVersionException(ex.Message, ex);
         }
+    }
+
+    private static readonly Regex OldDxfVersion = new(@"\$ACADVER\s+1\s+(AC10(?:0[0-8]))", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Relabels an ASCII DXF saved as AutoCAD R10 or older (AC1006 and below) as R12 (AC1009). ACadSharp 3.8.0 reads
+    /// the POLYLINE of those versions as unusable placeholders, so a drawing of polylines comes out empty or fails to
+    /// write; the same entities in an AC1009 file read correctly, and the entity layout R10 DXF uses is the same.
+    /// The label has the same length, so nothing else in the file moves.
+    /// </summary>
+    internal static byte[] AsR12(byte[] dxf)
+    {
+        // $ACADVER sits in the HEADER section at the top of the file.
+        var head = Encoding.Latin1.GetString(dxf, 0, Math.Min(dxf.Length, 64 * 1024));
+        var match = OldDxfVersion.Match(head);
+        if (match.Success)
+        {
+            Encoding.ASCII.GetBytes("AC1009").CopyTo(dxf, match.Groups[1].Index);
+        }
+
+        return dxf;
     }
 
     /// <summary>
@@ -61,12 +86,35 @@ internal static class CadFiles
         };
 
     /// <summary>
+    /// Removes entities the writers throw NotImplementedException for. A SEQEND closes the vertex or attribute list of
+    /// a POLYLINE or INSERT; ACadSharp's DXF reader also leaves it behind as an entity of its own, which the writers
+    /// can't save and which carries no drawing data. The placeholder types are what the reader puts where it couldn't
+    /// build the real entity.
+    /// </summary>
+    internal static int DropUnwritableEntities(CadDocument cad)
+    {
+        var dropped = 0;
+        foreach (var record in cad.BlockRecords)
+        {
+            var unwritable = record.Entities.Where(IsUnwritable).ToList();
+            record.Entities.Remove(unwritable);
+            dropped += unwritable.Count;
+        }
+
+        return dropped;
+    }
+
+    private static bool IsUnwritable(Entity entity) =>
+        entity is Seqend || entity.GetType().Name.EndsWith("Placeholder", StringComparison.Ordinal);
+
+    /// <summary>
     /// Writes the drawing as DWG or ASCII DXF, first moving it to a version the writer supports (see
     /// <see cref="WritableVersion"/>). ACadSharp writers dispose the stream they write to, so they write to memory.
     /// </summary>
     public static byte[] Write(CadDocument cad, string target)
     {
         cad.Header.Version = WritableVersion(cad.Header.Version, target);
+        DropUnwritableEntities(cad);
 
         using var buffer = new MemoryStream();
         if (target == ".dwg")
