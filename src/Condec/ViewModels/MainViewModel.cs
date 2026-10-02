@@ -306,7 +306,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private string DescribeUnsupported(string extension)
     {
-        var supported = string.Join(", ", _registry.GetSourceExtensions().Select(FormatCatalog.GetTargetLabel).Distinct());
+        var supported = string.Join(", ", _registry.GetSourceExtensions().Select(extension => FormatCatalog.GetTargetLabel(extension)).Distinct());
         return extension.Length == 0
             ? Loc.Format("Input.UnsupportedNoExtension", supported)
             : Loc.Format("Input.Unsupported", extension, supported);
