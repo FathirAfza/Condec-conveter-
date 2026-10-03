@@ -60,6 +60,8 @@ public class UpscaleEngineTests
     [InlineData(5, 7)]
     [InlineData(108, 108)]
     [InlineData(109, 30)]
+    [InlineData(121, 121)]
+    [InlineData(229, 30)]
     [InlineData(230, 150)]
     public void Tiles_MeetWithoutSeams_AndReproduceTheNetworksResultExactly(int width, int height) =>
         AssertSeamless(width, height, TiledUpscaler.DefaultTileSize);
@@ -68,6 +70,7 @@ public class UpscaleEngineTests
     [InlineData(96, 230, 150)]
     [InlineData(64, 230, 150)]
     [InlineData(48, 100, 61)]
+    [InlineData(48, 69, 41)]
     public void EverySizeOfTile_ReproducesTheNetworksResultExactly(int tileSize, int width, int height) =>
         AssertSeamless(width, height, tileSize);
 
@@ -97,19 +100,69 @@ public class UpscaleEngineTests
 
     [Theory]
     [InlineData(1, 1, 1)]
-    [InlineData(108, 108, 1)]
-    [InlineData(109, 108, 2)]
+    [InlineData(120, 120, 1)]
+    [InlineData(121, 120, 2)]
+    [InlineData(228, 228, 4)]
+    [InlineData(229, 120, 3)]
+    [InlineData(230, 150, 6)]
     [InlineData(1280, 720, 12 * 7)]
-    public void TileCount_CoversThePictureInBordersOf108(int width, int height, int expected) =>
+    public void TileCount_CoversThePicture_With120AndThen108PerTile(int width, int height, int expected) =>
         Assert.Equal(expected, TiledUpscaler.TileCount(width, height));
 
     [Theory]
-    [InlineData(128, 108)]
-    [InlineData(96, 76)]
-    [InlineData(64, 44)]
-    [InlineData(48, 28)]
-    public void EachTileSize_ContributesItsSizeWithoutTheBorder(int tileSize, int inner) =>
+    [InlineData(128, 120, 108)]
+    [InlineData(96, 88, 76)]
+    [InlineData(64, 56, 44)]
+    [InlineData(48, 40, 28)]
+    public void EachTileSize_KeepsItsSizeWithoutTheMargins_AndStepsOnByLessTheOverlap(int tileSize, int kept, int inner)
+    {
+        Assert.Equal(kept, TiledUpscaler.KeptSize(tileSize));
         Assert.Equal(inner, TiledUpscaler.InnerSize(tileSize));
+    }
+
+    /// <summary>Gives every pixel of a tile the same value, a different one per tile: where tiles meet shows how they are mixed.</summary>
+    private sealed class OneValuePerTileModel(params float[] values) : IUpscaleModel
+    {
+        private int _tiles;
+
+        public int Scale => 4;
+
+        public float[] RunTile(float[] input, int size) => Enumerable.Repeat(values[_tiles++], 3 * size * Scale * size * Scale).ToArray();
+
+        public void Dispose()
+        {
+        }
+    }
+
+    [Fact]
+    public void NeighboringTiles_FadeIntoEachOther_AcrossTheOverlap_AlsoWhereFourMeet()
+    {
+        // 228 × 228 is 2 × 2 tiles of 128. The second tile on each side writes from pixel 108 and fades in over the 12
+        // pixels after it: output 432 to 480. Tiles run row by row, so the values are top left, top right, bottom left, bottom right.
+        float[] values = [0.1f, 0.5f, 0.3f, 0.9f];
+        var result = TiledUpscaler.Run(new OneValuePerTileModel(values), Picture(228, 228), 228, 228, TiledUpscaler.DefaultTileSize, null, Ct);
+
+        static float Fade(int at) => at < 432 ? 0f : at >= 480 ? 1f : (at - 432 + 0.5f) / 48f;
+        const int Width = 228 * 4;
+        for (var y = 0; y < Width; y++)
+        {
+            for (var x = 0; x < Width; x++)
+            {
+                var (u, v) = (Fade(x), Fade(y));
+                var expected = ((1 - v) * (((1 - u) * values[0]) + (u * values[1]))) + (v * (((1 - u) * values[2]) + (u * values[3])));
+                var actual = result[(((y * Width) + x) * 4) + 1];
+                if ((u is 0f or 1f) && (v is 0f or 1f))
+                {
+                    Assert.Equal((int)MathF.Round(expected * 255f), actual);
+                }
+                else
+                {
+                    // Where tiles are mixed, the value goes through a byte once more: one step off at most.
+                    Assert.InRange(actual, (int)MathF.Round(expected * 255f) - 1, (int)MathF.Round(expected * 255f) + 1);
+                }
+            }
+        }
+    }
 
     [Fact]
     public void ATileSizeTheUpscalerDoesNotUse_IsRefused() =>

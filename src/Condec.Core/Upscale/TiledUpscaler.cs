@@ -5,9 +5,15 @@ namespace Condec.Core.Upscale;
 
 /// <summary>
 /// Enlarges a picture of any size with a network that takes one fixed-size tile. Every tile is the same size, so an
-/// engine that compiles for a tensor shape (DirectML) does so once: the picture is read with its edges mirrored, and
-/// each tile carries a border of its neighbors that is thrown away, so the tiles meet without seams.
+/// engine that compiles for a tensor shape (DirectML) does so once: the picture is read with its edges mirrored.
 /// </summary>
+/// <remarks>
+/// A network like Real-ESRGAN invents detail, and two tiles invent it a little differently where they meet. Cutting from
+/// one tile to the next left a visible line across blurry pictures (DESIGN §6.2). So each tile throws away a thin border
+/// (<see cref="TileMargin"/>), and neighboring tiles overlap by <see cref="TileOverlap"/> pixels, across which the result
+/// fades from one tile to the other. Measured with the bundled model against the whole picture run at once, 128 px tiles
+/// come 1.3 to 2.9 dB closer than cutting did, and no more tiles are run.
+/// </remarks>
 public static class TiledUpscaler
 {
     /// <summary>
@@ -19,14 +25,24 @@ public static class TiledUpscaler
     /// <summary>The tile sizes a render may use, largest first. The memory limit in Settings picks the largest that fits (<see cref="UpscaleMemory"/>).</summary>
     public static IReadOnlyList<int> TileSizes { get; } = [128, 96, 64, 48];
 
-    /// <summary>Border pixels read around each tile and discarded. 10 px keeps a tiled result within 53 dB of the whole picture, which no eye can tell apart.</summary>
-    public const int TilePad = 10;
+    /// <summary>Border pixels read around each tile and thrown away: the network sees too little around them.</summary>
+    public const int TileMargin = 4;
 
-    /// <summary>Pixels of the picture a tile of <paramref name="tileSize"/> contributes.</summary>
-    public static int InnerSize(int tileSize = DefaultTileSize) => tileSize - (2 * TilePad);
+    /// <summary>Pixels where neighboring tiles overlap and are faded into each other.</summary>
+    public const int TileOverlap = 12;
+
+    /// <summary>Pixels of the picture a tile's result covers: the tile without its margins.</summary>
+    public static int KeptSize(int tileSize = DefaultTileSize) => tileSize - (2 * TileMargin);
+
+    /// <summary>Pixels of the picture each further tile adds: the step from one tile to the next.</summary>
+    public static int InnerSize(int tileSize = DefaultTileSize) => KeptSize(tileSize) - TileOverlap;
 
     public static int TileCount(int width, int height, int tileSize = DefaultTileSize) =>
-        CeilDivide(width, InnerSize(tileSize)) * CeilDivide(height, InnerSize(tileSize));
+        TilesAlong(width, tileSize) * TilesAlong(height, tileSize);
+
+    /// <summary>Tiles needed along one side: the first covers <see cref="KeptSize"/> pixels, every next one <see cref="InnerSize"/> more.</summary>
+    private static int TilesAlong(int length, int tileSize) =>
+        length <= KeptSize(tileSize) ? 1 : 1 + CeilDivide(length - KeptSize(tileSize), InnerSize(tileSize));
 
     /// <summary>
     /// Runs the model over a BGRA picture and returns the picture <see cref="IUpscaleModel.Scale"/> times larger, as BGRA
@@ -58,25 +74,113 @@ public static class TiledUpscaler
         var scale = model.Scale;
         var outputWidth = checked(width * scale);
         var output = new byte[checked((long)outputWidth * height * scale * 4)];
-        var inner = InnerSize(tileSize);
+        var columns = Spans(width, tileSize);
+        var rows = Spans(height, tileSize);
+
+        // A row of tiles is put together here where it fades into the row above, then faded in as a whole: done tile by
+        // tile, the corner where four tiles meet would come out wrong.
+        var fadeRows = rows.Length > 1 ? new byte[outputWidth * TileOverlap * scale * 4] : [];
         var input = new float[3 * tileSize * tileSize];
-        var total = TileCount(width, height, tileSize);
+        var total = columns.Length * rows.Length;
         var done = 0;
 
-        for (var tileY = 0; tileY < height; tileY += inner)
+        foreach (var row in rows)
         {
-            for (var tileX = 0; tileX < width; tileX += inner)
+            foreach (var column in columns)
             {
                 ct.ThrowIfCancellationRequested();
-                FillTile(bgra, width, height, tileX - TilePad, tileY - TilePad, tileSize, input);
+                FillTile(bgra, width, height, column.Origin, row.Origin, tileSize, input);
                 var result = model.RunTile(input, tileSize);
-                WriteInterior(result, output, outputWidth, scale, tileSize, tileX, tileY, Math.Min(inner, width - tileX), Math.Min(inner, height - tileY));
+                WriteTile(result, tileSize, scale, row, column, output, outputWidth, fadeRows);
                 progress?.Report((++done, total));
+            }
+
+            if (row.FadesIn)
+            {
+                FadeInRows(output, fadeRows, outputWidth, row.From * scale, scale);
             }
         }
 
         return output;
     }
+
+    /// <summary>
+    /// Where the tiles along one side are read and what each writes. Tile k writes from k steps on to where the next one has
+    /// faded in. The last tile is read up to the picture's edge, so it sees real pixels rather than mirrored ones, but it
+    /// still fades in one step after the tile before it: no pixel is ever shared by more than two tiles along a side.
+    /// </summary>
+    private static Span[] Spans(int length, int tileSize)
+    {
+        var count = TilesAlong(length, tileSize);
+        var step = InnerSize(tileSize);
+        var spans = new Span[count];
+        for (var k = 0; k < count; k++)
+        {
+            var last = k == count - 1;
+            var origin = (last && count > 1 ? length - KeptSize(tileSize) : k * step) - TileMargin;
+            spans[k] = new Span(origin, k * step, last ? length : ((k + 1) * step) + TileOverlap);
+        }
+
+        return spans;
+    }
+
+    /// <summary>One tile along one side, in source pixels.</summary>
+    /// <param name="Origin">The first pixel the tile reads (below 0 where the picture is mirrored).</param>
+    /// <param name="From">The first pixel the tile writes. Past the first tile, the first <see cref="TileOverlap"/> of them fade in.</param>
+    /// <param name="To">One past the last pixel the tile writes.</param>
+    private readonly record struct Span(int Origin, int From, int To)
+    {
+        public bool FadesIn => From > 0;
+    }
+
+    private static void WriteTile(float[] result, int tileSize, int scale, Span row, Span column, byte[] output, int outputWidth, byte[] fadeRows)
+    {
+        var tileOut = tileSize * scale;
+        var plane = tileOut * tileOut;
+        var fade = TileOverlap * scale;
+        var top = row.From * scale;
+        var left = column.From * scale;
+        var right = column.To * scale;
+        for (var y = top; y < row.To * scale; y++)
+        {
+            var intoFadeRows = row.FadesIn && y < top + fade;
+            var target = intoFadeRows ? fadeRows : output;
+            var at = ((((intoFadeRows ? y - top : y) * outputWidth) + left) * 4);
+            var source = ((y - (row.Origin * scale)) * tileOut) + left - (column.Origin * scale);
+            for (var x = left; x < right; x++)
+            {
+                var weight = column.FadesIn && x < left + fade ? (x - left + 0.5f) / fade : 1f;
+                target[at] = Mix(target[at], result[(2 * plane) + source], weight);
+                target[at + 1] = Mix(target[at + 1], result[plane + source], weight);
+                target[at + 2] = Mix(target[at + 2], result[source], weight);
+                target[at + 3] = 255;
+                at += 4;
+                source++;
+            }
+        }
+    }
+
+    private static void FadeInRows(byte[] output, byte[] fadeRows, int outputWidth, int top, int scale)
+    {
+        var fade = TileOverlap * scale;
+        var rowBytes = outputWidth * 4;
+        for (var i = 0; i < fade; i++)
+        {
+            var weight = (i + 0.5f) / fade;
+            var at = (top + i) * rowBytes;
+            var from = i * rowBytes;
+            for (var x = 0; x < rowBytes; x += 4)
+            {
+                output[at + x] = Mix(output[at + x], fadeRows[from + x] / 255f, weight);
+                output[at + x + 1] = Mix(output[at + x + 1], fadeRows[from + x + 1] / 255f, weight);
+                output[at + x + 2] = Mix(output[at + x + 2], fadeRows[from + x + 2] / 255f, weight);
+            }
+        }
+    }
+
+    /// <summary><paramref name="previous"/> moved <paramref name="weight"/> of the way to <paramref name="next"/>; a weight of 1 is <paramref name="next"/> exactly.</summary>
+    private static byte Mix(byte previous, float next, float weight) =>
+        weight >= 1f ? ToByte(next) : ToByte((previous / 255f) + ((next - (previous / 255f)) * weight));
 
     /// <summary>The picture's pixel at <paramref name="index"/> of <paramref name="length"/>, mirrored at the edges (the edge pixel itself is not repeated).</summary>
     internal static int Reflect(int index, int length)
@@ -104,26 +208,6 @@ public static class TiledUpscaler
                 input[at] = bgra[pixel + 2] / 255f;
                 input[plane + at] = bgra[pixel + 1] / 255f;
                 input[(2 * plane) + at] = bgra[pixel] / 255f;
-            }
-        }
-    }
-
-    private static void WriteInterior(float[] result, byte[] output, int outputWidth, int scale, int tileSize, int tileX, int tileY, int width, int height)
-    {
-        var tileOut = tileSize * scale;
-        var plane = tileOut * tileOut;
-        var pad = TilePad * scale;
-        for (var y = 0; y < height * scale; y++)
-        {
-            var source = ((pad + y) * tileOut) + pad;
-            var target = ((((tileY * scale) + y) * outputWidth) + (tileX * scale)) * 4;
-            for (var x = 0; x < width * scale; x++)
-            {
-                output[target] = ToByte(result[(2 * plane) + source + x]);
-                output[target + 1] = ToByte(result[plane + source + x]);
-                output[target + 2] = ToByte(result[source + x]);
-                output[target + 3] = 255;
-                target += 4;
             }
         }
     }
