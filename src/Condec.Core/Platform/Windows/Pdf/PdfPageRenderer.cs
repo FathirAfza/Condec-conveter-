@@ -17,7 +17,9 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
 
     /// <param name="pageNumber">1-based.</param>
     /// <param name="pixelsPerPoint">Resolution: 1 point is 1/72 inch, so 200 dpi is 200 / 72.</param>
-    internal static async Task<RenderedPage> RenderAsync(string path, int pageNumber, double pixelsPerPoint, CancellationToken ct)
+    /// <param name="transparentBackground">Leave the paper transparent instead of white; the pixels keep their alpha.</param>
+    /// <param name="fitLongSide">When above 0, the page is drawn so its longer side is this many pixels, whatever its size; <paramref name="pixelsPerPoint"/> is then ignored.</param>
+    internal static async Task<RenderedPage> RenderAsync(string path, int pageNumber, double pixelsPerPoint, CancellationToken ct, bool transparentBackground = false, int fitLongSide = 0)
     {
         // Through StorageFile, not a wrapped .NET stream: see PdfOutputValidator.
         var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path)).AsTask(ct).ConfigureAwait(false);
@@ -31,12 +33,16 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
         using var page = document.GetPage((uint)(pageNumber - 1));
 
         // PdfPage.Size is in DIPs (1/96 inch; an A4 page at 200 dpi renders 1653 × 2339) and follows /Rotate.
-        var pixelsPerDip = pixelsPerPoint * 72 / 96;
+        var pixelsPerDip = fitLongSide > 0 ? fitLongSide / Math.Max(1, Math.Max(page.Size.Width, page.Size.Height)) : pixelsPerPoint * 72 / 96;
         var options = new PdfPageRenderOptions
         {
             DestinationWidth = (uint)Math.Max(1, Math.Round(page.Size.Width * pixelsPerDip)),
             DestinationHeight = (uint)Math.Max(1, Math.Round(page.Size.Height * pixelsPerDip)),
         };
+        if (transparentBackground)
+        {
+            options.BackgroundColor = Windows.UI.Color.FromArgb(0, 255, 255, 255);
+        }
 
         // A page is rendered whole, at 4 bytes per pixel. Say so before the minutes it would take, not after.
         var pixelCount = (long)options.DestinationWidth * options.DestinationHeight;
@@ -47,7 +53,7 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
 
         try
         {
-            return await RenderPageAsync(page, options, ct).ConfigureAwait(false);
+            return await RenderPageAsync(page, options, transparentBackground, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (Imaging.ImageConverter.IsOutOfMemory(ex))
         {
@@ -55,7 +61,7 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
         }
     }
 
-    private static async Task<RenderedPage> RenderPageAsync(PdfPage page, PdfPageRenderOptions options, CancellationToken ct)
+    private static async Task<RenderedPage> RenderPageAsync(PdfPage page, PdfPageRenderOptions options, bool transparentBackground, CancellationToken ct)
     {
         using var rendered = new InMemoryRandomAccessStream();
         await page.RenderToStreamAsync(rendered, options).AsTask(ct).ConfigureAwait(false);
@@ -80,7 +86,11 @@ public sealed class PdfPageRenderer : IPdfPageRasterizer
             ColorManagementMode.DoNotColorManage).AsTask(ct).ConfigureAwait(false);
 
         var bgra = pixels.DetachPixelData();
-        Imaging.ImageConverter.FlattenOntoWhite(bgra);
+        if (!transparentBackground)
+        {
+            Imaging.ImageConverter.FlattenOntoWhite(bgra);
+        }
+
         return new RenderedPage(bgra, options.DestinationWidth, options.DestinationHeight);
     }
 

@@ -8,9 +8,9 @@ Built with WinUI 3 (Windows App SDK) and .NET 10, packaged as MSIX. License: GPL
 
 - **Verified results.** Every conversion goes through four stages: decode, encode, chunk verification (SHA-256 of each 1 MiB, read back from disk) and an integrity check (SHA-256 of the whole file, then the file is reopened with the matching decoder). A file is saved only when every stage passes, so there is never a half-written file.
 - **Local history.** File name, format, time, output location and verification status are kept in `%LOCALAPPDATA%\Condec\history.json`. No copy of any file's contents is kept. History can be cleared or switched off.
-- **PDF → DXF/DWG.** Lines, arcs, circles, curves and text of a vector PDF become editable CAD objects, with a choice of unit, scale and page. A scanned PDF is traced into polylines.
+- **PDF → DXF/DWG.** Lines, arcs, circles, curves and text of a vector PDF become editable CAD objects, with a choice of unit and scale. Only the first page is converted. A scanned PDF is treated like a picture.
 - **Upscale pictures.** Real-ESRGAN x4plus enlarges a picture 1.5× to 16× (as far as the device allows) on the GPU through DirectML, or on the CPU, with ONNX Runtime. The model ships inside the app and runs on the device. The first upscale on an engine measures its speed, so the time estimate is real, not invented.
-- **Picture → DXF/DWG.** PNG, JPG, HEIC and other pictures are traced into closed outlines, sized in millimeters from the picture's resolution. A DWG is made from the DXF, the same steps as converting the DXF yourself.
+- **Architecture page.** A picture or scanned drawing is read on the device: wall lines, doors and windows, text (Windows OCR), logos and tables are found and listed, and you untick what should not become CAD. Blurry areas are marked, and Condec can upscale the picture first. The result is a DWG (or DXF) with the layers WALLS, OPENINGS, TEXT, LOGO and TABLE. The other direction turns a DWG or DXF into PDF, PNG or JPG with a preview, paper size, DPI and layer choice. Both directions live on the Architecture page, not on Convert File.
 - **Your language.** The app follows the Windows language list: English and Indonesian today, English for any other language.
 - **Fluent look.** Follows the Windows 11 light, dark and high-contrast themes.
 
@@ -22,17 +22,17 @@ The format list in the app is built from what the machine can actually do. A for
 |---|---|---|
 | JPG, PNG, BMP, GIF, TIFF | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | Windows Imaging Component (`Windows.Graphics.Imaging`) |
 | HEIC, HEIF, WebP² | JPG, PNG, BMP, GIF, TIFF | Windows Imaging Component |
-| JPG, PNG, BMP, GIF, TIFF, HEIC², WebP² | DXF, DWG (AutoCAD 2000) | Windows Imaging Component, outline tracing, ACadSharp |
+| PNG, JPG, HEIC², HEIF² and scanned PDF (Architecture page) | DWG, DXF (AutoCAD 2000) | Windows Imaging Component, Windows OCR, own line tracing, ACadSharp |
 | MP3, M4A, WAV, WMA, FLAC | MP3, M4A, WAV, WMA, FLAC | `Windows.Media.Transcoding` |
 | MP4, M4V, MOV, WMV, AVI | MP4, WMV, and the audio formats above | `Windows.Media.Transcoding` |
 | PDF (one page) | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | `Windows.Data.Pdf` |
-| PDF (one page) | DXF, DWG (AutoCAD 2000) | PdfPig + ACadSharp |
+| PDF (first page, Architecture page) | DXF, DWG (AutoCAD 2000) | PdfPig + ACadSharp |
 | PDF | DOCX, DOC, ODT, PPTX, PPT, ODP | LibreOffice (PDF import into Writer or Impress) |
 | DOCX, DOC, ODT, RTF, TXT | PDF, DOCX, DOC, ODT, RTF | LibreOffice |
 | XLSX, XLS, ODS | PDF, XLSX, XLS, ODS | LibreOffice |
 | PPTX, PPT, ODP | PDF, PPTX, PPT, ODP | LibreOffice |
-| DXF, DWG | PDF | ACadSharp (DWG → DXF), then LibreOffice Draw |
-| DXF ↔ DWG | DWG, DXF | ACadSharp |
+| DWG, DXF (Architecture page) | PDF, PNG, JPG | ACadSharp, own drawing code, `Windows.Data.Pdf` |
+| DXF → DWG (Architecture page) | DWG | ACadSharp |
 
 ¹ HEIC is offered only when the HEVC codec is installed and has been proven to work.
 ² Only when the HEIF or WebP decoder is installed in Windows (extensions from the Microsoft Store).
@@ -53,13 +53,13 @@ LibreOffice ships inside the x64 Condec package, so no other app needs to be ins
 - Units: 1 PDF point = 1/72 inch, times the chosen scale. `$INSUNITS` is set to match.
 - Encrypted PDFs (including ones that only restrict permissions) are refused. Condec doesn't remove any protection.
 
-### Picture → DXF/DWG
+### Picture → DWG/DXF (Architecture page)
 
-- The dark shapes are found with Otsu thresholding and traced into closed LWPOLYLINE outlines (marching squares, then Ramer–Douglas–Peucker simplification). Light shapes on a dark background are flipped first, so the shapes are traced and not the background.
-- This works best for drawings, logos and scans. A photo gives only a rough result.
-- The drawing is in millimeters, sized from the picture's resolution (96 dpi when the file doesn't state one). A picture larger than 3000 pixels is averaged down before tracing.
-- For DWG, the traced drawing is written as DXF first, read back, and converted to DWG.
-- Old DXF files (AutoCAD R10 and older, which many image-to-DXF tools write) are read as R12, so their polylines come through.
+- The picture is thinned to center lines and fitted with lines and arcs (LINE, LWPOLYLINE, ARC). Doors (arcs of 60–120°) and windows (a few close parallel lines) are looked for, text is read with Windows OCR in the languages of your Windows profile (without an OCR language pack the letters are drawn as lines), and a title block or table is kept as one object.
+- Soft areas of the picture are marked. When there are five or more, Condec offers to upscale first (2×, 4× or 8× as far as the device allows) and then reads the result again.
+- The drawing is sized from the picture's resolution (96 dpi when the file doesn't state one) unless you calibrate: mark two points and enter the real distance.
+- This is tuned on synthetic drawings; real floor plans may need checking and untick-ing of objects. A photo or a colour render becomes one logo object, not lines.
+- Old DXF files (AutoCAD R10 and older) are read as R12, so their polylines come through.
 
 ## Privacy
 
@@ -132,7 +132,7 @@ All texts are string resources in `src/Condec.Core/Resources`: `Strings.resx` is
 
 ```
 src/Condec/          the WinUI 3 app (MVVM with CommunityToolkit.Mvvm), MSIX
-src/Condec.Core/     converter contracts, the 4-stage pipeline, verification, history, PDF and picture → CAD
+src/Condec.Core/     converter contracts, the 4-stage pipeline, verification, history, PDF → CAD, drawing analysis and CAD rendering
                      Platform/Windows/: converters that use WinRT APIs and LibreOffice
                      Resources/: the strings in each language
 tests/Condec.Tests/  xUnit v3; Windows/ runs only on Windows

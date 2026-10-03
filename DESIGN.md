@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.7 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.8 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -329,7 +329,7 @@ Nama file hasil: `<nama>-<W>x<H>.<ext>`. Hasil Upscale dicatat di daftar Riwayat
 
 ### 6.3 Architecture
 
-> **Sementara (tahap 3–6):** halaman ini memuat kartu konverter §6.1 untuk DXF dan DWG saja: PDF, PNG, JPG, HEIC dan lainnya ke DXF/DWG, serta DXF/DWG ke gambar atau PDF, dengan opsi dan perilaku yang sama seperti sebelum redesign. Layar di bawah dibangun di tahap 7. Riwayatnya masuk ke daftar Riwayat di Convert File (menyentuh §13 #10).
+> **Dibangun di tahap 7.** Layar di bawah berfungsi penuh; yang berbeda dari rancangan awal dan hal yang ditambahkan saat membangun ada di §6.3.3. Convert File tidak lagi punya opsi CAD maupun penelusuran gambar: semua yang berhubungan dengan DXF/DWG ada di sini. Riwayat Architecture masuk ke daftar Riwayat di Convert File (§13 #10).
 
 `SelectorBar` di atas dengan dua item: **"Gambar, PDF, DXF → DWG"** dan **"DWG, DXF → Gambar, PDF"**.
 
@@ -386,9 +386,49 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 | Resolusi (DPI) | 150, 300, 600 | 300 | Nonaktif untuk PDF (vektor) |
 | Latar | Putih, Transparan | Putih | Transparan hanya bila format PNG |
 
-  Lalu garis pemisah, "Layer" (BodyStrong) dengan `ListView` Multiple (Dinding dan garis denah, Pintu dan jendela, Teks dan dimensi; keterangan "Ditampilkan"/"Disembunyikan"), dan Caption "Perkiraan hasil: …".
-- Perkiraan hasil `[ASUMSI]`: piksel = mm ÷ 25,4 × DPI per sisi (A3 lanskap 420 × 297 mm, A4 lanskap 297 × 210 mm). PNG ≈ 0,1 byte/piksel, JPG ≈ 0,14 byte/piksel, PDF ≈ 0,3 MB. Tampilan: "PDF vektor · ± 0,3 MB" atau "4961 × 3508 px · ± 1,7 MB".
+  Lalu garis pemisah, "Layer" (BodyStrong) dengan `ListView` Multiple berisi layer file yang benar-benar punya bentuk atau teks (nama CAD baku seperti WALLS, OPENINGS, TEXT ditampilkan sebagai "Dinding dan garis denah", "Pintu dan jendela", "Teks dan dimensi"; layer lain memakai namanya; keterangan "Ditampilkan"/"Disembunyikan"), dan Caption "Perkiraan hasil: …".
+- Perkiraan hasil `[ASUMSI]`: piksel = mm ÷ 25,4 × DPI per sisi (A3 420 × 297 mm, A4 297 × 210 mm; kertas lanskap bila gambar lebih lebar daripada tinggi, tegak bila sebaliknya, memakai layer yang ditampilkan). PNG ≈ 0,1 byte/piksel, JPG ≈ 0,14 byte/piksel, PDF ≈ 0,3 MB. Tampilan: "PDF vektor · ± 0,3 MB" atau "4961 × 3508 px · ± 1,7 MB".
 - Tombol aksen "Konversi dan simpan…".
+
+### 6.3.3 Perilaku yang dibangun di tahap 7
+
+Hal yang tidak ada atau berbeda di §6.3.1 dan §6.3.2 (tiap butir yang bertanda `[ASUMSI]` tercatat di §13 #31 sampai #38).
+
+**Pembacaan gambar (ke CAD)**
+- Gambar dibaca di perangkat: `DrawingAnalyzer` mencari dinding, pintu dan jendela, teks, logo, dan tabel; `ClarityAnalyzer` menandai area buram. Selama membaca, kartu menampilkan "Membaca `<nama>`" dengan `ProgressBar` ber-nama dan tombol "Hentikan". Sisi terpanjang dianalisis paling besar 2400 px; garis yang dibaca OCR paling banyak 500.
+- Jenis objek yang tidak ditemukan **tidak ditampilkan** di daftar (baris "Logo dan kop" muncul hanya bila ada logo).
+- "Teks dan dimensi" dibaca dengan `Windows.Media.Ocr` memakai bahasa profil pengguna Windows. Bila tidak ada paket bahasa OCR, teks tetap dikenali letaknya tetapi digambar sebagai garis, dan baris itu berkata "Digambar sebagai garis (tulisan tidak terbaca)" (§13 #9).
+- Gambar yang sebagian besar berwarna (render berwarna, foto) menjadi **satu** objek "Logo dan kop", tidak ditelusuri jadi garis.
+- Tidak ada garis atau teks sama sekali: `InfoBar` Warning "Tidak ada objek yang terdeteksi" dan tombol Konversi nonaktif.
+- Tidak ada yang dicentang: Caption "Tidak ada yang dicentang, jadi tidak ada yang dikonversi." dan tombol Konversi nonaktif.
+
+**Area tidak jelas**
+- Gambar dibagi petak 32 × 32 px. Petak yang garisnya landai (kecuraman tepi di bawah 0,5) dan cukup kontras digabung jadi area, **paling besar 6 × 6 petak (192 px)** sehingga gambar yang buram seluruhnya terhitung banyak area, bukan satu. Ambang "banyak" tetap 5 area atau lebih.
+- Di pratinjau area tidak jelas hanya digambar dengan garis tepi (tanpa isi) supaya gambar di bawahnya tetap terlihat.
+- Persen "objek terbaca jelas" di `InfoBar` Success = bagian objek yang tidak berada di area tidak jelas, dari analisis nyata. Setelah upscale, analisis diulang pada hasilnya.
+
+**Upscale dari halaman ini**
+- Gambar yang akan di-upscale disimpan sebagai PNG sementara di folder cache render (`%LOCALAPPDATA%\Condec\cache\architecture`, yang dikosongkan "Hapus cache" di Settings), dijalankan lewat pipeline Upscale yang sama dengan §6.2 (mesin dan batas memori dari Settings), lalu dibaca ulang dengan DPI sumber × skala dan dianalisis lagi. File sementara dihapus setelah selesai atau dibatalkan.
+- Hasil upscale hidup di memori selama gambar itu terbuka; yang dikonversi ke CAD adalah gambar hasil upscale. Kalibrasi skala disimpan per piksel gambar asli, jadi tetap benar setelah upscale.
+- Upscale yang gagal atau dibatalkan: gambar asli dipakai, dengan catatan "Upscale tidak berhasil, jadi gambar dikonversi apa adanya." atau "Upscale dihentikan."
+- Perangkat yang tidak memenuhi syarat dihitung dengan tingkat RAM dan batas efektif §7 untuk skala 2×; bila gambar terlalu besar bahkan untuk 2×, pesan Error berkata "Gambar ini terlalu besar untuk diperbesar di perangkat ini".
+
+**DXF dan PDF**
+- DXF: selalu dikonversi ke DWG (tidak ada pilihan format; DXF → DXF tidak berarti). Pesan Informational "File DXF sudah berupa CAD. File ini dikonversi ke DWG apa adanya."
+- PDF: hanya **halaman pertama** yang dikonversi (Caption bila lebih dari satu halaman). PDF vektor memakai konverter PDF → CAD yang sama dengan sebelum redesign, jadi kontrol satuan, skala, "Pertahankan teks sebagai teks", dan "Gabungkan garis bersambung" tetap ada di panel kanan menggantikan kalibrasi (`Architecture.Objects.PdfHint`). PDF hasil scan diperlakukan seperti gambar raster.
+
+**Kalibrasi**
+- `ContentDialog` "Kalibrasi skala": klik dua titik pada gambar, isi jarak asli dan satuan (milimeter, sentimeter, meter, inci, kaki); "Terapkan" menyimpan "1 piksel = N mm". Jalur keyboard: tombol panah menggeser kursor (Shift untuk langkah besar), Enter menandai titik; Caption petunjuknya ada di dialog. Gambar dalam dialog punya nama untuk pembaca layar. Tombol "Tandai ulang" mengosongkan titik.
+- Tanpa kalibrasi skala berasal dari DPI gambar (96 bila file tidak menyatakan).
+
+**Arah "dari CAD"**
+- Pratinjau dan hasil digambar oleh penggambar sendiri (`CadFlattener` → `CadPdfWriter` → render PDF Windows), bukan LibreOffice dan bukan Win2D (§13 #13). Format hasil PDF ditulis langsung oleh penggambar itu (vektor); PNG dan JPG dirender dari PDF yang sama pada DPI pilihan, JPG dengan latar putih.
+- Menonaktifkan semua layer: Caption "Tampilkan minimal satu layer." dan tombol nonaktif. Pratinjau yang gagal digambar: Caption "Pratinjau tidak bisa digambar, tapi file tetap bisa dikonversi."
+
+**Aksesibilitas dan lainnya**
+- `SelectorBar` dan semua tombol bisa dijangkau keyboard; pratinjau punya nama ("Pratinjau `<nama>`"); status tidak hanya lewat warna (judul `InfoBar`, ikon, dan teks "Ditampilkan"/"Disembunyikan"). Tiap baris objek dan layer membawa nama gabungan untuk pembaca layar.
+- Area seret menerima satu file; file yang tidak didukung mendapat pesan "File `<ekstensi>` tidak bisa dijadikan CAD di sini."
+- Konversi dari halaman ini ditulis ke Riwayat (§13 #10) dan log aktivitas dengan jenis konversi saja (tanpa path).
 
 ### 6.4 Settings
 
@@ -567,7 +607,8 @@ Condec.Core/
   Converters/               IConverter, registry
   Devices/                  DeviceProfile (DXCore), CapabilityPolicy      (§7)
   Upscale/                  tile, estimasi                                 (§8)
-  Architecture/             vektorisasi, klasifikasi objek, tulis DWG/DXF
+  Architecture/             analisis gambar (garis, kejelasan, pintu, teks, logo, tabel), tulis DWG/DXF,
+                            adegan CAD dan penulis PDF untuk "dari CAD"
   Settings/                 kunci dan nilai awal                           (§6.4)
 Condec.Tests/
   CapabilityPolicyTests     test vector §9
@@ -597,11 +638,11 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 6 | Ukuran minimum jendela 900 × 640 | `[TERBUKA]`, usulan ini sudah dipakai (tahap 3); konfirmasi atau ganti |
 | 7 | Versi DWG yang ditulis ACadSharp | diputuskan: AC1015 (AutoCAD 2000). ACadSharp 3.8.0 menulis DWG AC1014, AC1015, AC1018, AC1024, AC1027, AC1032 |
 | 8 | Model upscale (lisensi kode dan bobot harus kompatibel GPL-3.0) dan apakah bisa jalan di NPU | Model diputuskan pemilik 2026-10-02: hanya Real-ESRGAN x4plus (BSD-3-Clause), ekspor ONNX pihak ketiga (SkillSafe) yang diverifikasi identik dengan bobot resmi (THIRD-PARTY-NOTICES.md). NPU: `[TERBUKA]`. Paket ONNX Runtime DirectML tidak bisa diarahkan ke NPU, dan belum ada perangkat ber-NPU untuk dicoba; pilihan NPU merender di GPU (atau CPU) dengan keterangan (§6.2) |
-| 9 | OCR teks gambar: `Windows.Media.Ocr`, bahasa terpasang | `[TERBUKA]`, cek dokumentasi |
+| 9 | OCR teks gambar: `Windows.Media.Ocr`, bahasa terpasang | Dipakai di tahap 7 (`WindowsTextRecognizer`) dengan bahasa profil pengguna Windows. Bergantung pada paket bahasa OCR yang terpasang: tanpa itu teks digambar sebagai garis dan baris objek berkata begitu (§6.3.3). Belum dicoba di Windows berbahasa Indonesia |
 | 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | Diputuskan pemilik 2026-10-03: ya, satu `history.json`. Konversi Convert File, Architecture, dan Upscale Image (dengan skalanya) ada di daftar yang sama, yang hanya ditampilkan di Convert File. |
-| 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`, kalibrasi |
+| 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`. Satu area paling besar 6 × 6 petak 32 px, kecuraman tepi minimum 0,5, kontras minimum 40: dikalibrasi hanya pada gambar sintetis yang diburamkan, bukan pada denah nyata (§13 #31) |
 | 12 | Perkiraan ukuran file (§8) dan hasil DWG → gambar (§6.3.2) | `[ASUMSI]` |
-| 13 | Win2D untuk render DWG | `[TERBUKA]`, hanya kalau kontrol stock tidak cukup |
+| 13 | Win2D untuk render DWG | Tidak dipakai. Tahap 7 menggambar sendiri (`CadPdfWriter` + `Windows.Data.Pdf`) sehingga tanpa paket tambahan dan hasil PDF vektor yang sama dengan pratinjau |
 | 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
 | 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]`. Terbukti di mesin uji (2026-10-03): GPU terintegrasi 0,32 MP/detik, CPU 0,061 MP/detik. Gambar 640 × 360 (24 tile) di CPU: perkiraan dari jumlah tile 73 detik, render nyata 61 detik (tanpa faktor memori) |
 | 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
@@ -617,12 +658,28 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 28 | Microsoft menyatakan DirectML dalam mode pemeliharaan (Windows ML disarankan untuk proyek baru) | `[TERBUKA]`. DirectML dipakai karena berjalan tanpa identitas paket (build portabel) dan sudah diuji di mesin ini; pindah ke Windows ML dipertimbangkan setelah beta |
 | 29 | Skala di atas 4×: model berhenti di 4×, sisanya diperbesar dengan Lanczos3, jadi 8× dan 16× tidak menambah detail baru | `[ASUMSI]`. Alternatifnya (model dijalankan dua kali) jauh lebih lama dan butuh jauh lebih banyak memori; belum bisa dicoba di mesin uji (batas 2×) |
 | 30 | `PdfDocument` (Windows.Data.Pdf) yang sudah merender lalu dilepas membuat proses crash beberapa saat kemudian di driver grafis (AMD `atidxx64.dll`), juga di test host | Diatasi tahap 6: dokumen yang sudah dirender disimpan sampai proses selesai (maksimal 64). Belum dicoba di driver lain |
+| 31 | Heuristik analisis gambar (tahap 7): pintu = busur 60–120° dengan jari-jari kurang dari 15% sisi dan daun sepanjang jari-jari ±20%; jendela = 3–5 garis sejajar berjarak rapat; tabel = bingkai dengan sedikitnya 4 sel kecil; logo = daerah berwarna jenuh ≥ 70 dengan sisi ≥ 3% dan luas ≤ 50%; teks = tanda kecil berderet (tinggi ≤ 6% sisi, rentang tinggi ≤ 3,5×) | `[ASUMSI]`. Tidak ada denah nyata untuk dikalibrasi (contoh pemilik hanya gambar kerja PDF/DWG dan DXF); diuji dengan gambar sintetis. Perlu satu-dua denah pemilik |
+| 32 | Lebar teks hasil OCR diskalakan 0,75 dari lebar kotak, dan tinggi dari tinggi kotak | `[ASUMSI]`, supaya TEXT tidak lebih lebar dari tulisan asli |
+| 33 | "Kop gambar" dikenali sebagai tabel yang punya logo di dalamnya (jadi satu objek kop, bukan tabel dan logo terpisah) | `[ASUMSI]` |
+| 34 | Hanya halaman pertama PDF yang dikonversi di Architecture; PDF vektor memakai kontrol satuan dan skala lama, bukan kalibrasi | Diputuskan saat membangun tahap 7; DESIGN §6.3 tidak membahasnya. Bisa diubah bila pemilik ingin pilih halaman atau kalibrasi untuk PDF |
+| 35 | DXF → DXF tidak ditawarkan: DXF selalu jadi DWG | Diputuskan saat membangun (§6.3.3) |
+| 36 | Urutan objek dan layer file DWG/DXF tampil seperti di file; nama baku (WALLS dst.) diterjemahkan | `[ASUMSI]` |
+| 37 | Gambar yang sebagian besar berwarna (render, foto) menjadi satu objek "Logo dan kop" | `[ASUMSI]`; hasil CAD dari foto memang tidak berarti |
+| 38 | Dialog kalibrasi: jalur keyboard (panah + Enter) | `[TERBUKA]` belum dicoba langsung di UI; ada unit test untuk hitungannya |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.8] 2026-10-03 (tahap 7: halaman Architecture)
+- **Ditambah:** halaman Architecture berfungsi penuh (§6.3, §6.3.3): `SelectorBar` dua arah. "Ke CAD": area seret, pembacaan gambar di perangkat (garis dinding, pintu dan jendela, teks lewat OCR Windows, logo, tabel), area tidak jelas, saran dan jalankan upscale langsung di halaman, daftar objek yang bisa dicentang, kalibrasi skala (dialog dengan jalur keyboard), keluaran DWG atau DXF dengan layer WALLS, OPENINGS, TEXT, LOGO, TABLE. "Dari CAD": pratinjau yang digambar sendiri, opsi hasil (PDF, PNG, JPG; A4 atau A3; 150, 300, 600 DPI; latar putih atau transparan), layer, perkiraan ukuran.
+- **Diubah:** Convert File tidak lagi menawarkan DXF/DWG maupun opsi CAD; kartu konverter hanya untuk format bukan CAD dan menautkan ke Architecture. Konverter gambar → CAD lama (garis tepi tertutup lewat Otsu dan marching squares) diganti analisis gambar baru; `ImageToCadConverter`, `WicImageRasterizer`, dan test-nya dihapus.
+- **Diubah:** `ClarityAnalyzer` membagi area buram jadi blok paling besar 6 × 6 petak, supaya gambar yang buram seluruhnya tidak dianggap satu area dan lolos dari ambang 5 area. Pratinjau menandainya dengan garis tepi saja.
+- **Diperbaiki:** upscale dari halaman Architecture gagal dengan `DirectoryNotFoundException` karena folder `cache\architecture` belum ada; folder dibuat saat dibutuhkan.
+- **Diajukan:** §13 #31 sampai #38; §13 #9, #11, #13 diperbarui.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1269 lulus, 0 gagal. Uji langsung di build portabel: PNG (geek), DXF (geek), PDF (gambar kerja), DWG (bcc) ke dan dari CAD; gambar buram sintetis → saran upscale → Upscale 2× 44 detik di GPU terintegrasi → banner "Setelah upscale 2×, 100% objek terbaca jelas" → konversi DWG lolos verifikasi chunk dan integritas; entri muncul di Riwayat. Audit key resource: 431 key, 0 tidak terpakai. **Belum dicoba langsung:** tema kontras tinggi, Windows berbahasa Indonesia, paket MSIX terpasang, seret-lepas file sungguhan, dialog kalibrasi lewat keyboard, perangkat ber-NPU atau GPU diskrit, upscale di atas 2×, denah arsitektur nyata (heuristik pintu, jendela, tabel).
 
 ### [0.2.7] 2026-10-03 (batas memori nyata, Upscale masuk Riwayat)
 - **Diubah (keputusan pemilik):** batas memori di Settings kini nyata (§7.5, §6.4): ukuran tile (128, 96, 64, 48) mengikuti batas, gambar yang tidak muat tidak dimulai (§6.2). Faktor waktu ×1,3/×1,8 dibuang; throughput diukur per ukuran tile (§8). §13 #26 selesai.

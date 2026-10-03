@@ -58,9 +58,6 @@
   <data name="Progress.WritingCadObjects" xml:space="preserve"><value>Menulis {0} objek CAD</value></data>
   <data name="Progress.OpeningLibreOffice" xml:space="preserve"><value>Membuka dokumen di LibreOffice</value></data>
   <data name="Progress.RenderingPage" xml:space="preserve"><value>Merender halaman {0}</value></data>
-  <data name="Progress.ReadingImage" xml:space="preserve"><value>Membaca gambar</value></data>
-  <data name="Progress.TracingOutlines" xml:space="preserve"><value>Menelusuri garis tepi</value></data>
-  <data name="Progress.WritingDxf" xml:space="preserve"><value>Menulis {0} garis tepi ke DXF</value></data>
   <data name="Progress.ConvertingDxfToDwg" xml:space="preserve"><value>Mengubah DXF menjadi DWG</value></data>
   <data name="LibreOffice.Missing" xml:space="preserve"><value>Format ini perlu LibreOffice, yang belum terpasang di komputer ini. Pasang LibreOffice, lalu pilih file lagi.</value></data>
   <data name="Error.TryAnotherDrive" xml:space="preserve"><value>Coba lagi, atau simpan ke drive lain.</value></data>
@@ -96,15 +93,9 @@
   <data name="Scale.Custom" xml:space="preserve"><value>Kustom</value></data>
   <data name="Pdf.KeepTextNoteScan" xml:space="preserve"><value>Tidak tersedia untuk PDF hasil scan</value></data>
   <data name="Pdf.KeepTextNote" xml:space="preserve"><value>Disimpan sebagai entitas TEXT, bukan garis</value></data>
-  <data name="Pdf.KindScanTitle" xml:space="preserve"><value>PDF hasil scan terdeteksi</value></data>
-  <data name="Pdf.KindEmptyTitle" xml:space="preserve"><value>Halaman ini kosong</value></data>
-  <data name="Pdf.KindVectorTitle" xml:space="preserve"><value>PDF vektor terdeteksi</value></data>
-  <data name="Pdf.KindScanMessage" xml:space="preserve"><value>Isinya gambar piksel, bukan garis. Hasil DXF berupa jejak garis perkiraan dan tidak presisi untuk ukuran.</value></data>
   <data name="Pdf.KindEmptyMessage" xml:space="preserve"><value>Tidak ada garis, teks, atau gambar yang bisa diubah. Pilih halaman lain.</value></data>
-  <data name="Pdf.KindVectorMessage" xml:space="preserve"><value>Garis, busur, dan teks akan diubah menjadi objek CAD.</value></data>
   <data name="Pdf.PageOf" xml:space="preserve"><value>Halaman {0} dari {1}</value></data>
   <data name="Convert.Label" xml:space="preserve"><value>Konversi dan simpan…</value></data>
-  <data name="Convert.LabelAnyway" xml:space="preserve"><value>Tetap konversi…</value></data>
   <data name="Format.Placeholder" xml:space="preserve"><value>Pilih format</value></data>
   <data name="Format.PlaceholderNoFile" xml:space="preserve"><value>Pilih file dulu</value></data>
   <data name="Format.HelpNone" xml:space="preserve"><value>Format muncul setelah file dipilih</value></data>
@@ -147,15 +138,12 @@
   <data name="Shell.NoApp" xml:space="preserve"><value>File tersimpan, tetapi tidak ada aplikasi yang bisa membukanya.</value></data>
   <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer tidak bisa dibuka.</value></data>
   <data name="Drag.Caption" xml:space="preserve"><value>Pilih file ini</value></data>
-  <data name="Image.TraceTitle" xml:space="preserve"><value>Gambar ditelusuri menjadi garis tepi</value></data>
-  <data name="Image.TraceMessage" xml:space="preserve"><value>Condec menelusuri bentuk gelap di gambar menjadi garis tepi tertutup. Hasil terbaik didapat dari gambar garis, logo, dan hasil scan; foto hanya menghasilkan bentuk kasar. Ukuran gambar mengikuti resolusi gambar sumber.</value></data>
   <data name="Input.DropHere" xml:space="preserve"><value>Seret file ke sini</value></data>
   <data name="Input.Choose" xml:space="preserve"><value>Pilih file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>File sumber</value></data>
   <data name="Source.ChangeSpoken" xml:space="preserve"><value>Ganti file sumber</value></data>
   <data name="Source.Change" xml:space="preserve"><value>Ganti</value></data>
   <data name="Format.Header" xml:space="preserve"><value>Ubah ke format</value></data>
-  <data name="Pdf.ChooseAnother" xml:space="preserve"><value>Pilih file lain</value></data>
   <data name="Cad.UnitHeader" xml:space="preserve"><value>Satuan gambar</value></data>
   <data name="Cad.ScaleHeader" xml:space="preserve"><value>Skala gambar</value></data>
   <data name="Cad.CustomScaleSpoken" xml:space="preserve"><value>Skala kustom, 1 banding</value></data>
@@ -213,7 +201,6 @@
   <data name="Page.Settings.Subtitle" xml:space="preserve"><value>Atur mesin render, batas memori, tampilan, dan log.</value></data>
   <data name="Format.ArchitectureLink" xml:space="preserve"><value>Butuh DXF atau DWG? Buka Architecture</value></data>
   <data name="Input.UseArchitecture" xml:space="preserve"><value>File {0} diproses di Architecture. Buka dari menu.</value></data>
-  <data name="Input.UseConvertFile" xml:space="preserve"><value>File {0} diproses di Convert File. Buka dari menu.</value></data>
   <data name="Device.Gigabytes" xml:space="preserve"><value>{0} GB</value></data>
   <data name="Device.NotDetected" xml:space="preserve"><value>Tidak terdeteksi</value></data>
   <data name="Device.Detected" xml:space="preserve"><value>Terdeteksi</value></data>
@@ -346,4 +333,127 @@
   <data name="Upscale.Done.Engine" xml:space="preserve"><value>Mesin</value></data>
   <data name="Upscale.Done.Another" xml:space="preserve"><value>Upscale gambar lain</value></data>
   <data name="Upscale.Failed.Title" xml:space="preserve"><value>Upscale gagal</value></data>
+  <data name="Progress.BuildingCadLayers" xml:space="preserve"><value>Menyusun layer CAD</value></data>
+  <data name="Progress.ReadingDrawing" xml:space="preserve"><value>Membaca gambar kerja</value></data>
+  <data name="Progress.DrawingSheet" xml:space="preserve"><value>Menggambar lembar</value></data>
+  <data name="Architecture.TabToCad" xml:space="preserve"><value>Gambar, PDF, DXF → DWG</value></data>
+  <data name="Architecture.TabFromCad" xml:space="preserve"><value>DWG, DXF → Gambar, PDF</value></data>
+  <data name="Architecture.ToCad.DropHere" xml:space="preserve"><value>Seret gambar, PDF, atau DXF ke sini</value></data>
+  <data name="Architecture.ToCad.DropFormats" xml:space="preserve"><value>DXF, PNG, JPG, HEIC, HEIF, PDF → DWG</value></data>
+  <data name="Architecture.ToCad.Unsupported" xml:space="preserve"><value>File {0} tidak bisa dijadikan CAD di sini. Pakai file DXF, PNG, JPG, HEIC, HEIF, atau PDF.</value></data>
+  <data name="Architecture.ToCad.UnsupportedNoExtension" xml:space="preserve"><value>File ini tidak punya ekstensi. Pakai file DXF, PNG, JPG, HEIC, HEIF, atau PDF.</value></data>
+  <data name="Architecture.Reading.Title" xml:space="preserve"><value>Membaca {0}</value></data>
+  <data name="Architecture.Reading.Caption" xml:space="preserve"><value>Mencari garis, pintu, teks, dan tabel di perangkat ini</value></data>
+  <data name="Architecture.Reading.Cancel" xml:space="preserve"><value>Hentikan</value></data>
+  <data name="Architecture.Reading.Cancelled" xml:space="preserve"><value>Pembacaan dihentikan.</value></data>
+  <data name="Architecture.Preview.Raster" xml:space="preserve"><value>Gambar raster · perlu vektorisasi</value></data>
+  <data name="Architecture.Preview.Vector" xml:space="preserve"><value>Vektor · langsung dirender</value></data>
+  <data name="Architecture.Preview.Size" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Architecture.Preview.SizeUpscaled" xml:space="preserve"><value>{0} · {1} · setelah upscale {2}</value></data>
+  <data name="Architecture.Preview.Alt" xml:space="preserve"><value>Pratinjau {0}</value></data>
+  <data name="Architecture.Legend.Included" xml:space="preserve"><value>Dijadikan CAD</value></data>
+  <data name="Architecture.Legend.Excluded" xml:space="preserve"><value>Tidak dijadikan CAD</value></data>
+  <data name="Architecture.Legend.Unclear" xml:space="preserve"><value>Area tidak jelas</value></data>
+  <data name="Architecture.Unclear.Title" xml:space="preserve"><value>Banyak objek tidak jelas ({0} area)</value></data>
+  <data name="Architecture.Unclear.Message" xml:space="preserve"><value>Garis putus dan buram sulit dibaca, jadi hasil CAD bisa berantakan. Upscale dulu supaya lebih rapi. Perangkat ini mampu sampai {0}.</value></data>
+  <data name="Architecture.Unclear.UpscaleFirst" xml:space="preserve"><value>Upscale {0} dulu</value></data>
+  <data name="Architecture.Unclear.UpscaleSpoken" xml:space="preserve"><value>Upscale {0} dulu, skala lain ada di menu</value></data>
+  <data name="Architecture.Unclear.Skip" xml:space="preserve"><value>Lewati</value></data>
+  <data name="Architecture.NotEligible.MessageRam" xml:space="preserve"><value>Upscale 2× untuk gambar ini butuh RAM terpasang {0} GB, sedangkan perangkat ini {1} GB. Kamu tetap bisa lanjut tanpa upscale, tapi objek yang tidak jelas mungkin tidak terbaca.</value></data>
+  <data name="Architecture.NotEligible.MessageLimit" xml:space="preserve"><value>Batas perangkat dan Settings tidak mengizinkan upscale 2× untuk gambar ini. {0}. Kamu tetap bisa lanjut tanpa upscale, tapi objek yang tidak jelas mungkin tidak terbaca.</value></data>
+  <data name="Architecture.NotEligible.Continue" xml:space="preserve"><value>Lanjut tanpa upscale</value></data>
+  <data name="Architecture.Upscaling.Title" xml:space="preserve"><value>Meng-upscale {0}</value></data>
+  <data name="Architecture.Upscaling.Progress" xml:space="preserve"><value>Progres upscale</value></data>
+  <data name="Architecture.Ready.Title" xml:space="preserve"><value>Gambar siap dikonversi</value></data>
+  <data name="Architecture.Ready.MessageUpscaled" xml:space="preserve"><value>Setelah upscale {0}, {1}% objek terbaca jelas. Periksa daftar objek di kanan.</value></data>
+  <data name="Architecture.Ready.Message" xml:space="preserve"><value>{0}% objek terbaca jelas. Periksa daftar objek di kanan.</value></data>
+  <data name="Architecture.Skipped.Title" xml:space="preserve"><value>Tanpa upscale</value></data>
+  <data name="Architecture.Skipped.Message" xml:space="preserve"><value>{0} area tidak jelas mungkin tidak terbaca atau berbentuk salah di hasil CAD.</value></data>
+  <data name="Architecture.Skipped.UpscaleNow" xml:space="preserve"><value>Upscale {0} sekarang</value></data>
+  <data name="Architecture.Vector.Title" xml:space="preserve"><value>File ini sudah berupa gambar vektor</value></data>
+  <data name="Architecture.Vector.Message" xml:space="preserve"><value>Garis, kurva, dan teks dikonversi langsung, jadi tidak perlu upscale.</value></data>
+  <data name="Architecture.Vector.Dxf" xml:space="preserve"><value>File DXF sudah berupa CAD. File ini dikonversi ke DWG apa adanya.</value></data>
+  <data name="Architecture.Pdf.FirstPageOnly" xml:space="preserve"><value>PDF ini punya {0} halaman. Hanya halaman pertama yang dikonversi.</value></data>
+  <data name="Architecture.NothingFound.Title" xml:space="preserve"><value>Tidak ada objek yang terdeteksi</value></data>
+  <data name="Architecture.NothingFound.Message" xml:space="preserve"><value>Gambar ini tidak punya garis atau teks untuk ditelusuri. Pilih file lain.</value></data>
+  <data name="Architecture.Upscale.Failed" xml:space="preserve"><value>Upscale tidak berhasil, jadi gambar dikonversi apa adanya.</value></data>
+  <data name="Architecture.Upscale.Cancelled" xml:space="preserve"><value>Upscale dihentikan.</value></data>
+  <data name="Architecture.Objects.Title" xml:space="preserve"><value>Objek terdeteksi</value></data>
+  <data name="Architecture.Objects.Hint" xml:space="preserve"><value>Hilangkan centang untuk objek yang tidak dijadikan CAD.</value></data>
+  <data name="Architecture.Objects.None" xml:space="preserve"><value>Tidak ada yang dicentang, jadi tidak ada yang dikonversi.</value></data>
+  <data name="Architecture.Objects.VectorHint" xml:space="preserve"><value>Objek dan skala dibaca langsung dari file.</value></data>
+  <data name="Architecture.Kind.Walls" xml:space="preserve"><value>Dinding dan garis denah</value></data>
+  <data name="Architecture.Kind.Openings" xml:space="preserve"><value>Pintu dan jendela</value></data>
+  <data name="Architecture.Kind.Text" xml:space="preserve"><value>Teks dan dimensi</value></data>
+  <data name="Architecture.Kind.Logo" xml:space="preserve"><value>Logo dan kop</value></data>
+  <data name="Architecture.Kind.Table" xml:space="preserve"><value>Tabel keterangan</value></data>
+  <data name="Architecture.Count.Lines" xml:space="preserve"><value>{0} garis</value></data>
+  <data name="Architecture.Count.LinesOne" xml:space="preserve"><value>1 garis</value></data>
+  <data name="Architecture.Count.Objects" xml:space="preserve"><value>{0} objek</value></data>
+  <data name="Architecture.Count.ObjectsOne" xml:space="preserve"><value>1 objek</value></data>
+  <data name="Architecture.Count.Texts" xml:space="preserve"><value>{0} teks</value></data>
+  <data name="Architecture.Count.TextsOne" xml:space="preserve"><value>1 teks</value></data>
+  <data name="Architecture.Count.Tables" xml:space="preserve"><value>{0} tabel</value></data>
+  <data name="Architecture.Count.TablesOne" xml:space="preserve"><value>1 tabel</value></data>
+  <data name="Architecture.Desc.Walls" xml:space="preserve"><value>Jadi LINE dan POLYLINE</value></data>
+  <data name="Architecture.Desc.Openings" xml:space="preserve"><value>Jadi ARC dan garis ganda</value></data>
+  <data name="Architecture.Desc.Text" xml:space="preserve"><value>Jadi TEXT (hasil OCR, periksa ulang)</value></data>
+  <data name="Architecture.Desc.TextLines" xml:space="preserve"><value>Digambar sebagai garis (tulisan tidak terbaca)</value></data>
+  <data name="Architecture.Desc.Object" xml:space="preserve"><value>Jadi objek CAD</value></data>
+  <data name="Architecture.Desc.Excluded" xml:space="preserve"><value>Tidak dijadikan CAD</value></data>
+  <data name="Architecture.CadFormat" xml:space="preserve"><value>Format CAD</value></data>
+  <data name="Architecture.Scale.Label" xml:space="preserve"><value>Skala gambar</value></data>
+  <data name="Architecture.Scale.NotCalibrated" xml:space="preserve"><value>Belum dikalibrasi</value></data>
+  <data name="Architecture.Scale.Calibrated" xml:space="preserve"><value>Dikalibrasi: 1 piksel = {0} mm</value></data>
+  <data name="Architecture.Scale.Calibrate" xml:space="preserve"><value>Kalibrasi…</value></data>
+  <data name="Architecture.Scale.Recalibrate" xml:space="preserve"><value>Kalibrasi ulang…</value></data>
+  <data name="Architecture.PickAnother" xml:space="preserve"><value>Pilih file lain</value></data>
+  <data name="Architecture.Convert" xml:space="preserve"><value>Konversi ke {0}…</value></data>
+  <data name="Architecture.ConvertAnyway" xml:space="preserve"><value>Tetap konversi ke {0}…</value></data>
+  <data name="Architecture.ConvertAndSave" xml:space="preserve"><value>Konversi dan simpan…</value></data>
+  <data name="Architecture.Calibrate.Title" xml:space="preserve"><value>Kalibrasi skala</value></data>
+  <data name="Architecture.Calibrate.Instruction" xml:space="preserve"><value>Klik dua titik pada gambar yang jarak aslinya kamu tahu, lalu isi jarak itu.</value></data>
+  <data name="Architecture.Calibrate.Points" xml:space="preserve"><value>{0} dari 2 titik ditandai</value></data>
+  <data name="Architecture.Calibrate.Length" xml:space="preserve"><value>Jarak asli</value></data>
+  <data name="Architecture.Calibrate.Unit" xml:space="preserve"><value>Satuan</value></data>
+  <data name="Architecture.Calibrate.Reset" xml:space="preserve"><value>Tandai ulang</value></data>
+  <data name="Architecture.Calibrate.Apply" xml:space="preserve"><value>Terapkan</value></data>
+  <data name="Architecture.Calibrate.Picture" xml:space="preserve"><value>Gambar. Klik untuk menandai titik.</value></data>
+  <data name="Architecture.Unit.Millimeters" xml:space="preserve"><value>milimeter</value></data>
+  <data name="Architecture.Unit.Centimeters" xml:space="preserve"><value>sentimeter</value></data>
+  <data name="Architecture.Unit.Meters" xml:space="preserve"><value>meter</value></data>
+  <data name="Architecture.Unit.Inches" xml:space="preserve"><value>inci</value></data>
+  <data name="Architecture.Unit.Feet" xml:space="preserve"><value>kaki</value></data>
+  <data name="Architecture.Unit.Unitless" xml:space="preserve"><value>tanpa satuan</value></data>
+  <data name="Architecture.FromCad.DropHere" xml:space="preserve"><value>Seret file DWG atau DXF ke sini</value></data>
+  <data name="Architecture.FromCad.DropFormats" xml:space="preserve"><value>DWG, DXF → PNG, JPG, PDF</value></data>
+  <data name="Architecture.FromCad.Unsupported" xml:space="preserve"><value>File {0} tidak bisa digambar di sini. Pakai file DWG atau DXF.</value></data>
+  <data name="Architecture.FromCad.UnsupportedNoExtension" xml:space="preserve"><value>File ini tidak punya ekstensi. Pakai file DWG atau DXF.</value></data>
+  <data name="Architecture.FromCad.Empty" xml:space="preserve"><value>File ini tidak punya bentuk untuk digambar.</value></data>
+  <data name="Architecture.FromCad.ReadingTitle" xml:space="preserve"><value>Membaca {0}</value></data>
+  <data name="Architecture.FromCad.ReadingCaption" xml:space="preserve"><value>Membuka gambar kerja dan membaca layer-nya</value></data>
+  <data name="Architecture.FromCad.ReadyDwg" xml:space="preserve"><value>File DWG terbaca</value></data>
+  <data name="Architecture.FromCad.ReadyDxf" xml:space="preserve"><value>File DXF terbaca</value></data>
+  <data name="Architecture.FromCad.ReadyMessage" xml:space="preserve"><value>{0} layer, satuan {1}. Layer yang dimatikan tidak ikut di hasil.</value></data>
+  <data name="Architecture.FromCad.ReadyMessageOne" xml:space="preserve"><value>1 layer, satuan {0}. Layer yang dimatikan tidak ikut di hasil.</value></data>
+  <data name="Architecture.FromCad.PreviewWorking" xml:space="preserve"><value>Menggambar pratinjau</value></data>
+  <data name="Architecture.FromCad.PreviewFailed" xml:space="preserve"><value>Pratinjau tidak bisa digambar, tapi file tetap bisa dikonversi.</value></data>
+  <data name="Architecture.FromCad.NoLayerShown" xml:space="preserve"><value>Tampilkan minimal satu layer.</value></data>
+  <data name="Architecture.Options.Title" xml:space="preserve"><value>Opsi hasil</value></data>
+  <data name="Architecture.Options.Format" xml:space="preserve"><value>Format hasil</value></data>
+  <data name="Architecture.Options.Paper" xml:space="preserve"><value>Ukuran kertas</value></data>
+  <data name="Architecture.Options.Dpi" xml:space="preserve"><value>Resolusi (DPI)</value></data>
+  <data name="Architecture.Options.Background" xml:space="preserve"><value>Latar</value></data>
+  <data name="Architecture.Background.White" xml:space="preserve"><value>Putih</value></data>
+  <data name="Architecture.Background.Transparent" xml:space="preserve"><value>Transparan</value></data>
+  <data name="Architecture.Layers.Title" xml:space="preserve"><value>Layer</value></data>
+  <data name="Architecture.Layer.Shown" xml:space="preserve"><value>Ditampilkan</value></data>
+  <data name="Architecture.Layer.Hidden" xml:space="preserve"><value>Disembunyikan</value></data>
+  <data name="Architecture.Layer.Spoken" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Architecture.Estimate" xml:space="preserve"><value>Perkiraan hasil: {0}</value></data>
+  <data name="Architecture.Estimate.Pdf" xml:space="preserve"><value>PDF vektor · ± {0}</value></data>
+  <data name="Architecture.Estimate.Picture" xml:space="preserve"><value>{0} × {1} px · ± {2}</value></data>
+  <data name="Architecture.Calibrate.KeyboardHint" xml:space="preserve"><value>Dengan keyboard: geser kursor dengan tombol panah (tahan Shift untuk langkah lebih besar) lalu tekan Enter untuk menandai titik.</value></data>
+  <data name="Architecture.NotEligible.TooBig" xml:space="preserve"><value>Gambar ini terlalu besar untuk diperbesar di perangkat ini</value></data>
+  <data name="Architecture.Objects.PdfHint" xml:space="preserve"><value>Garis dan teks dibaca langsung dari halaman. Pilih satuan dan skala gambar di bawah.</value></data>
 </root>

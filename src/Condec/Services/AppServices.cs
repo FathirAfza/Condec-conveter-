@@ -25,13 +25,15 @@ public sealed class AppServices
         IDesktopServices desktop,
         ConverterRegistry upscaleRegistry,
         ConversionPipeline upscalePipeline,
+        ConversionPipeline architecturePipeline,
         string version)
     {
         Settings = settings;
         Log = log;
         Desktop = desktop;
-        Convert = new ConverterViewModel(ConverterScope.Files, registry, pipeline, history, desktop, log);
-        Architecture = new ConverterViewModel(ConverterScope.Cad, registry, pipeline, history, desktop, log);
+        Convert = new ConverterViewModel(registry, pipeline, history, desktop, log);
+        ToCad = new ToCadViewModel(settings, pipeline, architecturePipeline, upscalePipeline, new ConversionRun(history, desktop, log), desktop, log);
+        FromCad = new FromCadViewModel(architecturePipeline, new ConversionRun(history, desktop, log), desktop, log);
         Upscale = new UpscaleViewModel(settings, upscaleRegistry, upscalePipeline, history, desktop, log);
         SettingsPage = new SettingsViewModel(settings, log, desktop, version);
     }
@@ -44,7 +46,11 @@ public sealed class AppServices
 
     public ConverterViewModel Convert { get; }
 
-    public ConverterViewModel Architecture { get; }
+    /// <summary>Architecture, "Gambar, PDF, DXF → DWG" (DESIGN §6.3.1).</summary>
+    public ToCadViewModel ToCad { get; }
+
+    /// <summary>Architecture, "DWG, DXF → Gambar, PDF" (DESIGN §6.3.2).</summary>
+    public FromCadViewModel FromCad { get; }
 
     public UpscaleViewModel Upscale { get; }
 

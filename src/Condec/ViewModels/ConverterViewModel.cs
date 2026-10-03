@@ -25,17 +25,10 @@ public enum ConverterState
     Failed,
 }
 
-/// <summary>Which conversions a converter card offers.</summary>
-public enum ConverterScope
-{
-    /// <summary>Convert File: everything that neither starts nor ends as DXF or DWG (DESIGN §6.1).</summary>
-    Files,
-
-    /// <summary>Architecture: everything to or from DXF and DWG (DESIGN §6.3).</summary>
-    Cad,
-}
-
-/// <summary>The converter card (input, processing, done, failed) and the history card.</summary>
+/// <summary>
+/// Convert File (DESIGN §6.1): the converter card (input, processing, done, failed) and the history card. It offers everything
+/// that neither starts nor ends as DXF or DWG; those are Architecture's (DESIGN §6.3).
+/// </summary>
 public sealed partial class ConverterViewModel : ObservableObject
 {
     private readonly ConverterRegistry _registry;
@@ -49,9 +42,8 @@ public sealed partial class ConverterViewModel : ObservableObject
     private int _chunkCount;
     private bool _loadingHistory;
 
-    public ConverterViewModel(ConverterScope scope, ConverterRegistry registry, ConversionPipeline pipeline, HistoryStore history, IDesktopServices desktop, ActivityLog log)
+    public ConverterViewModel(ConverterRegistry registry, ConversionPipeline pipeline, HistoryStore history, IDesktopServices desktop, ActivityLog log)
     {
-        Scope = scope;
         _registry = registry;
         _pipeline = pipeline;
         _history = history;
@@ -62,22 +54,9 @@ public sealed partial class ConverterViewModel : ObservableObject
         _loadingHistory = true;
         IsHistoryEnabled = true;
         _loadingHistory = false;
-        Pdf.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName is nameof(PdfOptionsViewModel.PageKind) or nameof(PdfOptionsViewModel.HasValidScale))
-            {
-                OnPropertyChanged(nameof(ConvertLabel));
-                ConvertCommand.NotifyCanExecuteChanged();
-            }
-        };
     }
 
-    public ConverterScope Scope { get; }
-
-    /// <summary>Convert File links to Architecture for DXF and DWG ("Butuh DXF atau DWG? Buka Architecture").</summary>
-    public bool ShowsArchitectureLink => Scope == ConverterScope.Files;
-
-    /// <summary>Raised by the Architecture link; the window switches pages.</summary>
+    /// <summary>Raised by the Architecture link ("Butuh DXF atau DWG? Buka Architecture"); the window switches pages.</summary>
     public event EventHandler? ArchitectureRequested;
 
     [RelayCommand]
@@ -85,7 +64,7 @@ public sealed partial class ConverterViewModel : ObservableObject
 
     private static bool IsCad(string extension) => extension is ".dxf" or ".dwg";
 
-    private bool InScope(string source, string target) => (Scope == ConverterScope.Cad) == (IsCad(source) || IsCad(target));
+    private static bool InScope(string source, string target) => !(IsCad(source) || IsCad(target));
 
     private List<TargetOption> TargetOptionsFor(string extension) =>
         [.. _registry.GetTargetOptions(extension).Where(o => InScope(extension, o.Extension))];
@@ -111,7 +90,7 @@ public sealed partial class ConverterViewModel : ObservableObject
     // ---- Input ----
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSource), nameof(HasNoSource), nameof(FormatPlaceholder), nameof(FormatHelpText), nameof(ProcessingTitle), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ShowsImageTraceNotice), nameof(ConvertLabel))]
+    [NotifyPropertyChangedFor(nameof(HasSource), nameof(HasNoSource), nameof(FormatPlaceholder), nameof(FormatHelpText), nameof(ProcessingTitle), nameof(ShowsPageChoice))]
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     public partial SourceFile? Source { get; set; }
 
@@ -122,11 +101,11 @@ public sealed partial class ConverterViewModel : ObservableObject
     public ObservableCollection<FormatOption> TargetOptions { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ConversionFormat), nameof(ShowsPageChoice), nameof(ShowsCadOptions), nameof(ShowsImageTraceNotice), nameof(ConvertLabel), nameof(ShowsAudioQuality), nameof(ShowsVideoSize), nameof(ShowsMediaOptions))]
+    [NotifyPropertyChangedFor(nameof(ConversionFormat), nameof(ShowsPageChoice), nameof(ShowsAudioQuality), nameof(ShowsVideoSize), nameof(ShowsMediaOptions))]
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     public partial FormatOption? SelectedTarget { get; set; }
 
-    /// <summary>Page, unit, scale and switches for a PDF source.</summary>
+    /// <summary>The page of a PDF source.</summary>
     public PdfOptionsViewModel Pdf { get; } = new();
 
     /// <summary>Audio quality and video size for audio and video targets (DESIGN §6.1.2).</summary>
@@ -141,15 +120,8 @@ public sealed partial class ConverterViewModel : ObservableObject
 
     private bool IsPdfSource => Source?.Extension == ".pdf";
 
-    /// <summary>A PDF going to a one-page target (image or CAD) needs a page.</summary>
-    public bool ShowsPageChoice => IsPdfSource && SelectedTarget?.Extension is ".png" or ".jpg" or ".heic" or ".dxf" or ".dwg";
-
-    public bool ShowsCadOptions => IsPdfSource && SelectedTarget?.Extension is ".dxf" or ".dwg";
-
-    /// <summary>A picture going to DXF/DWG is traced into outlines, which suits line art better than photos.</summary>
-    public bool ShowsImageTraceNotice => Source is { } source && FileGlyphs.IsImage(source.Extension) && SelectedTarget?.Extension is ".dxf" or ".dwg";
-
-    public string ConvertLabel => Loc.Get(ShowsCadOptions && Pdf.IsScan ? "Convert.LabelAnyway" : "Convert.Label");
+    /// <summary>A PDF going to a one-page target (an image) needs a page.</summary>
+    public bool ShowsPageChoice => IsPdfSource && SelectedTarget?.Extension is ".png" or ".jpg" or ".heic";
 
     public string FormatPlaceholder => Loc.Get(HasSource ? "Format.Placeholder" : "Format.PlaceholderNoFile");
 
@@ -297,10 +269,10 @@ public sealed partial class ConverterViewModel : ObservableObject
         var options = extension.Length == 0 ? [] : TargetOptionsFor(extension);
         if (options.Count == 0)
         {
-            // A DWG dropped on Convert File, or a Word file on Architecture: say where it goes instead.
+            // A DWG dropped on Convert File: say where it goes instead.
             var elsewhere = extension.Length > 0 && _registry.GetTargetOptions(extension).Count > 0;
             ShowInputMessage(
-                elsewhere ? Loc.Format(Scope == ConverterScope.Files ? "Input.UseArchitecture" : "Input.UseConvertFile", extension) : DescribeUnsupported(extension),
+                elsewhere ? Loc.Format("Input.UseArchitecture", extension) : DescribeUnsupported(extension),
                 elsewhere ? InfoBarSeverity.Informational : InfoBarSeverity.Warning);
             return;
         }
@@ -378,8 +350,7 @@ public sealed partial class ConverterViewModel : ObservableObject
     private bool CanConvert() =>
         State == ConverterState.Input
         && Source is not null
-        && SelectedTarget is { Option.IsEnabled: true }
-        && !(ShowsCadOptions && (Pdf.PageKind is null || Pdf.IsEmpty || !Pdf.HasValidScale));
+        && SelectedTarget is { Option.IsEnabled: true };
 
     [RelayCommand(CanExecute = nameof(CanConvert))]
     private async Task ConvertAsync()

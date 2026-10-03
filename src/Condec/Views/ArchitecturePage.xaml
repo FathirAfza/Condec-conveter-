@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Architecture (DESIGN §6.3). Until stage 7 builds the two-way screen, this page carries the conversions to and from
-    DXF and DWG that used to sit in Convert File, unchanged (DESIGN §14 [0.2.2]).
--->
+<!--  Architecture (DESIGN §6.3): two directions, one tab each.  -->
 <Page
     x:Class="Condec.Views.ArchitecturePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -25,7 +22,16 @@
                 Style="{StaticResource SecondaryBodyTextStyle}"
                 local:L.Text="Page.Architecture.Subtitle" />
 
-            <views:ConverterCard x:Name="Card" Margin="0,20,0,0" />
+            <SelectorBar
+                x:Name="Tabs"
+                Margin="0,20,0,16"
+                SelectionChanged="OnTabChanged">
+                <SelectorBarItem x:Name="ToCadTab" IsSelected="True" local:L.Text="Architecture.TabToCad" />
+                <SelectorBarItem x:Name="FromCadTab" local:L.Text="Architecture.TabFromCad" />
+            </SelectorBar>
+
+            <views:ToCadView x:Name="ToCad" />
+            <views:FromCadView x:Name="FromCad" Visibility="Collapsed" />
         </StackPanel>
     </ScrollViewer>
 </Page>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--  The converter card of DESIGN §6.1 (input, processing, done, failed). Convert File and Architecture each have one.  -->
+<!--  The converter card of DESIGN §6.1 (input, processing, done, failed) of Convert File.  -->
 <UserControl
     x:Class="Condec.Views.ConverterCard"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -158,22 +158,10 @@
                             <HyperlinkButton
                                 Padding="0,4"
                                 Command="{x:Bind ViewModel.OpenArchitectureCommand}"
-                                local:L.Content="Format.ArchitectureLink"
-                                Visibility="{x:Bind ViewModel.ShowsArchitectureLink}" />
+                                local:L.Content="Format.ArchitectureLink" />
                         </StackPanel>
                     </Border>
                 </Grid>
-
-                <!--  Pictures going to CAD are traced, which suits line art best.  -->
-                <InfoBar
-                    Grid.Row="2"
-                    Margin="0,20,0,0"
-                    IsClosable="False"
-                    IsOpen="True"
-                    Severity="Informational"
-                    local:L.Message="Image.TraceMessage"
-                    local:L.Title="Image.TraceTitle"
-                    Visibility="{x:Bind ViewModel.ShowsImageTraceNotice, Mode=OneWay}" />
 
                 <!--  Audio quality and video size, for the targets that have them (DESIGN §6.1.2).  -->
                 <Grid
@@ -201,103 +189,23 @@
                     </StackPanel>
                 </Grid>
 
-                <!--  PDF options: the page for image and CAD targets; unit, scale and switches for CAD only.  -->
-                <StackPanel
+                <!--  PDF options: the page, for an image target.  -->
+                <Grid
                     Grid.Row="2"
                     Margin="0,20,0,0"
-                    Spacing="16"
+                    ColumnSpacing="16"
                     Visibility="{x:Bind ViewModel.ShowsPageChoice, Mode=OneWay}">
-                    <InfoBar
-                        Title="{x:Bind ViewModel.Pdf.KindTitle, Mode=OneWay}"
-                        IsClosable="False"
-                        IsOpen="True"
-                        Message="{x:Bind ViewModel.Pdf.KindMessage, Mode=OneWay}"
-                        Severity="{x:Bind ViewModel.Pdf.KindSeverity, Mode=OneWay}"
-                        Visibility="{x:Bind VisibleWhenBoth(ViewModel.ShowsCadOptions, ViewModel.Pdf.HasKind), Mode=OneWay}">
-                        <InfoBar.ActionButton>
-                            <Button
-                                Command="{x:Bind ViewModel.PickSourceCommand}"
-                                local:L.Content="Pdf.ChooseAnother"
-                                Visibility="{x:Bind ViewModel.Pdf.IsScan, Mode=OneWay}" />
-                        </InfoBar.ActionButton>
-                    </InfoBar>
-
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ComboBox
-                            HorizontalAlignment="Stretch"
-                            local:L.Header="Cad.UnitHeader"
-                            ItemsSource="{x:Bind ViewModel.Pdf.Units}"
-                            SelectedItem="{x:Bind ViewModel.Pdf.SelectedUnit, Mode=TwoWay}"
-                            Visibility="{x:Bind ViewModel.ShowsCadOptions, Mode=OneWay}" />
-                        <StackPanel
-                            Grid.Column="1"
-                            Spacing="8"
-                            Visibility="{x:Bind ViewModel.ShowsCadOptions, Mode=OneWay}">
-                            <ComboBox
-                                HorizontalAlignment="Stretch"
-                                local:L.Header="Cad.ScaleHeader"
-                                ItemsSource="{x:Bind ViewModel.Pdf.Scales}"
-                                SelectedItem="{x:Bind ViewModel.Pdf.SelectedScale, Mode=TwoWay}" />
-                            <NumberBox
-                                local:L.AutomationName="Cad.CustomScaleSpoken"
-                                local:L.Header="Cad.CustomScaleHeader"
-                                Minimum="1"
-                                local:L.PlaceholderText="Cad.CustomScalePlaceholder"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind ViewModel.Pdf.CustomDenominator, Mode=TwoWay}"
-                                Visibility="{x:Bind ViewModel.Pdf.IsCustomScale, Mode=OneWay}" />
-                        </StackPanel>
-                        <ComboBox
-                            Grid.Column="{x:Bind PageColumn(ViewModel.ShowsCadOptions), Mode=OneWay}"
-                            HorizontalAlignment="Stretch"
-                            local:L.Header="Cad.PageHeader"
-                            ItemsSource="{x:Bind ViewModel.Pdf.Pages, Mode=OneWay}"
-                            SelectedItem="{x:Bind ViewModel.Pdf.SelectedPage, Mode=TwoWay}" />
-                    </Grid>
-
-                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsCadOptions, Mode=OneWay}">
-                        <Grid ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center" Spacing="2">
-                                <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Cad.KeepText" />
-                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.Pdf.KeepTextNote, Mode=OneWay}" />
-                            </StackPanel>
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                local:L.AutomationName="Cad.KeepText"
-                                IsEnabled="{x:Bind ViewModel.Pdf.CanKeepText, Mode=OneWay}"
-                                IsOn="{x:Bind ViewModel.Pdf.KeepText, Mode=TwoWay}"
-                                OffContent=""
-                                OnContent="" />
-                        </Grid>
-                        <Grid ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center" Spacing="2">
-                                <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Cad.JoinLines" />
-                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Cad.JoinLinesNote" />
-                            </StackPanel>
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                local:L.AutomationName="Cad.JoinLines"
-                                IsOn="{x:Bind ViewModel.Pdf.JoinLines, Mode=TwoWay}"
-                                OffContent=""
-                                OnContent="" />
-                        </Grid>
-                    </StackPanel>
-                </StackPanel>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox
+                        HorizontalAlignment="Stretch"
+                        local:L.Header="Cad.PageHeader"
+                        ItemsSource="{x:Bind ViewModel.Pdf.Pages, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.Pdf.SelectedPage, Mode=TwoWay}" />
+                </Grid>
 
                 <Grid
                     Grid.Row="3"
@@ -325,7 +233,7 @@
                         x:Name="ConvertButton"
                         Grid.Column="1"
                         Command="{x:Bind ViewModel.ConvertCommand}"
-                        Content="{x:Bind ViewModel.ConvertLabel, Mode=OneWay}"
+                        local:L.Content="Convert.Label"
                         Style="{StaticResource AccentButtonStyle}" />
                 </Grid>
             </Grid>

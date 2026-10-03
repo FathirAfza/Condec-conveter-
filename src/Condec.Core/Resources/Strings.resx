@@ -58,9 +58,6 @@
   <data name="Progress.WritingCadObjects" xml:space="preserve"><value>Writing {0} CAD objects</value></data>
   <data name="Progress.OpeningLibreOffice" xml:space="preserve"><value>Opening the document in LibreOffice</value></data>
   <data name="Progress.RenderingPage" xml:space="preserve"><value>Rendering page {0}</value></data>
-  <data name="Progress.ReadingImage" xml:space="preserve"><value>Reading the image</value></data>
-  <data name="Progress.TracingOutlines" xml:space="preserve"><value>Tracing outlines</value></data>
-  <data name="Progress.WritingDxf" xml:space="preserve"><value>Writing {0} outlines to DXF</value></data>
   <data name="Progress.ConvertingDxfToDwg" xml:space="preserve"><value>Converting the DXF to DWG</value></data>
   <data name="LibreOffice.Missing" xml:space="preserve"><value>This format needs LibreOffice, which isn't installed on this computer. Install LibreOffice, then choose the file again.</value></data>
   <data name="Error.TryAnotherDrive" xml:space="preserve"><value>Try again, or save to another drive.</value></data>
@@ -96,15 +93,9 @@
   <data name="Scale.Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="Pdf.KeepTextNoteScan" xml:space="preserve"><value>Not available for scanned PDFs</value></data>
   <data name="Pdf.KeepTextNote" xml:space="preserve"><value>Saved as TEXT entities, not lines</value></data>
-  <data name="Pdf.KindScanTitle" xml:space="preserve"><value>Scanned PDF detected</value></data>
-  <data name="Pdf.KindEmptyTitle" xml:space="preserve"><value>This page is empty</value></data>
-  <data name="Pdf.KindVectorTitle" xml:space="preserve"><value>Vector PDF detected</value></data>
-  <data name="Pdf.KindScanMessage" xml:space="preserve"><value>It contains pixels, not lines. The DXF will be an approximate trace of the lines and isn't precise in size.</value></data>
   <data name="Pdf.KindEmptyMessage" xml:space="preserve"><value>There are no lines, text or images that can be converted. Choose another page.</value></data>
-  <data name="Pdf.KindVectorMessage" xml:space="preserve"><value>Lines, arcs and text will become CAD objects.</value></data>
   <data name="Pdf.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
   <data name="Convert.Label" xml:space="preserve"><value>Convert and save…</value></data>
-  <data name="Convert.LabelAnyway" xml:space="preserve"><value>Convert anyway…</value></data>
   <data name="Format.Placeholder" xml:space="preserve"><value>Choose a format</value></data>
   <data name="Format.PlaceholderNoFile" xml:space="preserve"><value>Choose a file first</value></data>
   <data name="Format.HelpNone" xml:space="preserve"><value>Formats appear after you choose a file</value></data>
@@ -147,15 +138,12 @@
   <data name="Shell.NoApp" xml:space="preserve"><value>The file was saved, but no app can open it.</value></data>
   <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer can't be opened.</value></data>
   <data name="Drag.Caption" xml:space="preserve"><value>Choose this file</value></data>
-  <data name="Image.TraceTitle" xml:space="preserve"><value>Images are traced into outlines</value></data>
-  <data name="Image.TraceMessage" xml:space="preserve"><value>Condec traces the dark shapes in the image into closed outlines. This works best for drawings, logos and scans; a photo gives only a rough result. The drawing is sized from the image's resolution.</value></data>
   <data name="Input.DropHere" xml:space="preserve"><value>Drag a file here</value></data>
   <data name="Input.Choose" xml:space="preserve"><value>Choose file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>Source file</value></data>
   <data name="Source.ChangeSpoken" xml:space="preserve"><value>Change source file</value></data>
   <data name="Source.Change" xml:space="preserve"><value>Change</value></data>
   <data name="Format.Header" xml:space="preserve"><value>Convert to</value></data>
-  <data name="Pdf.ChooseAnother" xml:space="preserve"><value>Choose another file</value></data>
   <data name="Cad.UnitHeader" xml:space="preserve"><value>Drawing unit</value></data>
   <data name="Cad.ScaleHeader" xml:space="preserve"><value>Drawing scale</value></data>
   <data name="Cad.CustomScaleSpoken" xml:space="preserve"><value>Custom scale, 1 to</value></data>
@@ -213,7 +201,6 @@
   <data name="Page.Settings.Subtitle" xml:space="preserve"><value>Set the render engine, memory limit, appearance and log.</value></data>
   <data name="Format.ArchitectureLink" xml:space="preserve"><value>Need DXF or DWG? Open Architecture</value></data>
   <data name="Input.UseArchitecture" xml:space="preserve"><value>{0} files are handled in Architecture. Open it from the menu.</value></data>
-  <data name="Input.UseConvertFile" xml:space="preserve"><value>{0} files are handled in Convert File. Open it from the menu.</value></data>
   <data name="Device.Gigabytes" xml:space="preserve"><value>{0} GB</value></data>
   <data name="Device.NotDetected" xml:space="preserve"><value>Not detected</value></data>
   <data name="Device.Detected" xml:space="preserve"><value>Detected</value></data>
@@ -346,4 +333,127 @@
   <data name="Upscale.Done.Engine" xml:space="preserve"><value>Engine</value></data>
   <data name="Upscale.Done.Another" xml:space="preserve"><value>Upscale another picture</value></data>
   <data name="Upscale.Failed.Title" xml:space="preserve"><value>Upscale failed</value></data>
+  <data name="Progress.BuildingCadLayers" xml:space="preserve"><value>Building the CAD layers</value></data>
+  <data name="Progress.ReadingDrawing" xml:space="preserve"><value>Reading the drawing</value></data>
+  <data name="Progress.DrawingSheet" xml:space="preserve"><value>Drawing the sheet</value></data>
+  <data name="Architecture.TabToCad" xml:space="preserve"><value>Pictures, PDF, DXF → DWG</value></data>
+  <data name="Architecture.TabFromCad" xml:space="preserve"><value>DWG, DXF → Pictures, PDF</value></data>
+  <data name="Architecture.ToCad.DropHere" xml:space="preserve"><value>Drag a picture, PDF or DXF here</value></data>
+  <data name="Architecture.ToCad.DropFormats" xml:space="preserve"><value>DXF, PNG, JPG, HEIC, HEIF, PDF → DWG</value></data>
+  <data name="Architecture.ToCad.Unsupported" xml:space="preserve"><value>{0} files can't be turned into CAD here. Use a DXF, PNG, JPG, HEIC, HEIF or PDF file.</value></data>
+  <data name="Architecture.ToCad.UnsupportedNoExtension" xml:space="preserve"><value>This file has no extension. Use a DXF, PNG, JPG, HEIC, HEIF or PDF file.</value></data>
+  <data name="Architecture.Reading.Title" xml:space="preserve"><value>Reading {0}</value></data>
+  <data name="Architecture.Reading.Caption" xml:space="preserve"><value>Looking for lines, doors, text and tables on this device</value></data>
+  <data name="Architecture.Reading.Cancel" xml:space="preserve"><value>Stop</value></data>
+  <data name="Architecture.Reading.Cancelled" xml:space="preserve"><value>Reading was stopped.</value></data>
+  <data name="Architecture.Preview.Raster" xml:space="preserve"><value>Raster picture · needs tracing</value></data>
+  <data name="Architecture.Preview.Vector" xml:space="preserve"><value>Vector · drawn directly</value></data>
+  <data name="Architecture.Preview.Size" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Architecture.Preview.SizeUpscaled" xml:space="preserve"><value>{0} · {1} · after upscale {2}</value></data>
+  <data name="Architecture.Preview.Alt" xml:space="preserve"><value>Preview of {0}</value></data>
+  <data name="Architecture.Legend.Included" xml:space="preserve"><value>Becomes CAD</value></data>
+  <data name="Architecture.Legend.Excluded" xml:space="preserve"><value>Not made into CAD</value></data>
+  <data name="Architecture.Legend.Unclear" xml:space="preserve"><value>Unclear area</value></data>
+  <data name="Architecture.Unclear.Title" xml:space="preserve"><value>Many objects are unclear ({0} areas)</value></data>
+  <data name="Architecture.Unclear.Message" xml:space="preserve"><value>Dashed and blurry lines are hard to read, so the CAD result may come out messy. Upscale first to make it tidier. This device can go up to {0}.</value></data>
+  <data name="Architecture.Unclear.UpscaleFirst" xml:space="preserve"><value>Upscale {0} first</value></data>
+  <data name="Architecture.Unclear.UpscaleSpoken" xml:space="preserve"><value>Upscale {0} first, more scales in the menu</value></data>
+  <data name="Architecture.Unclear.Skip" xml:space="preserve"><value>Skip</value></data>
+  <data name="Architecture.NotEligible.MessageRam" xml:space="preserve"><value>A 2× upscale of this picture needs {0} GB of installed RAM, and this device has {1} GB. You can still continue without upscaling, but objects that aren't clear may not be read.</value></data>
+  <data name="Architecture.NotEligible.MessageLimit" xml:space="preserve"><value>The limits of this device and Settings don't allow a 2× upscale of this picture. {0}. You can still continue without upscaling, but objects that aren't clear may not be read.</value></data>
+  <data name="Architecture.NotEligible.Continue" xml:space="preserve"><value>Continue without upscaling</value></data>
+  <data name="Architecture.Upscaling.Title" xml:space="preserve"><value>Upscaling {0}</value></data>
+  <data name="Architecture.Upscaling.Progress" xml:space="preserve"><value>Upscale progress</value></data>
+  <data name="Architecture.Ready.Title" xml:space="preserve"><value>The picture is ready to convert</value></data>
+  <data name="Architecture.Ready.MessageUpscaled" xml:space="preserve"><value>After a {0} upscale, {1}% of objects read clearly. Check the list of objects on the right.</value></data>
+  <data name="Architecture.Ready.Message" xml:space="preserve"><value>{0}% of objects read clearly. Check the list of objects on the right.</value></data>
+  <data name="Architecture.Skipped.Title" xml:space="preserve"><value>Without upscale</value></data>
+  <data name="Architecture.Skipped.Message" xml:space="preserve"><value>{0} unclear areas may not be read, or may come out in the wrong shape in the CAD result.</value></data>
+  <data name="Architecture.Skipped.UpscaleNow" xml:space="preserve"><value>Upscale {0} now</value></data>
+  <data name="Architecture.Vector.Title" xml:space="preserve"><value>This file is already a drawing</value></data>
+  <data name="Architecture.Vector.Message" xml:space="preserve"><value>Lines, curves and text are converted directly, so no upscale is needed.</value></data>
+  <data name="Architecture.Vector.Dxf" xml:space="preserve"><value>A DXF file is already CAD. It is converted to DWG as it is.</value></data>
+  <data name="Architecture.Pdf.FirstPageOnly" xml:space="preserve"><value>This PDF has {0} pages. Only the first page is converted.</value></data>
+  <data name="Architecture.NothingFound.Title" xml:space="preserve"><value>No objects found</value></data>
+  <data name="Architecture.NothingFound.Message" xml:space="preserve"><value>This picture has no lines or text to trace. Choose another file.</value></data>
+  <data name="Architecture.Upscale.Failed" xml:space="preserve"><value>The upscale did not work, so the picture is converted as it is.</value></data>
+  <data name="Architecture.Upscale.Cancelled" xml:space="preserve"><value>The upscale was stopped.</value></data>
+  <data name="Architecture.Objects.Title" xml:space="preserve"><value>Detected objects</value></data>
+  <data name="Architecture.Objects.Hint" xml:space="preserve"><value>Untick objects that should not become CAD.</value></data>
+  <data name="Architecture.Objects.None" xml:space="preserve"><value>Nothing is ticked, so there is nothing to convert.</value></data>
+  <data name="Architecture.Objects.VectorHint" xml:space="preserve"><value>Objects and scale are read directly from the file.</value></data>
+  <data name="Architecture.Kind.Walls" xml:space="preserve"><value>Walls and plan lines</value></data>
+  <data name="Architecture.Kind.Openings" xml:space="preserve"><value>Doors and windows</value></data>
+  <data name="Architecture.Kind.Text" xml:space="preserve"><value>Text and dimensions</value></data>
+  <data name="Architecture.Kind.Logo" xml:space="preserve"><value>Logos and title block</value></data>
+  <data name="Architecture.Kind.Table" xml:space="preserve"><value>Schedule tables</value></data>
+  <data name="Architecture.Count.Lines" xml:space="preserve"><value>{0} lines</value></data>
+  <data name="Architecture.Count.LinesOne" xml:space="preserve"><value>1 line</value></data>
+  <data name="Architecture.Count.Objects" xml:space="preserve"><value>{0} objects</value></data>
+  <data name="Architecture.Count.ObjectsOne" xml:space="preserve"><value>1 object</value></data>
+  <data name="Architecture.Count.Texts" xml:space="preserve"><value>{0} texts</value></data>
+  <data name="Architecture.Count.TextsOne" xml:space="preserve"><value>1 text</value></data>
+  <data name="Architecture.Count.Tables" xml:space="preserve"><value>{0} tables</value></data>
+  <data name="Architecture.Count.TablesOne" xml:space="preserve"><value>1 table</value></data>
+  <data name="Architecture.Desc.Walls" xml:space="preserve"><value>Becomes LINE and POLYLINE</value></data>
+  <data name="Architecture.Desc.Openings" xml:space="preserve"><value>Becomes ARC and double lines</value></data>
+  <data name="Architecture.Desc.Text" xml:space="preserve"><value>Becomes TEXT (read by OCR, check it again)</value></data>
+  <data name="Architecture.Desc.TextLines" xml:space="preserve"><value>Drawn as lines (the writing could not be read)</value></data>
+  <data name="Architecture.Desc.Object" xml:space="preserve"><value>Becomes a CAD object</value></data>
+  <data name="Architecture.Desc.Excluded" xml:space="preserve"><value>Not made into CAD</value></data>
+  <data name="Architecture.CadFormat" xml:space="preserve"><value>CAD format</value></data>
+  <data name="Architecture.Scale.Label" xml:space="preserve"><value>Drawing scale</value></data>
+  <data name="Architecture.Scale.NotCalibrated" xml:space="preserve"><value>Not calibrated</value></data>
+  <data name="Architecture.Scale.Calibrated" xml:space="preserve"><value>Calibrated: 1 pixel = {0} mm</value></data>
+  <data name="Architecture.Scale.Calibrate" xml:space="preserve"><value>Calibrate…</value></data>
+  <data name="Architecture.Scale.Recalibrate" xml:space="preserve"><value>Calibrate again…</value></data>
+  <data name="Architecture.PickAnother" xml:space="preserve"><value>Choose another file</value></data>
+  <data name="Architecture.Convert" xml:space="preserve"><value>Convert to {0}…</value></data>
+  <data name="Architecture.ConvertAnyway" xml:space="preserve"><value>Convert to {0} anyway…</value></data>
+  <data name="Architecture.ConvertAndSave" xml:space="preserve"><value>Convert and save…</value></data>
+  <data name="Architecture.Calibrate.Title" xml:space="preserve"><value>Calibrate the scale</value></data>
+  <data name="Architecture.Calibrate.Instruction" xml:space="preserve"><value>Click two points on the picture whose real distance you know, then enter that distance.</value></data>
+  <data name="Architecture.Calibrate.Points" xml:space="preserve"><value>{0} of 2 points marked</value></data>
+  <data name="Architecture.Calibrate.Length" xml:space="preserve"><value>Real distance</value></data>
+  <data name="Architecture.Calibrate.Unit" xml:space="preserve"><value>Unit</value></data>
+  <data name="Architecture.Calibrate.Reset" xml:space="preserve"><value>Mark again</value></data>
+  <data name="Architecture.Calibrate.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Architecture.Calibrate.Picture" xml:space="preserve"><value>The picture. Click to mark a point.</value></data>
+  <data name="Architecture.Unit.Millimeters" xml:space="preserve"><value>millimeters</value></data>
+  <data name="Architecture.Unit.Centimeters" xml:space="preserve"><value>centimeters</value></data>
+  <data name="Architecture.Unit.Meters" xml:space="preserve"><value>meters</value></data>
+  <data name="Architecture.Unit.Inches" xml:space="preserve"><value>inches</value></data>
+  <data name="Architecture.Unit.Feet" xml:space="preserve"><value>feet</value></data>
+  <data name="Architecture.Unit.Unitless" xml:space="preserve"><value>no unit</value></data>
+  <data name="Architecture.FromCad.DropHere" xml:space="preserve"><value>Drag a DWG or DXF file here</value></data>
+  <data name="Architecture.FromCad.DropFormats" xml:space="preserve"><value>DWG, DXF → PNG, JPG, PDF</value></data>
+  <data name="Architecture.FromCad.Unsupported" xml:space="preserve"><value>{0} files can't be drawn here. Use a DWG or DXF file.</value></data>
+  <data name="Architecture.FromCad.UnsupportedNoExtension" xml:space="preserve"><value>This file has no extension. Use a DWG or DXF file.</value></data>
+  <data name="Architecture.FromCad.Empty" xml:space="preserve"><value>This file has no shapes to draw.</value></data>
+  <data name="Architecture.FromCad.ReadingTitle" xml:space="preserve"><value>Reading {0}</value></data>
+  <data name="Architecture.FromCad.ReadingCaption" xml:space="preserve"><value>Opening the drawing and reading its layers</value></data>
+  <data name="Architecture.FromCad.ReadyDwg" xml:space="preserve"><value>DWG file read</value></data>
+  <data name="Architecture.FromCad.ReadyDxf" xml:space="preserve"><value>DXF file read</value></data>
+  <data name="Architecture.FromCad.ReadyMessage" xml:space="preserve"><value>{0} layers, unit {1}. Layers that are turned off are not in the result.</value></data>
+  <data name="Architecture.FromCad.ReadyMessageOne" xml:space="preserve"><value>1 layer, unit {0}. Layers that are turned off are not in the result.</value></data>
+  <data name="Architecture.FromCad.PreviewWorking" xml:space="preserve"><value>Drawing the preview</value></data>
+  <data name="Architecture.FromCad.PreviewFailed" xml:space="preserve"><value>The preview could not be drawn, but the file can still be converted.</value></data>
+  <data name="Architecture.FromCad.NoLayerShown" xml:space="preserve"><value>Show at least one layer.</value></data>
+  <data name="Architecture.Options.Title" xml:space="preserve"><value>Result options</value></data>
+  <data name="Architecture.Options.Format" xml:space="preserve"><value>Result format</value></data>
+  <data name="Architecture.Options.Paper" xml:space="preserve"><value>Paper size</value></data>
+  <data name="Architecture.Options.Dpi" xml:space="preserve"><value>Resolution (DPI)</value></data>
+  <data name="Architecture.Options.Background" xml:space="preserve"><value>Background</value></data>
+  <data name="Architecture.Background.White" xml:space="preserve"><value>White</value></data>
+  <data name="Architecture.Background.Transparent" xml:space="preserve"><value>Transparent</value></data>
+  <data name="Architecture.Layers.Title" xml:space="preserve"><value>Layers</value></data>
+  <data name="Architecture.Layer.Shown" xml:space="preserve"><value>Shown</value></data>
+  <data name="Architecture.Layer.Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Architecture.Layer.Spoken" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Architecture.Estimate" xml:space="preserve"><value>Estimated result: {0}</value></data>
+  <data name="Architecture.Estimate.Pdf" xml:space="preserve"><value>vector PDF · ± {0}</value></data>
+  <data name="Architecture.Estimate.Picture" xml:space="preserve"><value>{0} × {1} px · ± {2}</value></data>
+  <data name="Architecture.Calibrate.KeyboardHint" xml:space="preserve"><value>With the keyboard: move the cursor with the arrow keys (hold Shift for bigger steps) and press Enter to mark a point.</value></data>
+  <data name="Architecture.NotEligible.TooBig" xml:space="preserve"><value>This picture is too large to enlarge on this device</value></data>
+  <data name="Architecture.Objects.PdfHint" xml:space="preserve"><value>Lines and text are read directly from the page. Choose the unit and scale of the drawing below.</value></data>
 </root>

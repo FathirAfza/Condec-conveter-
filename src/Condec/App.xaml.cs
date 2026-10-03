@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Condec contributors
 
 using Condec.Core;
+using Condec.Core.Architecture;
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
 using Condec.Core.Documents;
@@ -52,7 +53,6 @@ public partial class App : Application
             [
                 new ImageConverter(),
                 new MediaConverter(),
-                new ImageToCadConverter(new WicImageRasterizer()),
                 new PdfToImageConverter(),
                 new PdfToCadConverter(new PdfPageRenderer()),
                 new CadFileConverter(),
@@ -65,6 +65,13 @@ public partial class App : Application
         // Upscale has its own registry: its converter takes the same picture formats as Convert File's, so the two can't share one.
         var upscaleRegistry = new ConverterRegistry([new UpscaleConverter(device)], [new ImageOutputValidator()]);
         var upscalePipeline = new ConversionPipeline(upscaleRegistry, journal);
+
+        // Architecture's own: a picture analyzed on this device becomes DWG or DXF, and a drawing is drawn as PDF, PNG or JPG.
+        // The vector DXF and PDF conversions of "to CAD" use the main pipeline.
+        var architectureRegistry = new ConverterRegistry(
+            [new ArchitectureToCadConverter(), new CadRenderConverter()],
+            [new CadOutputValidator(), new PdfOutputValidator(), new ImageOutputValidator()]);
+        var architecturePipeline = new ConversionPipeline(architectureRegistry, journal);
         var history = new HistoryStore(CondecPaths.HistoryFile);
 
         // Leftovers from a conversion that was cut off by a crash or power loss. Best effort: the
@@ -72,7 +79,7 @@ public partial class App : Application
         _ = Task.Run(journal.CleanupStale);
 
         _window = new MainWindow();
-        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), upscaleRegistry, upscalePipeline, version);
+        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), upscaleRegistry, upscalePipeline, architecturePipeline, version);
         _window.Start(Services);
         _window.Activate();
         _ = Services.Upscale.InitializeAsync();

@@ -5,7 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Condec.Core.Conversion;
 using Condec.Core.Localization;
 using Condec.Core.Pdf;
-using Microsoft.UI.Xaml.Controls;
 
 namespace Condec.ViewModels;
 
@@ -15,8 +14,8 @@ public sealed record Choice<T>(T Value, string Label)
 }
 
 /// <summary>
-/// Options for a PDF source: the page, and for DXF/DWG the unit, scale and two switches. The page is checked
-/// for being a vector drawing or a scan, which decides the notice and whether text can be kept.
+/// Options for a PDF source: the page, and for DXF/DWG (Architecture) the unit, scale and two switches. The page is checked
+/// for being a vector drawing or a scan, which decides whether text can be kept.
 /// </summary>
 public sealed partial class PdfOptionsViewModel : ObservableObject
 {
@@ -73,10 +72,8 @@ public sealed partial class PdfOptionsViewModel : ObservableObject
 
     /// <summary>Null while the page is being checked.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsScan), nameof(IsEmpty), nameof(CanKeepText), nameof(KeepTextNote), nameof(KindTitle), nameof(KindMessage), nameof(KindSeverity), nameof(HasKind))]
+    [NotifyPropertyChangedFor(nameof(IsScan), nameof(IsEmpty), nameof(CanKeepText), nameof(KeepTextNote))]
     public partial PdfPageKind? PageKind { get; set; }
-
-    public bool HasKind => PageKind is not null;
 
     public bool IsScan => PageKind == PdfPageKind.Scan;
 
@@ -85,26 +82,6 @@ public sealed partial class PdfOptionsViewModel : ObservableObject
     public bool CanKeepText => !IsScan;
 
     public string KeepTextNote => Loc.Get(IsScan ? "Pdf.KeepTextNoteScan" : "Pdf.KeepTextNote");
-
-    public string KindTitle => PageKind switch
-    {
-        PdfPageKind.Scan => Loc.Get("Pdf.KindScanTitle"),
-        PdfPageKind.Empty => Loc.Get("Pdf.KindEmptyTitle"),
-        _ => Loc.Get("Pdf.KindVectorTitle"),
-    };
-
-    public string KindMessage => PageKind switch
-    {
-        PdfPageKind.Scan => Loc.Get("Pdf.KindScanMessage"),
-        PdfPageKind.Empty => Loc.Get("Pdf.KindEmptyMessage"),
-        _ => Loc.Get("Pdf.KindVectorMessage"),
-    };
-
-    public InfoBarSeverity KindSeverity => PageKind switch
-    {
-        PdfPageKind.Scan or PdfPageKind.Empty => InfoBarSeverity.Warning,
-        _ => InfoBarSeverity.Success,
-    };
 
     /// <summary>Resets the options for a newly chosen PDF.</summary>
     public void Load(string path, int pageCount)

@@ -32,15 +32,6 @@ public sealed partial class ConverterCard : UserControl
         }
     }
 
-    /// <summary>
-    /// For x:Bind, which has no "and" of two properties. Returns Visibility itself: the XAML compiler
-    /// generates code that doesn't build when a bool function result is cast to Visibility.
-    /// </summary>
-    public Visibility VisibleWhenBoth(bool a, bool b) => a && b ? Visibility.Visible : Visibility.Collapsed;
-
-    /// <summary>The page list sits under "Halaman" in the third column next to unit and scale, or alone in the first.</summary>
-    public int PageColumn(bool showsCadOptions) => showsCadOptions ? 2 : 0;
-
     /// <summary>Label style for a row in the progress list, used by x:Bind.</summary>
     public static Style StepLabelStyle(StepState state) => (Style)Application.Current.Resources[state switch
     {
