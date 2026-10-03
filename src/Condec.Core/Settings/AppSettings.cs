@@ -37,6 +37,7 @@ public sealed class AppSettings
     public const string LogLevelKey = "log.level";
     public const string PerformanceModeKey = "perf.mode";
     public const string MemorySaverKey = "perf.memorySaver";
+    public const string AdaptiveKey = "perf.adaptive";
     private const string ThroughputKeyPrefix = "bench.";
 
     /// <summary>The smallest memory limit the slider offers.</summary>
@@ -105,6 +106,13 @@ public sealed class AppSettings
     {
         get => bool.TryParse(_store.Get(MemorySaverKey), out var on) && on;
         set => Write(MemorySaverKey, value.ToString());
+    }
+
+    /// <summary>Adaptive (DESIGN §7.6): a render works less while other apps use the GPU or the memory is nearly full. On at first.</summary>
+    public bool Adaptive
+    {
+        get => !bool.TryParse(_store.Get(AdaptiveKey), out var on) || on;
+        set => Write(AdaptiveKey, value.ToString());
     }
 
     /// <summary>What the performance mode and Memory saver mean for a render.</summary>

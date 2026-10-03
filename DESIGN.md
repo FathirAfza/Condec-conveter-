@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.16 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.17 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -518,6 +518,7 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9], [0.2.10]): PDF ke DWG/DXF bisa banya
 | Perangkat ini | Kartu info (grid 2 × 2) | Prosesor, RAM terpasang, GPU, NPU ("Tidak terdeteksi" bila tidak ada). Kanan: Caption "Batas upscale perangkat" dan angka `TitleTextBlockStyle` ("4×"). |
 | Render mode | `Expander` | Header: "Render mode" + deskripsi "Mesin yang dipakai untuk upscale dan vektorisasi. GPU paling cepat, CPU selalu tersedia." + nilai terpilih di kanan. Isi: `RadioButtons` vertikal GPU / CPU / NPU, masing-masing dengan nama perangkat dan status ("Terdeteksi · tercepat", "Selalu tersedia · paling lambat", "Terdeteksi" / "Tidak terdeteksi"). NPU nonaktif bila tidak terdeteksi. |
 | Mode performa | `ComboBox` (lebar 200) | "Sangat tinggi (80%)", "Tinggi (60%)", "Sedang (40%)", "Rendah (20%)" (§7.6). Deskripsi: "Seberapa keras perangkat bekerja saat upscale. Mode yang lebih rendah beristirahat di antara tile: render lebih lama, perangkat lebih dingin, dan aplikasi lain tetap lancar." Saat Hemat memori aktif: nonaktif, menampilkan "Rendah (20%)", dan deskripsi "Dikunci oleh Hemat memori: render bekerja 10% dari waktunya." Mode yang dipilih tetap tersimpan dan kembali saat Hemat memori dimatikan. |
+| Adaptif | `ToggleSwitch` | "Kurangi kerja render otomatis saat aplikasi lain memakai GPU atau RAM hampir penuh. Tidak pernah melebihi mode performa." Label "Aktif"/"Nonaktif" (§7.6). |
 | Hemat memori | `ToggleSwitch` | "Batasi Condec ke memori 2 GB, tile 48 px, dan kerja 10% dari waktu render. Untuk perangkat dengan RAM kecil atau saat banyak aplikasi terbuka. Upscale jadi jauh lebih lama." Label "Aktif"/"Nonaktif". |
 | Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
 | Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–4K 8 GB · 4K–8K 32 GB · di atas 8K 64 GB." Saat Hemat memori aktif: slider nonaktif (nilainya tetap tersimpan), nilai di kanan "2 GB", dan deskripsi "Dikunci oleh Hemat memori: Condec memakai paling banyak 2 GB untuk upscale." |
@@ -554,11 +555,12 @@ Disimpan di `ApplicationData.Current.LocalSettings` bila aplikasi terpasang seba
 | `log.level` | Info |
 | `perf.mode` | Sangat tinggi (`ExtraHigh`) |
 | `perf.memorySaver` | Nonaktif |
+| `perf.adaptive` | Aktif |
 
 Aturan:
 - Mode tersimpan yang tidak tersedia lagi (mis. NPU dicabut) → pindah ke GPU, atau CPU bila tidak ada GPU.
 - `limit.scale` dan `limit.memoryGb` dijepit ke kemampuan perangkat saat dibaca.
-- Perubahan Render mode, Batas upscale, Batas memori, Mode performa, dan Hemat memori langsung berlaku di Upscale Image dan Architecture tanpa restart (render yang sedang berjalan memakai setelan saat dimulai).
+- Perubahan Render mode, Batas upscale, Batas memori, Mode performa, Adaptif, dan Hemat memori langsung berlaku di Upscale Image dan Architecture tanpa restart (render yang sedang berjalan memakai setelan saat dimulai).
 - `perf.mode` yang bukan salah satu mode dibaca sebagai Sangat tinggi.
 
 ## 7. Aturan batas perangkat
@@ -638,6 +640,7 @@ Keputusan pemilik 2026-10-03: upscale tidak boleh membebani perangkat terus-mene
 - Tile yang lebih kecil berarti beban yang lebih pendek per tile; hasilnya sedikit lebih jauh dari gambar utuh (§13 #56).
 - Perkiraan waktu (§8) dibagi waktu kerja. Benchmark mesin tetap diukur tanpa istirahat.
 - Selama render, prioritas proses Condec diturunkan ke `BelowNormal` (`Process.PriorityClass`) dan dikembalikan setelah render terakhir selesai; berlaku di semua mode (§13 #59). Seluruh proses yang diturunkan karena ONNX Runtime merender di thread miliknya sendiri. Bila Windows menolak, render tetap jalan dengan prioritas biasa.
+- **Adaptif** (bawaan aktif): selama render, paling cepat tiap 2 detik saat istirahat, Condec membaca pemakaian mesin 3D GPU oleh proses lain (penghitung kinerja "GPU Engine", angka yang sama dengan Task Manager, lewat PDH) dan beban memori (`GlobalMemoryStatusEx`). GPU dipakai aplikasi lain ≥ 30%: waktu kerja dibagi dua. Memori terpakai ≥ 90%: dibagi dua lagi. Tidak pernah di bawah 10% (atau waktu kerja mode bila lebih kecil) dan tidak pernah di atas mode. Kembali ke waktu kerja mode begitu beban turun. Yang tidak bisa dibaca Windows (driver lama, mesin virtual) dianggap tidak sibuk. Perkiraan waktu tidak memperhitungkan Adaptif, karena beban nanti tidak diketahui (§13 #60). Tidak ada yang dikirim ke luar perangkat. Suhu tidak dibaca: Windows tidak menyediakannya untuk aplikasi biasa.
 - Berlaku untuk Upscale Image (satu gambar dan antrean) dan upscale di Architecture (§6.3.1).
 - Tidak ada pemblokiran menurut nama prosesor atau GPU (keputusan pemilik "Dari hasil ukur"): syarat tetap RAM terpasang (§7.2) dan batas GPU (§7.1); render yang lama diberi tahu (§6.2 "Render lama").
 
@@ -788,12 +791,19 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 57 | Gaya hasil satu untuk semua gambar di antrean dan tidak diingat antarsesi (selalu mulai di Tajam); Riwayat mencatat skala tetapi tidak gaya | `[ASUMSI]`, sama dengan format hasil (#53) |
 | 58 | Upscale di halaman Architecture (§6.3.1, sebelum dijadikan CAD) tetap memakai gaya Tajam, tanpa pilihan | `[ASUMSI]`; belum diukur gaya mana yang lebih baik untuk pembacaan garis |
 | 59 | Mode performa: bawaan Sangat tinggi (render ±25% lebih lama dari sebelumnya); prioritas proses rendah selama render di semua mode, tanpa setelan; Rendah membatasi tile ke 64; Hemat memori menampilkan "Rendah" di ComboBox yang dikunci; peringatan render lama mulai 10 menit | `[ASUMSI]`. Persen per mode dan isi Hemat memori (2 GB, 10%) dari pemilik 2026-10-03 |
+| 60 | Ambang Adaptif: GPU proses lain ≥ 30% dan memori ≥ 90%, masing-masing membagi dua waktu kerja; dibaca tiap 2 detik; bawaan aktif; perkiraan waktu tidak ikut berubah | `[ASUMSI]`. Semua proses lain di semua adaptor dihitung, karena adaptor yang dipakai DirectML tidak diketahui Condec (§13 #27) |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.17] 2026-10-04 (Adaptif)
+- **Keputusan pemilik (2026-10-03):** fitur Adaptif, yang menyesuaikan render dengan kondisi perangkat.
+- **Ditambah:** baris "Adaptif" di Settings (§6.4, kunci `perf.adaptive`, bawaan aktif) dan aturannya di §7.6; pembaca beban `WindowsLoadMonitor` (PDH "GPU Engine" dan `GlobalMemoryStatusEx`, API dicek di dokumentasi Microsoft); 2 kunci resource baru (ID dan EN).
+- **Diajukan:** §13 #60.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1495 lulus, 0 gagal, 0 dilewati (test baru: aturan Adaptif, istirahat yang memanjang saat GPU sibuk dan kembali normal, pembacaan paling sering tiap interval, setelan, dan pembaca nyata di Windows). Di laptop pemilik pembaca memberi memori 74% (Windows: 73%) dan GPU proses lain 3,2% (`Get-Counter` pada detik lain: 1,1%, 182 instance). Uji langsung: baris "Adaptive" tampil aktif; 8x07ex 300 × 300 → 600 × 600 di Sangat tinggi dengan Adaptif selesai 9,9 detik (tanpa Adaptif 8,6 detik; selisihnya membuka dan membaca penghitung), hasil identik piksel dengan render tanpa Adaptif, prioritas kembali Normal. **Belum dicoba langsung:** render saat aplikasi lain benar-benar memakai GPU ≥ 30% atau memori ≥ 90% (ada unit test), CPU, Windows berbahasa Indonesia, paket MSIX.
 
 ### [0.2.16] 2026-10-04 (Mode performa dan Hemat memori)
 - **Keputusan pemilik (2026-10-03):** upscale dibatasi dengan persen waktu kerja, empat mode (Sangat tinggi 80%, Tinggi 60%, Sedang 40%, Rendah 20%) dan Hemat memori (2 GB, 10%, mengunci mode); prioritas render rendah; batas perangkat "dari hasil ukur", bukan dari nama prosesor atau GPU.

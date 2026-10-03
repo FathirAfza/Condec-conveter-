@@ -1437,7 +1437,7 @@ public sealed partial class ToCadViewModel : ObservableObject
             var (outputWidth, outputHeight) = UpscaleEstimator.OutputSize(width, height, scale);
             var pace = _settings.Pace;
             var plan = UpscaleMemory.Plan(width, height, outputWidth, outputHeight, EffectiveEngine, keepsAlpha: true, _settings.EffectiveMemoryLimitGb * GiB, pace.MaxTileSize);
-            var job = new ConversionJob(input, ".png", output, new UpscaleOptions(outputWidth, outputHeight, _settings.RenderMode, plan.TileSize, Duty: pace.Duty));
+            var job = new ConversionJob(input, ".png", output, new UpscaleOptions(outputWidth, outputHeight, _settings.RenderMode, plan.TileSize, Duty: pace.Duty, Adaptive: _settings.Adaptive));
             var progress = new Progress<PipelineProgress>(p => UpscalePercent = Math.Floor(p.OverallFraction * UpscaleShare * 100));
             await Task.Run(() => _upscalePipeline.RunAsync(job, progress, ct), CancellationToken.None);
             ct.ThrowIfCancellationRequested();

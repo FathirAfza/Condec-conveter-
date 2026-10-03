@@ -181,8 +181,9 @@ public sealed class UpscaleConverter : IReencodingConverter
     {
         byte[] enlarged;
         using (RenderPriority.Lower())
+        using (var monitor = options.Adaptive ? WindowsLoadMonitor.Open() : null)
         {
-            var pacer = options.Duty < 1 ? new TilePacer(options.Duty) : null;
+            var pacer = options.Duty < 1 || monitor is not null ? new TilePacer(options.Duty, monitor: monitor) : null;
             enlarged = TiledUpscaler.Run(model, source, width, height, options.TileSize, tiles, ct, pacer);
         }
 

@@ -203,6 +203,19 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool CanChooseMemoryLimit => !_settings.MemorySaver;
 
+    public bool Adaptive
+    {
+        get => _settings.Adaptive;
+        set
+        {
+            if (value != _settings.Adaptive)
+            {
+                _settings.Adaptive = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string MemoryLimitDescription => _settings.MemorySaver
         ? Loc.Format("Settings.MemoryLimitLocked", RenderPace.MemorySaverGb)
         : Loc.Get("Settings.MemoryLimitDescription");

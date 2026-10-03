@@ -1033,7 +1033,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         }
 
         _lastScale = Scale;
-        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style, _settings.Pace.Duty)));
+        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style, _settings.Pace.Duty, _settings.Adaptive)));
     }
 
     [RelayCommand]
@@ -1159,7 +1159,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
                 item.File.Path,
                 extension,
                 names[i],
-                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style, _settings.Pace.Duty)),
+                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style, _settings.Pace.Duty, _settings.Adaptive)),
             item.Scale,
             item.Name,
             item.Width,

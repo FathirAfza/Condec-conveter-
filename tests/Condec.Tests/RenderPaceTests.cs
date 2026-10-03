@@ -251,6 +251,85 @@ public class RenderPaceTests
         Assert.Equal(2, changes);
     }
 
+    private sealed class FixedMonitor(SystemLoad load) : ILoadMonitor
+    {
+        public int Reads { get; private set; }
+
+        public SystemLoad Load { get; set; } = load;
+
+        public SystemLoad Read()
+        {
+            Reads++;
+            return Load;
+        }
+    }
+
+    [Theory]
+    [InlineData(0.8, null, null, 0.8)]
+    [InlineData(0.8, 10.0, 50.0, 0.8)]
+    [InlineData(0.8, 30.0, 50.0, 0.4)]
+    [InlineData(0.8, 10.0, 90.0, 0.4)]
+    [InlineData(0.8, 90.0, 95.0, 0.2)]
+    [InlineData(0.2, 90.0, 95.0, 0.1)]
+    [InlineData(0.1, 90.0, 95.0, 0.1)]
+    [InlineData(0.6, 29.9, 89.9, 0.6)]
+    public void Adaptive_LowersTheShare_WhileTheDeviceIsBusy(double duty, double? gpu, double? memory, double expected) =>
+        Assert.Equal(expected, AdaptivePace.Adjust(duty, new SystemLoad(gpu, memory)), 6);
+
+    [Fact]
+    public void Adaptive_NeverWorksMoreThanTheMode()
+    {
+        foreach (var mode in RenderPace.Modes)
+        {
+            var duty = RenderPace.For(mode, false).Duty;
+            Assert.True(AdaptivePace.Adjust(duty, new SystemLoad(0, 0)) <= duty);
+            Assert.True(AdaptivePace.Adjust(duty, new SystemLoad(100, 100)) <= duty);
+        }
+    }
+
+    [Fact]
+    public void ThePacer_RestsLonger_WhileAdaptiveFindsTheDeviceBusy()
+    {
+        var waits = new List<TimeSpan>();
+        var monitor = new FixedMonitor(new SystemLoad(50, 40));
+        var pacer = new TilePacer(0.8, (pause, _) => waits.Add(pause), monitor, TimeSpan.Zero);
+
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        monitor.Load = new SystemLoad(0, 40);
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+
+        // Busy GPU: 40% of the time, so 150 ms after 100 ms of work; then back to 80%, 25 ms.
+        Assert.Equal(150, waits[0].TotalMilliseconds, 3);
+        Assert.Equal(25, waits[1].TotalMilliseconds, 3);
+        Assert.Equal(0.8, pacer.CurrentDuty);
+    }
+
+    [Fact]
+    public void ThePacer_ReadsTheDevice_OnlyEveryFewSeconds()
+    {
+        var monitor = new FixedMonitor(new SystemLoad(0, 0));
+        var pacer = new TilePacer(0.8, (_, _) => { }, monitor, TimeSpan.FromMinutes(1));
+
+        for (var i = 0; i < 5; i++)
+        {
+            pacer.Rest(TimeSpan.FromMilliseconds(10), Ct);
+        }
+
+        Assert.Equal(1, monitor.Reads);
+    }
+
+    [Fact]
+    public void Settings_StartWithAdaptiveOn_AndRememberIt()
+    {
+        var store = new MemoryStore();
+        Assert.True(new AppSettings(store, Laptop).Adaptive);
+
+        new AppSettings(store, Laptop).Adaptive = false;
+
+        Assert.Equal("False", store.Values[AppSettings.AdaptiveKey]);
+        Assert.False(new AppSettings(store, Laptop).Adaptive);
+    }
+
     [Fact]
     public void TheModeNames_ReadInBothLanguages()
     {

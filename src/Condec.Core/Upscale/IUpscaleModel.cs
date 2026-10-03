@@ -27,10 +27,12 @@ public interface IUpscaleModel : IDisposable
 /// <param name="TileSize">One of <see cref="TiledUpscaler.TileSizes"/>: the largest that fits the memory limit (<see cref="UpscaleMemory"/>).</param>
 /// <param name="Style">Which bundled network renders (<see cref="UpscaleStyle"/>).</param>
 /// <param name="Duty">The share of the time the engine works, from the performance mode (<see cref="RenderPace.Duty"/>); 1 works without rest.</param>
+/// <param name="Adaptive">Lower <paramref name="Duty"/> while other apps use the GPU or the memory is nearly full (DESIGN §7.6).</param>
 public sealed record UpscaleOptions(
     int OutputWidth,
     int OutputHeight,
     RenderEngine Engine,
     int TileSize = TiledUpscaler.DefaultTileSize,
     UpscaleStyle Style = UpscaleStyle.Sharp,
-    double Duty = 1) : ConversionOptions;
+    double Duty = 1,
+    bool Adaptive = false) : ConversionOptions;

@@ -159,6 +159,27 @@
                     </Grid>
                 </Border>
 
+                <!--  Adaptive  -->
+                <Border Style="{StaticResource SettingRowBorderStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Settings.Adaptive" />
+                            <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Settings.AdaptiveDescription" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            local:L.AutomationName="Settings.Adaptive"
+                            IsOn="{x:Bind ViewModel.Adaptive, Mode=TwoWay}"
+                            local:L.OffContent="Settings.Off"
+                            local:L.OnContent="Settings.On" />
+                    </Grid>
+                </Border>
+
                 <!--  Memory saver  -->
                 <Border Style="{StaticResource SettingRowBorderStyle}">
                     <Grid ColumnSpacing="16">
