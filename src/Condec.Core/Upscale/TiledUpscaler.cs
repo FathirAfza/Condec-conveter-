@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
+using System.Diagnostics;
+
 namespace Condec.Core.Upscale;
 
 /// <summary>
@@ -50,6 +52,7 @@ public static class TiledUpscaler
     /// </summary>
     /// <param name="tileSize">One of <see cref="TileSizes"/>.</param>
     /// <param name="progress">Called after each tile with the tiles done and the number of tiles.</param>
+    /// <param name="pacer">Rests between tiles (the performance mode, DESIGN §7.6); null works without rest.</param>
     public static byte[] Run(
         IUpscaleModel model,
         byte[] bgra,
@@ -57,7 +60,8 @@ public static class TiledUpscaler
         int height,
         int tileSize,
         IProgress<(int Done, int Total)>? progress,
-        CancellationToken ct)
+        CancellationToken ct,
+        TilePacer? pacer = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(bgra);
@@ -89,10 +93,16 @@ public static class TiledUpscaler
             foreach (var column in columns)
             {
                 ct.ThrowIfCancellationRequested();
+                var started = Stopwatch.GetTimestamp();
                 FillTile(bgra, width, height, column.Origin, row.Origin, tileSize, input);
                 var result = model.RunTile(input, tileSize);
                 WriteTile(result, tileSize, scale, row, column, output, outputWidth, fadeRows);
-                progress?.Report((++done, total));
+                done++;
+                progress?.Report((done, total));
+                if (pacer is not null && done < total)
+                {
+                    pacer.Rest(Stopwatch.GetElapsedTime(started), ct);
+                }
             }
 
             if (row.FadesIn)

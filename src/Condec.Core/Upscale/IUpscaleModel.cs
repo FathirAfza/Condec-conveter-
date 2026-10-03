@@ -26,9 +26,11 @@ public interface IUpscaleModel : IDisposable
 /// <param name="Engine">The engine from Settings; when it can't start, the CPU takes over and a note says so.</param>
 /// <param name="TileSize">One of <see cref="TiledUpscaler.TileSizes"/>: the largest that fits the memory limit (<see cref="UpscaleMemory"/>).</param>
 /// <param name="Style">Which bundled network renders (<see cref="UpscaleStyle"/>).</param>
+/// <param name="Duty">The share of the time the engine works, from the performance mode (<see cref="RenderPace.Duty"/>); 1 works without rest.</param>
 public sealed record UpscaleOptions(
     int OutputWidth,
     int OutputHeight,
     RenderEngine Engine,
     int TileSize = TiledUpscaler.DefaultTileSize,
-    UpscaleStyle Style = UpscaleStyle.Sharp) : ConversionOptions;
+    UpscaleStyle Style = UpscaleStyle.Sharp,
+    double Duty = 1) : ConversionOptions;

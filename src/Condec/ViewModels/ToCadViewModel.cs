@@ -1235,7 +1235,7 @@ public sealed partial class ToCadViewModel : ObservableObject
         item.OriginalWidth,
         item.OriginalHeight,
         _settings.ScaleLimit,
-        _settings.MemoryLimitGb * GiB,
+        _settings.EffectiveMemoryLimitGb * GiB,
         EffectiveEngine);
 
     private static ToCadBanner BannerFor(UpscaleAdvice advice) => advice.Kind switch
@@ -1340,8 +1340,9 @@ public sealed partial class ToCadViewModel : ObservableObject
         if (advice.Limit.Effective >= 2)
         {
             var (outputWidth, outputHeight) = UpscaleEstimator.OutputSize(item.OriginalWidth, item.OriginalHeight, 2);
-            var peak = UpscaleMemory.Plan(item.OriginalWidth, item.OriginalHeight, outputWidth, outputHeight, EffectiveEngine, keepsAlpha: true, _settings.MemoryLimitGb * GiB).PeakBytes;
-            return Loc.Format("Upscale.Estimate.MemoryShort", _settings.MemoryLimitGb, ScaleText.Gigabytes(peak, Loc.Culture));
+            var peak = UpscaleMemory.Plan(
+                item.OriginalWidth, item.OriginalHeight, outputWidth, outputHeight, EffectiveEngine, keepsAlpha: true, _settings.EffectiveMemoryLimitGb * GiB, _settings.Pace.MaxTileSize).PeakBytes;
+            return Loc.Format("Upscale.Estimate.MemoryShort", _settings.EffectiveMemoryLimitGb, ScaleText.Gigabytes(peak, Loc.Culture));
         }
 
         var reasons = advice.Limit.DescribeReasons(Loc.Culture);
@@ -1434,8 +1435,9 @@ public sealed partial class ToCadViewModel : ObservableObject
             }
 
             var (outputWidth, outputHeight) = UpscaleEstimator.OutputSize(width, height, scale);
-            var plan = UpscaleMemory.Plan(width, height, outputWidth, outputHeight, EffectiveEngine, keepsAlpha: true, _settings.MemoryLimitGb * GiB);
-            var job = new ConversionJob(input, ".png", output, new UpscaleOptions(outputWidth, outputHeight, _settings.RenderMode, plan.TileSize));
+            var pace = _settings.Pace;
+            var plan = UpscaleMemory.Plan(width, height, outputWidth, outputHeight, EffectiveEngine, keepsAlpha: true, _settings.EffectiveMemoryLimitGb * GiB, pace.MaxTileSize);
+            var job = new ConversionJob(input, ".png", output, new UpscaleOptions(outputWidth, outputHeight, _settings.RenderMode, plan.TileSize, Duty: pace.Duty));
             var progress = new Progress<PipelineProgress>(p => UpscalePercent = Math.Floor(p.OverallFraction * UpscaleShare * 100));
             await Task.Run(() => _upscalePipeline.RunAsync(job, progress, ct), CancellationToken.None);
             ct.ThrowIfCancellationRequested();

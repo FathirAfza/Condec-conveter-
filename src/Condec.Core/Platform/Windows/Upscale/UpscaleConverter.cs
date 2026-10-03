@@ -60,6 +60,11 @@ public sealed class UpscaleConverter : IReencodingConverter
             throw new ArgumentException($"{options.TileSize} is not a tile size the upscaler uses.", nameof(request));
         }
 
+        if (!(options.Duty > 0 && options.Duty <= 1))
+        {
+            throw new ArgumentException($"{options.Duty} is not a share of time working.", nameof(request));
+        }
+
         var target = OutputExtensions.Contains(FileExtension.Normalize(request.TargetExtension))
             ? ImageFormats.FindTarget(FileExtension.Normalize(request.TargetExtension))
             : null;
@@ -174,7 +179,13 @@ public sealed class UpscaleConverter : IReencodingConverter
         IProgress<(int Done, int Total)> tiles,
         CancellationToken ct)
     {
-        var enlarged = TiledUpscaler.Run(model, source, width, height, options.TileSize, tiles, ct);
+        byte[] enlarged;
+        using (RenderPriority.Lower())
+        {
+            var pacer = options.Duty < 1 ? new TilePacer(options.Duty) : null;
+            enlarged = TiledUpscaler.Run(model, source, width, height, options.TileSize, tiles, ct, pacer);
+        }
+
         var scale = model.Scale;
         var result = Resampler.Resize(enlarged, width * scale, height * scale, 4, options.OutputWidth, options.OutputHeight, ct);
         if (alpha is not null)

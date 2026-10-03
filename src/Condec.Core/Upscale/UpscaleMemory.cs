@@ -45,10 +45,24 @@ public static class UpscaleMemory
 
     /// <param name="engine">The engine that really renders (<see cref="UpscaleSupport.EffectiveEngine"/>).</param>
     /// <param name="keepsAlpha">The result is a PNG, so a transparent source needs its alpha kept and resized apart.</param>
-    public static MemoryPlan Plan(int width, int height, int outputWidth, int outputHeight, RenderEngine engine, bool keepsAlpha, long limitBytes)
+    /// <param name="maxTileSize">The largest tile the performance mode allows (<see cref="RenderPace.MaxTileSize"/>).</param>
+    public static MemoryPlan Plan(
+        int width,
+        int height,
+        int outputWidth,
+        int outputHeight,
+        RenderEngine engine,
+        bool keepsAlpha,
+        long limitBytes,
+        int maxTileSize = TiledUpscaler.DefaultTileSize)
     {
+        if (!TiledUpscaler.TileSizes.Contains(maxTileSize))
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxTileSize), maxTileSize, "Not a tile size the upscaler uses.");
+        }
+
         MemoryPlan? last = null;
-        foreach (var tileSize in TiledUpscaler.TileSizes)
+        foreach (var tileSize in TiledUpscaler.TileSizes.Where(t => t <= maxTileSize))
         {
             var peak = PeakBytes(width, height, outputWidth, outputHeight, tileSize, engine, keepsAlpha);
             last = new MemoryPlan(tileSize, peak, peak <= limitBytes);

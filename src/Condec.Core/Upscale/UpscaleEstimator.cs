@@ -33,16 +33,19 @@ public static class UpscaleEstimator
     /// <summary>
     /// Render time: the megapixels the network works through (whole tiles at 4 times each side of the source, whatever size is
     /// asked for; <see cref="UpscaleSupport.RenderedPixels"/>) ÷ how many megapixels per second the engine measured at the
-    /// tile size the memory limit allows. Null when the engine hasn't been measured yet, because the app never shows an invented speed.
+    /// tile size the memory limit allows, ÷ the share of the time the performance mode works (DESIGN §7.6). Null when the engine
+    /// hasn't been measured yet, because the app never shows an invented speed.
     /// </summary>
-    public static double? EstimatedSeconds(long networkPixels, double? megapixelsPerSecond)
+    public static double? EstimatedSeconds(long networkPixels, double? megapixelsPerSecond, double duty = 1)
     {
         if (megapixelsPerSecond is not > 0)
         {
             return null;
         }
 
-        return networkPixels / 1_000_000d / megapixelsPerSecond.Value;
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(duty);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(duty, 1);
+        return networkPixels / 1_000_000d / megapixelsPerSecond.Value / duty;
     }
 
     private static int Scaled(int value, double scale) => (int)Math.Round(value * scale, MidpointRounding.AwayFromZero);

@@ -35,6 +35,8 @@ public sealed class AppSettings
     public const string MicaKey = "ui.mica";
     public const string LogEnabledKey = "log.enabled";
     public const string LogLevelKey = "log.level";
+    public const string PerformanceModeKey = "perf.mode";
+    public const string MemorySaverKey = "perf.memorySaver";
     private const string ThroughputKeyPrefix = "bench.";
 
     /// <summary>The smallest memory limit the slider offers.</summary>
@@ -88,6 +90,28 @@ public sealed class AppSettings
         }
         set => Write(MemoryGbKey, value.ToString(CultureInfo.InvariantCulture));
     }
+
+    /// <summary>How hard an upscale may work (DESIGN §7.6); Extra high at first.</summary>
+    public PerformanceMode PerformanceMode
+    {
+        get => Enum.TryParse<PerformanceMode>(_store.Get(PerformanceModeKey), out var mode) && Enum.IsDefined(mode)
+            ? mode
+            : PerformanceMode.ExtraHigh;
+        set => Write(PerformanceModeKey, value.ToString());
+    }
+
+    /// <summary>Memory saver (DESIGN §7.6): 2 GB, the smallest tile and 10% of the time, whatever the mode and the memory limit say. Off at first.</summary>
+    public bool MemorySaver
+    {
+        get => bool.TryParse(_store.Get(MemorySaverKey), out var on) && on;
+        set => Write(MemorySaverKey, value.ToString());
+    }
+
+    /// <summary>What the performance mode and Memory saver mean for a render.</summary>
+    public RenderPace Pace => RenderPace.For(PerformanceMode, MemorySaver);
+
+    /// <summary>The memory a render may use: the limit above, or less with Memory saver on.</summary>
+    public int EffectiveMemoryLimitGb => Pace.MemoryLimitGb is { } saver ? Math.Min(saver, MemoryLimitGb) : MemoryLimitGb;
 
     public ThemePreference Theme
     {

@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.15 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.16 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -348,7 +348,7 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonver
 - Diagram ukuran proporsional (rasio 16:9 mengikuti gambar): kotak besar bergaris putus-putus = hasil, kotak kecil di pojok kiri atas = asli, lebarnya 100/skala persen. Legenda: "Asli · W × H" dan "Hasil · W × H".
 
 **Kartu kanan, berurutan**
-1. **Mesin render:** Caption "Mesin render", nilai BodyStrong ("GPU · `<nama>`", "CPU · `<nama>`", atau "NPU · `<nama>`") dari Settings, `HyperlinkButton` "Ubah di Settings". Mesin NPU belum bisa menjalankan model (§13 #8): bila NPU dipilih, Caption di bawahnya "NPU belum bisa menjalankan model ini, jadi `<GPU/CPU>` yang merender." dan perkiraan waktu memakai mesin yang benar-benar merender.
+1. **Mesin render:** Caption "Mesin render", nilai BodyStrong ("GPU · `<nama>`", "CPU · `<nama>`", atau "NPU · `<nama>`") dari Settings, `HyperlinkButton` "Ubah di Settings". Mesin NPU belum bisa menjalankan model (§13 #8): bila NPU dipilih, Caption di bawahnya "NPU belum bisa menjalankan model ini, jadi `<GPU/CPU>` yang merender." dan perkiraan waktu memakai mesin yang benar-benar merender. Di bawahnya selalu Caption "Mode performa: Sangat tinggi (80%)" (atau mode lain, atau "Hemat memori (10%)"), dari Settings (§7.6).
 2. **Skala:** label "Skala", `ComboBox` dengan item 2×, 4×, 8×, 16× (keterangan kanan "200%", "400%", dst.). Item di atas batas efektif (§7) nonaktif dengan keterangan "Dikunci". Kalau skala berasal dari slider dan bukan preset, ComboBox menampilkan "Kustom 3,5×" lewat `PlaceholderText`.
 3. **Persentase upscale:** label dan nilai ("400%", BodyStrong). `Slider` Minimum=150, Maximum = batas efektif × 100, StepFrequency=50, TickFrequency=50, tick di bawah. Di bawah slider: Caption "150%" (kiri) dan nilai maksimum (kanan). Slider dan ComboBox Skala saling menyinkronkan.
 4. Bila ada skala terkunci: Caption berwarna peringatan dengan ikon gembok "Dikunci: 8×, 16×. `<alasan>`." (alasan dari §7.4).
@@ -359,9 +359,11 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonver
 **Kartu perkiraan** (grid 4 kolom, nilai `BodyLargeStrongTextBlockStyle`, label dan keterangan Caption):
 - "Resolusi hasil" — "5120 × 2880" / "14,7 MP · 5K"
 - "Perkiraan ukuran file" — "± 23,9 MB" / "PNG"
-- "Perkiraan waktu render" — "± 7 detik" / "GPU · RTX 4060 Laptop" ("GPU · RTX 4060 Laptop · tile 64 px (batas memori)" bila batas memori memaksa tile lebih kecil)
+- "Perkiraan waktu render" — "± 7 detik" / "GPU · RTX 4060 Laptop" ("GPU · RTX 4060 Laptop · tile 64 px" bila batas memori atau mode performa membuat tile lebih kecil). Keterangan satu baris; teks lengkapnya ada di tooltip. Waktu sudah termasuk istirahat mode performa (§7.6, §8).
 - "RAM dibutuhkan" — "32 GB" / "Terpasang 32 GB, cukup" (warna sukses), "Terpasang N GB, kurang" (warna galat), atau "Batas memori N GB kurang: butuh X GB" (warna galat; gambar tidak muat di batas memori Settings walau dengan tile terkecil, §7.5)
 - Tombol aksen "Upscale dan simpan…" di kanan, **nonaktif** bila upscale tidak tersedia, RAM kurang, atau gambar tidak muat di batas memori.
+
+**Render lama** (perkiraan ≥ 10 menit dan RAM cukup): `InfoBar` Informational di bawah kartu perkiraan, tidak bisa ditutup. Pesan "Render ini perkiraannya lebih dari 10 menit. Colokkan charger dan biarkan Condec terbuka. Mode performa di Settings mengatur seberapa keras perangkat bekerja." dengan `HyperlinkButton` "Ubah di Settings" (§13 #59).
 
 **Upscale tidak tersedia** (batas efektif < 1,5): `InfoBar` Error di atas kartu. Judul "Perangkat ini belum memenuhi syarat upscale". Pesan "Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 4K. Perangkat ini hanya punya N GB." Bila RAM cukup tetapi gambarnya terlalu besar untuk diperbesar 1,5× (syarat RAM §7.2 atau batas satu gambar di memori, §13 #20), pesannya "Gambar ini terlalu besar untuk diperbesar di perangkat ini. `<alasan §7.4>`." Skala, slider, dan resolusi nonaktif.
 
@@ -515,8 +517,10 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9], [0.2.10]): PDF ke DWG/DXF bisa banya
 |---|---|---|
 | Perangkat ini | Kartu info (grid 2 × 2) | Prosesor, RAM terpasang, GPU, NPU ("Tidak terdeteksi" bila tidak ada). Kanan: Caption "Batas upscale perangkat" dan angka `TitleTextBlockStyle` ("4×"). |
 | Render mode | `Expander` | Header: "Render mode" + deskripsi "Mesin yang dipakai untuk upscale dan vektorisasi. GPU paling cepat, CPU selalu tersedia." + nilai terpilih di kanan. Isi: `RadioButtons` vertikal GPU / CPU / NPU, masing-masing dengan nama perangkat dan status ("Terdeteksi · tercepat", "Selalu tersedia · paling lambat", "Terdeteksi" / "Tidak terdeteksi"). NPU nonaktif bila tidak terdeteksi. |
+| Mode performa | `ComboBox` (lebar 200) | "Sangat tinggi (80%)", "Tinggi (60%)", "Sedang (40%)", "Rendah (20%)" (§7.6). Deskripsi: "Seberapa keras perangkat bekerja saat upscale. Mode yang lebih rendah beristirahat di antara tile: render lebih lama, perangkat lebih dingin, dan aplikasi lain tetap lancar." Saat Hemat memori aktif: nonaktif, menampilkan "Rendah (20%)", dan deskripsi "Dikunci oleh Hemat memori: render bekerja 10% dari waktunya." Mode yang dipilih tetap tersimpan dan kembali saat Hemat memori dimatikan. |
+| Hemat memori | `ToggleSwitch` | "Batasi Condec ke memori 2 GB, tile 48 px, dan kerja 10% dari waktu render. Untuk perangkat dengan RAM kecil atau saat banyak aplikasi terbuka. Upscale jadi jauh lebih lama." Label "Aktif"/"Nonaktif". |
 | Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
-| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–4K 8 GB · 4K–8K 32 GB · di atas 8K 64 GB." |
+| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–4K 8 GB · 4K–8K 32 GB · di atas 8K 64 GB." Saat Hemat memori aktif: slider nonaktif (nilainya tetap tersimpan), nilai di kanan "2 GB", dan deskripsi "Dikunci oleh Hemat memori: Condec memakai paling banyak 2 GB untuk upscale." |
 | Render dump | `Button` "Bersihkan cache" | Deskripsi: "Hapus cache render (tile dan data sementara). Ukuran sekarang: 1,8 GB." Setelah dibersihkan: "Cache kosong. Ukuran sekarang: 0 MB." dan tombol nonaktif. Folder cache: `%LOCALAPPDATA%\Condec\cache` (belum ada isinya sampai tahap 6). Bila ada file yang sedang dipakai: "Sebagian file cache sedang dipakai dan tidak terhapus. Ukuran sekarang: …". |
 
 #### Tab "Umum"
@@ -548,11 +552,14 @@ Disimpan di `ApplicationData.Current.LocalSettings` bila aplikasi terpasang seba
 | `ui.mica` | Aktif |
 | `log.enabled` | Aktif |
 | `log.level` | Info |
+| `perf.mode` | Sangat tinggi (`ExtraHigh`) |
+| `perf.memorySaver` | Nonaktif |
 
 Aturan:
 - Mode tersimpan yang tidak tersedia lagi (mis. NPU dicabut) → pindah ke GPU, atau CPU bila tidak ada GPU.
 - `limit.scale` dan `limit.memoryGb` dijepit ke kemampuan perangkat saat dibaca.
-- Perubahan Render mode, Batas upscale, dan Batas memori langsung berlaku di Upscale Image dan Architecture tanpa restart.
+- Perubahan Render mode, Batas upscale, Batas memori, Mode performa, dan Hemat memori langsung berlaku di Upscale Image dan Architecture tanpa restart (render yang sedang berjalan memakai setelan saat dimulai).
+- `perf.mode` yang bukan salah satu mode dibaca sebagai Sangat tinggi.
 
 ## 7. Aturan batas perangkat
 
@@ -614,7 +621,25 @@ Memori puncak proses = `app + model + tile + gambar`:
 - tile: 22 KB (GPU) atau 14 KB (CPU) per piksel tile, jadi tile 128 px memakai 360 MB di GPU dan 230 MB di CPU. Di CPU, arena memori ONNX Runtime dimatikan (tile 128 butuh 183 MB, bukan 542 MB, tanpa jadi lebih lambat).
 - gambar: sumber (4 B/px) + hasil jaringan (64 B per piksel sumber) + langkah pertama resize (16 B × lebar hasil × tinggi sumber) + hasil (4 B/px hasil) + salinan saat menyimpan (6 B/px hasil) + transparansi bila hasilnya PNG. Gambar jaringan dan langkah pertama dilepas (GC paksa) sebelum hasil disimpan.
 
-Aturan: dari ukuran tile 128, 96, 64, 48 dipakai yang terbesar yang puncaknya masih ≤ batas. Tile yang lebih kecil lebih lambat per piksel (di GPU uji: 48 → 0,13, 64 → 0,20, 96 → 0,28, 128 → 0,32 MP/detik), dan hasilnya lebih jauh dari hasil gambar utuh (§13 #56). Bila tile 48 pun tidak muat, upscale tidak dimulai dan kartu perkiraan menulis "Batas memori N GB kurang: butuh X GB". Angka di atas diukur dengan proses penuh (§13 #26) dan setiap konstanta sedikit di atas hasil ukur.
+Aturan: dari ukuran tile 128, 96, 64, 48 dipakai yang terbesar yang puncaknya masih ≤ batas dan tidak di atas batas tile mode performa (§7.6). Dengan Hemat memori, batasnya 2 GB (atau batas Settings bila lebih kecil). Tile yang lebih kecil lebih lambat per piksel (di GPU uji: 48 → 0,13, 64 → 0,20, 96 → 0,28, 128 → 0,32 MP/detik), dan hasilnya lebih jauh dari hasil gambar utuh (§13 #56). Bila tile 48 pun tidak muat, upscale tidak dimulai dan kartu perkiraan menulis "Batas memori N GB kurang: butuh X GB". Angka di atas diukur dengan proses penuh (§13 #26) dan setiap konstanta sedikit di atas hasil ukur.
+
+### 7.6 Mode performa dan Hemat memori
+Keputusan pemilik 2026-10-03: upscale tidak boleh membebani perangkat terus-menerus. Pembatasnya adalah **persen waktu kerja** (bukan jumlah tile per detik: GPU terintegrasi uji hanya ±1,7 tile/detik, jadi batas 10 tile/detik tidak pernah tercapai).
+
+| Mode | Waktu kerja | Tile maksimum | Memori |
+|---|---|---|---|
+| Sangat tinggi (bawaan) | 80% | 128 | Batas memori Settings |
+| Tinggi | 60% | 128 | Batas memori Settings |
+| Sedang | 40% | 128 | Batas memori Settings |
+| Rendah | 20% | 64 | Batas memori Settings |
+| Hemat memori (mengalahkan mode) | 10% | 48 | 2 GB (atau batas Settings bila lebih kecil) |
+
+- Setelah tile yang butuh waktu t, render beristirahat `t × (1 ÷ waktu kerja − 1)` (80%: seperempat t; 10%: 9 × t). Tidak ada istirahat setelah tile terakhir. Batal menghentikan istirahat seketika.
+- Tile yang lebih kecil berarti beban yang lebih pendek per tile; hasilnya sedikit lebih jauh dari gambar utuh (§13 #56).
+- Perkiraan waktu (§8) dibagi waktu kerja. Benchmark mesin tetap diukur tanpa istirahat.
+- Selama render, prioritas proses Condec diturunkan ke `BelowNormal` (`Process.PriorityClass`) dan dikembalikan setelah render terakhir selesai; berlaku di semua mode (§13 #59). Seluruh proses yang diturunkan karena ONNX Runtime merender di thread miliknya sendiri. Bila Windows menolak, render tetap jalan dengan prioritas biasa.
+- Berlaku untuk Upscale Image (satu gambar dan antrean) dan upscale di Architecture (§6.3.1).
+- Tidak ada pemblokiran menurut nama prosesor atau GPU (keputusan pemilik "Dari hasil ukur"): syarat tetap RAM terpasang (§7.2) dan batas GPU (§7.1); render yang lama diberi tahu (§6.2 "Render lama").
 
 ## 8. Estimasi
 
@@ -623,7 +648,7 @@ Aturan: dari ukuran tile 128, 96, 64, 48 dipakai yang terbesar yang puncaknya ma
 | Piksel hasil | `round(W × skala) × round(H × skala)` | |
 | Ukuran file PNG | piksel × 1,7 byte | `[ASUMSI]` |
 | Ukuran file JPG | piksel × 0,4 byte | `[ASUMSI]` |
-| Waktu render | `MP kerja ÷ throughput(mesin, ukuran tile)`. MP kerja = jumlah tile × MP berguna satu tile (tile 128: tiap tile menambah 108 px, 4× = 432 × 432 px = 0,186624 MP; tile 96: 304 × 304; 64: 176 × 176; 48: 112 × 112). Tile di tepi kanan dan bawah dihitung utuh karena model tetap memproses tile penuh. Tidak bergantung pada skala yang dipilih, karena model selalu bekerja 4× (§6.2) | |
+| Waktu render | `MP kerja ÷ throughput(mesin, ukuran tile) ÷ waktu kerja mode performa` (§7.6). MP kerja = jumlah tile × MP berguna satu tile (tile 128: tiap tile menambah 108 px, 4× = 432 × 432 px = 0,186624 MP; tile 96: 304 × 304; 64: 176 × 176; 48: 112 × 112). Tile di tepi kanan dan bawah dihitung utuh karena model tetap memproses tile penuh. Tidak bergantung pada skala yang dipilih, karena model selalu bekerja 4× (§6.2) | |
 | Throughput | hasil benchmark singkat pada eksekusi pertama (tile yang sama dengan render), disimpan per mesin, ukuran tile (`bench.<mesin>.<tile>`), dan nama perangkat; ganti GPU atau NPU berarti diukur ulang, dan ukuran tile yang belum pernah dipakai diukur saat pertama kali dipakai. Protokol: 1 tile pemanasan tanpa hitung waktu, lalu 3 tile diukur; satuannya MP berguna per detik. Diukur saat upscale pertama dengan mesin itu, pada tahap "Menyiapkan mesin render" | protokol `[ASUMSI]` |
 | Format waktu | < 1 dtk: "< 1 detik"; < 60: "N detik"; < 60 mnt: "N menit M detik"; selain itu "N jam M menit" | |
 
@@ -762,12 +787,20 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 56 | Tile kecil lebih jauh dari hasil gambar utuh: tiap tile melihat lebih sedikit sekelilingnya. Diukur 2026-10-03 pada 8x07ex 150 × 150: tile 128 38,3 dB, 96 34,6 dB, 64 29,6 dB, 48 28,7 dB. Sebelum [0.2.13] §7.5 menulis "hasilnya sama persis", dan deskripsi Batas memori di Settings (§6.4, tab "Render dan performa") menulis "bukan lebih buruk kualitasnya" | Diputuskan pemilik 2026-10-03: teks dibuat jujur, "…lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil)…" (§6.4, §14 [0.2.13]). Tile kecil hanya dipakai bila batas memori menuntutnya; di mesin uji tidak pernah tercapai (§13 #26) |
 | 57 | Gaya hasil satu untuk semua gambar di antrean dan tidak diingat antarsesi (selalu mulai di Tajam); Riwayat mencatat skala tetapi tidak gaya | `[ASUMSI]`, sama dengan format hasil (#53) |
 | 58 | Upscale di halaman Architecture (§6.3.1, sebelum dijadikan CAD) tetap memakai gaya Tajam, tanpa pilihan | `[ASUMSI]`; belum diukur gaya mana yang lebih baik untuk pembacaan garis |
+| 59 | Mode performa: bawaan Sangat tinggi (render ±25% lebih lama dari sebelumnya); prioritas proses rendah selama render di semua mode, tanpa setelan; Rendah membatasi tile ke 64; Hemat memori menampilkan "Rendah" di ComboBox yang dikunci; peringatan render lama mulai 10 menit | `[ASUMSI]`. Persen per mode dan isi Hemat memori (2 GB, 10%) dari pemilik 2026-10-03 |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.16] 2026-10-04 (Mode performa dan Hemat memori)
+- **Keputusan pemilik (2026-10-03):** upscale dibatasi dengan persen waktu kerja, empat mode (Sangat tinggi 80%, Tinggi 60%, Sedang 40%, Rendah 20%) dan Hemat memori (2 GB, 10%, mengunci mode); prioritas render rendah; batas perangkat "dari hasil ukur", bukan dari nama prosesor atau GPU.
+- **Ditambah:** §7.6; baris "Mode performa" dan "Hemat memori" di Settings (§6.4) dengan kunci `perf.mode` dan `perf.memorySaver`; Caption mode di kartu mesin Upscale Image dan `InfoBar` "Render lama" (§6.2); istirahat antar tile dan prioritas `BelowNormal` selama render; 14 kunci resource baru (ID dan EN).
+- **Diubah:** pemilihan tile §7.5 ikut batas tile mode; perkiraan waktu §8 dibagi waktu kerja; keterangan "tile N px" di kartu perkiraan tidak lagi menyebut "(batas memori)" karena mode performa juga bisa mengecilkan tile, dan punya tooltip. Upscale di Architecture memakai mode dan Hemat memori yang sama.
+- **Diajukan:** §13 #59.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1469 lulus, 0 gagal, 0 dilewati. Test baru menemukan bahwa penghitung tile tidak naik bila tidak ada pendengar progres (`progress?.Report((++done, …))` tidak menjalankan `++done` saat `progress` null), sehingga render beristirahat juga setelah tile terakhir; diperbaiki sebelum commit. Uji langsung di laptop pemilik (GPU terintegrasi, Windows berbahasa Inggris): Settings menampilkan "Performance mode" dan "Memory saver"; Hemat memori mengunci mode di "Low (20%)", slider nonaktif dengan "2 GB", deskripsi berganti, `perf.mode` tidak tertimpa, dan mematikannya mengembalikan "Extra high (80%)" dan 6 GB. 8x07ex 300 × 300 → 600 × 600: Sedang perkiraan 13 detik, selesai 15,6 detik; Sangat tinggi perkiraan 6 detik, selesai 8,6 detik; kedua hasil identik piksel demi piksel dan lolos integritas; prioritas proses `BelowNormal` selama render dan `Normal` sesudahnya. Gambar sintetis 2000 × 1500 di Rendah: "Belum diukur" sampai tile 64 diukur (0,19 MP/detik), 1564 tile sesuai hitungan, ±0,8 detik per tile; Batal berhenti dalam kurang dari 1 detik tanpa file sisa; perkiraan "± 21 min 40 sec" dan `InfoBar` render lama tampil dengan "Change in Settings". Setelan pemilik dikembalikan setelah uji. **Belum dicoba langsung:** upscale di Architecture dengan mode performa (kodenya sama dan ada unit test), CPU, Windows berbahasa Indonesia, paket MSIX.
 
 ### [0.2.15] 2026-10-03 (RAM 8 GB sampai 4K)
 - **Keputusan pemilik (2026-10-03):** hasil sampai 4K (3840 × 2160) cukup dengan RAM terpasang 8 GB. Mengubah §7.2 yang sebelumnya meminta 16 GB untuk 2K–4K atas permintaan pemilik sendiri. Dasar: hasil ukur §13 #26 (4000 × 3000 butuh ±0,8 GB di proses Condec), dan Batas memori di Settings tetap menolak gambar yang tidak muat.

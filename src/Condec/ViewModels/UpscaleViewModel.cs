@@ -880,11 +880,15 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public bool HasEngineNote => EngineNote is not null;
 
+    /// <summary>"Performance mode: Extra high (80%)": the pace from Settings, which makes a render take longer (DESIGN §7.6).</summary>
+    public string PaceText => Loc.Format("Upscale.PerformanceMode", PerformanceText.Describe(_settings.PerformanceMode, _settings.MemorySaver));
+
     private void RaiseEngine()
     {
         OnPropertyChanged(nameof(EngineText));
         OnPropertyChanged(nameof(EngineNote));
         OnPropertyChanged(nameof(HasEngineNote));
+        OnPropertyChanged(nameof(PaceText));
         RaiseEstimates();
     }
 
@@ -923,15 +927,22 @@ public sealed partial class UpscaleViewModel : ObservableObject
         : null;
 
     private MemoryPlan MemoryPlanFor(int width, int height, int outputWidth, int outputHeight) =>
-        UpscaleMemory.Plan(width, height, outputWidth, outputHeight, EffectiveEngine, Format == UpscaleFormat.Png, _settings.MemoryLimitGb * GiB);
+        UpscaleMemory.Plan(
+            width, height, outputWidth, outputHeight, EffectiveEngine, Format == UpscaleFormat.Png, _settings.EffectiveMemoryLimitGb * GiB, _settings.Pace.MaxTileSize);
 
     private int TileSize => Plan?.TileSize ?? TiledUpscaler.DefaultTileSize;
 
     private bool MemoryFits => Plan is not { Fits: false };
 
     private double? EstimatedSeconds => HasSource && !IsLimitUnavailable
-        ? UpscaleEstimator.EstimatedSeconds(UpscaleSupport.RenderedPixels(SourceWidth, SourceHeight, TileSize), _settings.GetThroughput(EffectiveEngine, TileSize))
+        ? UpscaleEstimator.EstimatedSeconds(
+            UpscaleSupport.RenderedPixels(SourceWidth, SourceHeight, TileSize), _settings.GetThroughput(EffectiveEngine, TileSize), _settings.Pace.Duty)
         : null;
+
+    /// <summary>A render expected to take this long or more gets a note under the estimate (DESIGN §7.6).</summary>
+    private const double LongRenderSeconds = 10 * 60;
+
+    public bool LongRenderVisible => EstimatedSeconds >= LongRenderSeconds && RamIsEnough;
 
     /// <summary>"± 7 seconds", or "—" until the engine has been measured: the app never shows an invented speed.</summary>
     public string TimeValue => EstimatedSeconds is { } seconds ? ScaleText.Approximately(ScaleText.Duration(seconds, Loc.Culture)) : "—";
@@ -954,7 +965,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
     public string RamCaption => RequiredRam is null
         ? string.Empty
         : !InstalledRamIsEnough ? Loc.Format("Upscale.Estimate.RamShort", _settings.Device.InstalledRamGb)
-        : !MemoryFits ? Loc.Format("Upscale.Estimate.MemoryShort", _settings.MemoryLimitGb, ScaleText.Gigabytes(Plan!.PeakBytes, Loc.Culture))
+        : !MemoryFits ? Loc.Format("Upscale.Estimate.MemoryShort", _settings.EffectiveMemoryLimitGb, ScaleText.Gigabytes(Plan!.PeakBytes, Loc.Culture))
         : Loc.Format("Upscale.Estimate.RamEnough", _settings.Device.InstalledRamGb);
 
     public bool RamEnoughVisible => RequiredRam is not null && RamIsEnough;
@@ -974,7 +985,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         {
             nameof(ResolutionValue), nameof(ResolutionCaption), nameof(FileSizeValue), nameof(FileSizeCaption), nameof(TimeValue),
             nameof(TimeCaption), nameof(RamValue), nameof(RamCaption), nameof(RamEnoughVisible), nameof(RamShortVisible),
-            nameof(OriginalLegend), nameof(ResultLegend),
+            nameof(OriginalLegend), nameof(ResultLegend), nameof(LongRenderVisible),
         })
         {
             OnPropertyChanged(name);
@@ -1022,7 +1033,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         }
 
         _lastScale = Scale;
-        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style)));
+        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style, _settings.Pace.Duty)));
     }
 
     [RelayCommand]
@@ -1148,7 +1159,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
                 item.File.Path,
                 extension,
                 names[i],
-                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style)),
+                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style, _settings.Pace.Duty)),
             item.Scale,
             item.Name,
             item.Width,

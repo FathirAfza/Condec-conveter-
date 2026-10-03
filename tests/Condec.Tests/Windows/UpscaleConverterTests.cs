@@ -157,6 +157,43 @@ public sealed class UpscaleConverterTests : IDisposable
         Assert.False(opened);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1.5)]
+    public async Task AShareOfTimeOutsideZeroToOne_IsRefusedBeforeAnythingIsLoaded(double duty)
+    {
+        var source = _dir.File("gambar.png");
+        await WriteSourceAsync(source);
+        var opened = false;
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => CreatePipeline(factory: _ =>
+        {
+            opened = true;
+            return new NearestNeighborModel();
+        }).RunAsync(new ConversionJob(source, ".png", _dir.File("hasil.png"), new UpscaleOptions(64, 64, RenderEngine.Cpu, Duty: duty)), null, Ct));
+
+        Assert.False(opened);
+    }
+
+    [Fact]
+    public async Task APacedRender_GivesTheSamePicture_AndPutsThePriorityBack()
+    {
+        // 100 × 100 at tile 48 is 4 × 4 tiles, so the paced render rests 15 times.
+        var source = _dir.File("gambar.png");
+        await WriteSourceAsync(source, 100);
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        var priority = process.PriorityClass;
+
+        await CreatePipeline(factory: _ => new NearestNeighborModel()).RunAsync(
+            new ConversionJob(source, ".png", _dir.File("tanpa-jeda.png"), new UpscaleOptions(200, 200, RenderEngine.Cpu, 48)), null, Ct);
+        await CreatePipeline(factory: _ => new NearestNeighborModel()).RunAsync(
+            new ConversionJob(source, ".png", _dir.File("dengan-jeda.png"), new UpscaleOptions(200, 200, RenderEngine.Cpu, 48, Duty: 0.5)), null, Ct);
+
+        Assert.Equal(await File.ReadAllBytesAsync(_dir.File("tanpa-jeda.png"), Ct), await File.ReadAllBytesAsync(_dir.File("dengan-jeda.png"), Ct));
+        process.Refresh();
+        Assert.Equal(priority, process.PriorityClass);
+    }
+
     [Fact]
     public async Task AnNpuChoice_RendersOnTheGpu_AndSaysSo()
     {
@@ -396,15 +433,15 @@ public sealed class UpscaleConverterTests : IDisposable
         return new Image(decoder.PixelWidth, decoder.PixelHeight, data.DetachPixelData());
     }
 
-    /// <summary>A 16 × 16 picture: transparent on the left half, opaque blue on the right.</summary>
-    private async Task WriteSourceAsync(string path)
+    /// <summary>A square picture, 16 × 16 unless asked: transparent on the left half, opaque blue on the right.</summary>
+    private async Task WriteSourceAsync(string path, uint size = Size)
     {
-        var pixels = new byte[Size * Size * 4];
-        for (var y = 0; y < Size; y++)
+        var pixels = new byte[size * size * 4];
+        for (var y = 0; y < size; y++)
         {
-            for (var x = (int)Size / 2; x < Size; x++)
+            for (var x = (int)size / 2; x < size; x++)
             {
-                var i = (int)((y * Size) + x) * 4;
+                var i = (int)((y * size) + x) * 4;
                 pixels[i] = 255;
                 pixels[i + 3] = 255;
             }
@@ -412,7 +449,7 @@ public sealed class UpscaleConverterTests : IDisposable
 
         using var staging = new InMemoryRandomAccessStream();
         var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, staging);
-        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, Size, Size, 96, 96, pixels);
+        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, size, size, 96, 96, pixels);
         await encoder.FlushAsync();
 
         using var encoded = staging.GetInputStreamAt(0).AsStreamForRead();

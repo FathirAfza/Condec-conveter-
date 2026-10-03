@@ -137,6 +137,49 @@
                     </RadioButtons>
                 </Expander>
 
+                <!--  Performance mode  -->
+                <Border Style="{StaticResource SettingRowBorderStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Settings.PerformanceMode" />
+                            <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.PerformanceModeDescription, Mode=OneWay}" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="200"
+                            VerticalAlignment="Center"
+                            local:L.AutomationName="Settings.PerformanceMode"
+                            IsEnabled="{x:Bind ViewModel.CanChoosePerformanceMode, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.PerformanceModeOptions}"
+                            SelectedIndex="{x:Bind ViewModel.PerformanceModeIndex, Mode=TwoWay}" />
+                    </Grid>
+                </Border>
+
+                <!--  Memory saver  -->
+                <Border Style="{StaticResource SettingRowBorderStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Settings.MemorySaver" />
+                            <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Settings.MemorySaverDescription" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            local:L.AutomationName="Settings.MemorySaver"
+                            IsOn="{x:Bind ViewModel.MemorySaver, Mode=TwoWay}"
+                            local:L.OffContent="Settings.Off"
+                            local:L.OnContent="Settings.On" />
+                    </Grid>
+                </Border>
+
                 <!--  Upscale limit  -->
                 <Border Style="{StaticResource SettingRowBorderStyle}">
                     <Grid ColumnSpacing="16">
@@ -188,13 +231,14 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center" Spacing="2">
                                 <TextBlock Style="{StaticResource BodyTextBlockStyle}" local:L.Text="Settings.MemoryLimit" />
-                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Settings.MemoryLimitDescription" />
+                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.MemoryLimitDescription, Mode=OneWay}" />
                             </StackPanel>
                             <Slider
                                 Grid.Column="1"
                                 Width="220"
                                 VerticalAlignment="Center"
                                 local:L.AutomationName="Settings.MemoryLimitSpoken"
+                                IsEnabled="{x:Bind ViewModel.CanChooseMemoryLimit, Mode=OneWay}"
                                 Maximum="{x:Bind ViewModel.MemoryMaximum}"
                                 Minimum="{x:Bind ViewModel.MemoryMinimum}"
                                 StepFrequency="1"

@@ -222,6 +222,12 @@
   <data name="Settings.MemoryLimit" xml:space="preserve"><value>Batas memori</value></data>
   <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai.</value></data>
   <data name="Settings.MemoryLimitSpoken" xml:space="preserve"><value>Batas memori dalam GB</value></data>
+  <data name="Settings.PerformanceMode" xml:space="preserve"><value>Mode performa</value></data>
+  <data name="Settings.PerformanceModeDescription" xml:space="preserve"><value>Seberapa keras perangkat bekerja saat upscale. Mode yang lebih rendah beristirahat di antara tile: render lebih lama, perangkat lebih dingin, dan aplikasi lain tetap lancar.</value></data>
+  <data name="Settings.PerformanceModeLocked" xml:space="preserve"><value>Dikunci oleh Hemat memori: render bekerja 10% dari waktunya.</value></data>
+  <data name="Settings.MemorySaver" xml:space="preserve"><value>Hemat memori</value></data>
+  <data name="Settings.MemorySaverDescription" xml:space="preserve"><value>Batasi Condec ke memori 2 GB, tile 48 px, dan kerja 10% dari waktu render. Untuk perangkat dengan RAM kecil atau saat banyak aplikasi terbuka. Upscale jadi jauh lebih lama.</value></data>
+  <data name="Settings.MemoryLimitLocked" xml:space="preserve"><value>Dikunci oleh Hemat memori: Condec memakai paling banyak {0} GB untuk upscale.</value></data>
   <data name="Settings.RamRequirement" xml:space="preserve"><value>Syarat RAM terpasang menurut resolusi hasil: {0}.</value></data>
   <data name="Settings.Cache" xml:space="preserve"><value>Render dump</value></data>
   <data name="Settings.CacheClear" xml:space="preserve"><value>Bersihkan cache</value></data>
@@ -305,7 +311,15 @@
   <data name="Upscale.Estimate.RamEnough" xml:space="preserve"><value>Terpasang {0} GB, cukup</value></data>
   <data name="Upscale.Estimate.RamShort" xml:space="preserve"><value>Terpasang {0} GB, kurang</value></data>
   <data name="Upscale.Estimate.MemoryShort" xml:space="preserve"><value>Batas memori {0} GB kurang: butuh {1}</value></data>
-  <data name="Upscale.Estimate.TimeSmallTiles" xml:space="preserve"><value>{0} · tile {1} px (batas memori)</value></data>
+  <data name="Upscale.Estimate.TimeSmallTiles" xml:space="preserve"><value>{0} · tile {1} px</value></data>
+  <data name="Upscale.PerformanceMode" xml:space="preserve"><value>Mode performa: {0}</value></data>
+  <data name="Upscale.LongRender" xml:space="preserve"><value>Render ini perkiraannya lebih dari 10 menit. Colokkan charger dan biarkan Condec terbuka. Mode performa di Settings mengatur seberapa keras perangkat bekerja.</value></data>
+  <data name="Performance.WithPercent" xml:space="preserve"><value>{0} ({1}%)</value></data>
+  <data name="Performance.ExtraHigh" xml:space="preserve"><value>Sangat tinggi</value></data>
+  <data name="Performance.High" xml:space="preserve"><value>Tinggi</value></data>
+  <data name="Performance.Medium" xml:space="preserve"><value>Sedang</value></data>
+  <data name="Performance.Low" xml:space="preserve"><value>Rendah</value></data>
+  <data name="Performance.MemorySaver" xml:space="preserve"><value>Hemat memori</value></data>
   <data name="Upscale.Start" xml:space="preserve"><value>Upscale dan simpan…</value></data>
   <data name="Upscale.UnavailableTitle" xml:space="preserve"><value>Perangkat ini belum memenuhi syarat upscale</value></data>
   <data name="Upscale.UnavailableRam" xml:space="preserve"><value>Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 4K. Perangkat ini hanya punya {0} GB.</value></data>

@@ -9,6 +9,7 @@ using Condec.Core.Formats;
 using Condec.Core.Localization;
 using Condec.Core.Logging;
 using Condec.Core.Settings;
+using Condec.Core.Upscale;
 using Condec.Services;
 
 namespace Condec.ViewModels;
@@ -110,6 +111,52 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public string RenderModeText => DeviceText.ShortName(_settings.RenderMode);
 
+    // ---- Performance mode and Memory saver (DESIGN §7.6) ----
+
+    /// <summary>"Extra high (80%)", "High (60%)", …: the order of the ComboBox.</summary>
+    public IReadOnlyList<string> PerformanceModeOptions { get; } = [.. RenderPace.Modes.Select(mode => PerformanceText.Mode(mode))];
+
+    /// <summary>
+    /// The ComboBox's choice. Memory saver locks it on Low (the closest mode to what Memory saver does); the chosen mode is kept
+    /// and comes back when Memory saver is turned off.
+    /// </summary>
+    public int PerformanceModeIndex
+    {
+        get => _settings.MemorySaver ? RenderPace.Modes.Count - 1 : RenderPace.Modes.ToList().IndexOf(_settings.PerformanceMode);
+        set
+        {
+            if (!_settings.MemorySaver && value >= 0 && value < RenderPace.Modes.Count && RenderPace.Modes[value] != _settings.PerformanceMode)
+            {
+                _settings.PerformanceMode = RenderPace.Modes[value];
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool CanChoosePerformanceMode => !_settings.MemorySaver;
+
+    public string PerformanceModeDescription => Loc.Get(_settings.MemorySaver ? "Settings.PerformanceModeLocked" : "Settings.PerformanceModeDescription");
+
+    public bool MemorySaver
+    {
+        get => _settings.MemorySaver;
+        set
+        {
+            if (value != _settings.MemorySaver)
+            {
+                _settings.MemorySaver = value;
+                foreach (var name in new[]
+                {
+                    nameof(MemorySaver), nameof(PerformanceModeIndex), nameof(CanChoosePerformanceMode), nameof(PerformanceModeDescription),
+                    nameof(CanChooseMemoryLimit), nameof(MemoryLimitText), nameof(MemoryLimitDescription),
+                })
+                {
+                    OnPropertyChanged(name);
+                }
+            }
+        }
+    }
+
     // ---- Upscale limit ----
 
     public IReadOnlyList<ScaleLimitOption> ScaleLimitOptions { get; }
@@ -151,7 +198,14 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    public string MemoryLimitText => Loc.Format("Device.Gigabytes", _settings.MemoryLimitGb);
+    /// <summary>The memory a render may use: the slider's value, or 2 GB while Memory saver is on.</summary>
+    public string MemoryLimitText => Loc.Format("Device.Gigabytes", _settings.EffectiveMemoryLimitGb);
+
+    public bool CanChooseMemoryLimit => !_settings.MemorySaver;
+
+    public string MemoryLimitDescription => _settings.MemorySaver
+        ? Loc.Format("Settings.MemoryLimitLocked", RenderPace.MemorySaverGb)
+        : Loc.Get("Settings.MemoryLimitDescription");
 
     /// <summary>"HD–2K 8 GB · 2K–4K 16 GB · …", read from the same table that sets the limits (DESIGN §7.2).</summary>
     public string RamRequirementText => Loc.Format(
