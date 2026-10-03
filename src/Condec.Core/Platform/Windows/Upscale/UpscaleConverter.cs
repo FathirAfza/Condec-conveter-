@@ -55,6 +55,11 @@ public sealed class UpscaleConverter : IReencodingConverter
     {
         var options = request.Options as UpscaleOptions
             ?? throw new ArgumentException("An upscale needs UpscaleOptions.", nameof(request));
+        if (!TiledUpscaler.TileSizes.Contains(options.TileSize))
+        {
+            throw new ArgumentException($"{options.TileSize} is not a tile size the upscaler uses.", nameof(request));
+        }
+
         var target = OutputExtensions.Contains(FileExtension.Normalize(request.TargetExtension))
             ? ImageFormats.FindTarget(FileExtension.Normalize(request.TargetExtension))
             : null;
@@ -111,6 +116,10 @@ public sealed class UpscaleConverter : IReencodingConverter
             throw new ImageTooLargeException(outputPixels, ex);
         }
 
+        // The network's own result (16 times the source) and the first pass of the resize are garbage now. Left to the collector
+        // they would still be held while the picture is saved, and the memory limit counts them (DESIGN §7.5).
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true);
+
         progress.Report(new ConversionProgress(ConversionStage.Encode, 0.9));
         using var staging = await ImageConverter.EncodeAsync(
             target, pixels, (uint)options.OutputWidth, (uint)options.OutputHeight, image.DpiX, image.DpiY, ct).ConfigureAwait(false);
@@ -143,7 +152,7 @@ public sealed class UpscaleConverter : IReencodingConverter
                 throw new UpscaleModelUnavailableException(status);
             }
 
-            model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, gpu);
+            model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, gpu, options.TileSize);
         }
 
         if (gpu && model is OnnxUpscaleModel { Engine: RenderEngine.Cpu })
@@ -165,7 +174,7 @@ public sealed class UpscaleConverter : IReencodingConverter
         IProgress<(int Done, int Total)> tiles,
         CancellationToken ct)
     {
-        var enlarged = TiledUpscaler.Run(model, source, width, height, tiles, ct);
+        var enlarged = TiledUpscaler.Run(model, source, width, height, options.TileSize, tiles, ct);
         var scale = model.Scale;
         var result = Resampler.Resize(enlarged, width * scale, height * scale, 4, options.OutputWidth, options.OutputHeight, ct);
         if (alpha is not null)

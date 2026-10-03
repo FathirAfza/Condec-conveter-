@@ -32,7 +32,7 @@ public sealed class AppServices
         Desktop = desktop;
         Convert = new ConverterViewModel(ConverterScope.Files, registry, pipeline, history, desktop, log);
         Architecture = new ConverterViewModel(ConverterScope.Cad, registry, pipeline, history, desktop, log);
-        Upscale = new UpscaleViewModel(settings, upscaleRegistry, upscalePipeline, desktop, log);
+        Upscale = new UpscaleViewModel(settings, upscaleRegistry, upscalePipeline, history, desktop, log);
         SettingsPage = new SettingsViewModel(settings, log, desktop, version);
     }
 

@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using Condec.Core.Conversion;
 using Condec.Core.Devices;
 using Condec.Core.Formats;
+using Condec.Core.History;
 using Condec.Core.Imaging;
 using Condec.Core.Localization;
 using Condec.Core.Logging;
@@ -52,6 +53,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
     private readonly ConverterRegistry _registry;
     private readonly ConversionPipeline _pipeline;
     private readonly EngineBenchmark _benchmark;
+    private readonly HistoryStore _history;
     private readonly IDesktopServices _desktop;
     private readonly ActivityLog _log;
     private readonly SynchronizationContext? _ui = SynchronizationContext.Current;
@@ -63,11 +65,12 @@ public sealed partial class UpscaleViewModel : ObservableObject
     private bool _syncing;
     private ScaleLimit? _limit;
 
-    public UpscaleViewModel(AppSettings settings, ConverterRegistry registry, ConversionPipeline pipeline, IDesktopServices desktop, ActivityLog log)
+    public UpscaleViewModel(AppSettings settings, ConverterRegistry registry, ConversionPipeline pipeline, HistoryStore history, IDesktopServices desktop, ActivityLog log)
     {
         _settings = settings;
         _registry = registry;
         _pipeline = pipeline;
+        _history = history;
         _desktop = desktop;
         _log = log;
         _benchmark = new EngineBenchmark(settings);
@@ -555,8 +558,22 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public string FileSizeCaption => Format == UpscaleFormat.Jpg ? "JPG" : "PNG";
 
+    private const long GiB = 1024L * 1024 * 1024;
+
+    /// <summary>
+    /// What the memory limit in Settings allows for this picture (DESIGN §7.5): the largest tile that fits, and whether anything does.
+    /// A PNG is assumed to carry transparency, because that is only known once the file is decoded.
+    /// </summary>
+    private MemoryPlan? Plan => HasSource && !IsLimitUnavailable && OutputWidth > 0
+        ? UpscaleMemory.Plan(SourceWidth, SourceHeight, OutputWidth, OutputHeight, EffectiveEngine, Format == UpscaleFormat.Png, _settings.MemoryLimitGb * GiB)
+        : null;
+
+    private int TileSize => Plan?.TileSize ?? TiledUpscaler.DefaultTileSize;
+
+    private bool MemoryFits => Plan is not { Fits: false };
+
     private double? EstimatedSeconds => HasSource && !IsLimitUnavailable
-        ? UpscaleEstimator.EstimatedSeconds(UpscaleSupport.RenderedPixels(SourceWidth, SourceHeight), _settings.GetThroughput(EffectiveEngine), _settings.MemoryLimitGb)
+        ? UpscaleEstimator.EstimatedSeconds(UpscaleSupport.RenderedPixels(SourceWidth, SourceHeight, TileSize), _settings.GetThroughput(EffectiveEngine, TileSize))
         : null;
 
     /// <summary>"± 7 seconds", or "—" until the engine has been measured: the app never shows an invented speed.</summary>
@@ -564,17 +581,24 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public string TimeCaption => EstimatedSeconds is null
         ? Loc.Get("Upscale.Estimate.NotMeasured")
-        : DeviceText.Engine(_settings.Device, EffectiveEngine);
+        : TileSize < TiledUpscaler.DefaultTileSize
+            ? Loc.Format("Upscale.Estimate.TimeSmallTiles", DeviceText.Engine(_settings.Device, EffectiveEngine), TileSize)
+            : DeviceText.Engine(_settings.Device, EffectiveEngine);
 
     private RamTier? RequiredRam => HasSource && !IsLimitUnavailable ? CapabilityPolicy.RequiredRam((long)OutputWidth * OutputHeight) : null;
 
-    private bool RamIsEnough => RequiredRam is not { } tier || _settings.Device.InstalledRamGb >= tier.Gb;
+    private bool InstalledRamIsEnough => RequiredRam is not { } tier || _settings.Device.InstalledRamGb >= tier.Gb;
+
+    /// <summary>The installed RAM meets the tier of the result (§7.2) and the picture fits the memory limit in Settings (§7.5).</summary>
+    private bool RamIsEnough => InstalledRamIsEnough && MemoryFits;
 
     public string RamValue => RequiredRam is { } tier ? Loc.Format("Device.Gigabytes", tier.Gb) : "—";
 
     public string RamCaption => RequiredRam is null
         ? string.Empty
-        : Loc.Format(RamIsEnough ? "Upscale.Estimate.RamEnough" : "Upscale.Estimate.RamShort", _settings.Device.InstalledRamGb);
+        : !InstalledRamIsEnough ? Loc.Format("Upscale.Estimate.RamShort", _settings.Device.InstalledRamGb)
+        : !MemoryFits ? Loc.Format("Upscale.Estimate.MemoryShort", _settings.MemoryLimitGb, ScaleText.Gigabytes(Plan!.PeakBytes, Loc.Culture))
+        : Loc.Format("Upscale.Estimate.RamEnough", _settings.Device.InstalledRamGb);
 
     public bool RamEnoughVisible => RequiredRam is not null && RamIsEnough;
 
@@ -625,7 +649,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         }
 
         _lastScale = Scale;
-        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode)));
+        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize)));
     }
 
     [RelayCommand]
@@ -704,7 +728,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         _log.Info($"Upscale started: {ScaleText.Format(_lastScale)} on {_lastEngine}");
         try
         {
-            await MeasureEngineIfNeededAsync(_lastEngine, cancellation.Token);
+            await MeasureEngineIfNeededAsync(_lastEngine, ((UpscaleOptions)job.Options!).TileSize, cancellation.Token);
 
             // Hashing and verification run on a worker thread; the window stays responsive.
             var result = await Task.Run(() => _pipeline.RunAsync(job, progress, cancellation.Token), CancellationToken.None);
@@ -717,6 +741,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
             Result = result;
             State = ConverterState.Done;
+            await RecordHistoryAsync(job, result);
             _log.Info(string.Create(CultureInfo.InvariantCulture, $"Upscale verified: {result.ChunkCount} chunks, {started.Elapsed.TotalSeconds:0.0} s"));
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -743,9 +768,9 @@ public sealed partial class UpscaleViewModel : ObservableObject
     /// The first upscale on an engine measures its speed (one tile to warm up, three timed; DESIGN §8), which the estimates then
     /// use. An engine that can't run the model is left unmeasured: the converter falls back to the CPU and says so.
     /// </summary>
-    private async Task MeasureEngineIfNeededAsync(RenderEngine engine, CancellationToken ct)
+    private async Task MeasureEngineIfNeededAsync(RenderEngine engine, int tileSize, CancellationToken ct)
     {
-        if (_settings.GetThroughput(engine) is not null || UpscaleModelLocator.GetStatus() != UpscaleModelStatus.Ready)
+        if (_settings.GetThroughput(engine, tileSize) is not null || UpscaleModelLocator.GetStatus() != UpscaleModelStatus.Ready)
         {
             return;
         }
@@ -755,8 +780,8 @@ public sealed partial class UpscaleViewModel : ObservableObject
         using var workload = new UpscaleBenchmarkWorkload();
         try
         {
-            var speed = await _benchmark.MeasureAsync(engine, workload, ct);
-            _log.Info(string.Create(CultureInfo.InvariantCulture, $"Measured {engine}: {speed:0.00} MP/s"));
+            var speed = await _benchmark.MeasureAsync(engine, workload, tileSize, ct);
+            _log.Info(string.Create(CultureInfo.InvariantCulture, $"Measured {engine} at tile {tileSize}: {speed:0.00} MP/s"));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -876,6 +901,26 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string? ErrorMessage { get; set; }
+
+    /// <summary>An upscale goes into the same history as a conversion, marked with its scale (DESIGN §6.2).</summary>
+    private async Task RecordHistoryAsync(ConversionJob job, ConversionResult result)
+    {
+        try
+        {
+            await _history.AddAsync(new HistoryEntry(
+                Path.GetFileName(job.SourcePath),
+                FileExtension.FromPath(job.SourcePath),
+                FileExtension.Normalize(job.TargetExtension),
+                DateTimeOffset.Now,
+                result.OutputPath,
+                VerificationStatus.Verified,
+                _lastScale));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ResultMessage = Loc.Get("History.RecordFailed");
+        }
+    }
 
     [RelayCommand]
     private void OpenResult()

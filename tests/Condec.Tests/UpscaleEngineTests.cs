@@ -22,10 +22,9 @@ public class UpscaleEngineTests
 
         public Func<float, float>? Distort { get; init; }
 
-        public float[] RunTile(float[] input)
+        public float[] RunTile(float[] input, int size)
         {
             Tiles++;
-            var size = TiledUpscaler.TileSize;
             var big = size * Scale;
             var result = new float[3 * big * big];
             for (var c = 0; c < 3; c++)
@@ -62,12 +61,22 @@ public class UpscaleEngineTests
     [InlineData(108, 108)]
     [InlineData(109, 30)]
     [InlineData(230, 150)]
-    public void Tiles_MeetWithoutSeams_AndReproduceTheNetworksResultExactly(int width, int height)
+    public void Tiles_MeetWithoutSeams_AndReproduceTheNetworksResultExactly(int width, int height) =>
+        AssertSeamless(width, height, TiledUpscaler.DefaultTileSize);
+
+    [Theory]
+    [InlineData(96, 230, 150)]
+    [InlineData(64, 230, 150)]
+    [InlineData(48, 100, 61)]
+    public void EverySizeOfTile_ReproducesTheNetworksResultExactly(int tileSize, int width, int height) =>
+        AssertSeamless(width, height, tileSize);
+
+    private static void AssertSeamless(int width, int height, int tileSize)
     {
         var source = Picture(width, height);
         var model = new NearestNeighborModel();
 
-        var result = TiledUpscaler.Run(model, source, width, height, null, Ct);
+        var result = TiledUpscaler.Run(model, source, width, height, tileSize, null, Ct);
 
         Assert.Equal(width * 4 * height * 4 * 4, result.Length);
         for (var y = 0; y < height * 4; y++)
@@ -83,7 +92,7 @@ public class UpscaleEngineTests
             }
         }
 
-        Assert.Equal(TiledUpscaler.TileCount(width, height), model.Tiles);
+        Assert.Equal(TiledUpscaler.TileCount(width, height, tileSize), model.Tiles);
     }
 
     [Theory]
@@ -94,13 +103,25 @@ public class UpscaleEngineTests
     public void TileCount_CoversThePictureInBordersOf108(int width, int height, int expected) =>
         Assert.Equal(expected, TiledUpscaler.TileCount(width, height));
 
+    [Theory]
+    [InlineData(128, 108)]
+    [InlineData(96, 76)]
+    [InlineData(64, 44)]
+    [InlineData(48, 28)]
+    public void EachTileSize_ContributesItsSizeWithoutTheBorder(int tileSize, int inner) =>
+        Assert.Equal(inner, TiledUpscaler.InnerSize(tileSize));
+
+    [Fact]
+    public void ATileSizeTheUpscalerDoesNotUse_IsRefused() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => TiledUpscaler.Run(new NearestNeighborModel(), Picture(4, 4), 4, 4, 100, null, Ct));
+
     [Fact]
     public void Progress_IsReportedAfterEveryTile()
     {
         var reports = new List<(int Done, int Total)>();
         var progress = new SynchronousProgress<(int Done, int Total)>(reports.Add);
 
-        TiledUpscaler.Run(new NearestNeighborModel(), Picture(230, 150), 230, 150, progress, Ct);
+        TiledUpscaler.Run(new NearestNeighborModel(), Picture(230, 150), 230, 150, TiledUpscaler.DefaultTileSize, progress, Ct);
 
         Assert.Equal([(1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6)], reports);
     }
@@ -112,7 +133,7 @@ public class UpscaleEngineTests
         var model = new NearestNeighborModel();
         var progress = new SynchronousProgress<(int Done, int Total)>(_ => cts.Cancel());
 
-        Assert.Throws<OperationCanceledException>(() => TiledUpscaler.Run(model, Picture(230, 150), 230, 150, progress, cts.Token));
+        Assert.Throws<OperationCanceledException>(() => TiledUpscaler.Run(model, Picture(230, 150), 230, 150, TiledUpscaler.DefaultTileSize, progress, cts.Token));
         Assert.Equal(1, model.Tiles);
     }
 
@@ -120,7 +141,7 @@ public class UpscaleEngineTests
     public void ValuesOutsideZeroToOne_AreClamped()
     {
         var model = new NearestNeighborModel { Distort = value => value < 0.5f ? -0.3f : 1.4f };
-        var result = TiledUpscaler.Run(model, Picture(4, 4), 4, 4, null, Ct);
+        var result = TiledUpscaler.Run(model, Picture(4, 4), 4, 4, TiledUpscaler.DefaultTileSize, null, Ct);
 
         Assert.All(result.Where((_, i) => i % 4 != 3), value => Assert.True(value is 0 or 255));
         Assert.Contains((byte)0, result);
@@ -129,7 +150,7 @@ public class UpscaleEngineTests
 
     [Fact]
     public void PixelData_MustMatchTheSize() =>
-        Assert.Throws<ArgumentException>(() => TiledUpscaler.Run(new NearestNeighborModel(), new byte[10], 4, 4, null, Ct));
+        Assert.Throws<ArgumentException>(() => TiledUpscaler.Run(new NearestNeighborModel(), new byte[10], 4, 4, TiledUpscaler.DefaultTileSize, null, Ct));
 
     [Theory]
     [InlineData(-1, 5, 1)]
@@ -268,6 +289,8 @@ public class UpscaleEngineTests
     {
         // 1280 x 720 is 12 x 7 tiles of 108 pixels; the last column and row are only partly filled but run whole.
         Assert.Equal(12L * 7 * 432 * 432, UpscaleSupport.RenderedPixels(1280, 720));
+        // A smaller tile repeats more border: 76 pixels of picture per tile of 96.
+        Assert.Equal(17L * 10 * 304 * 304, UpscaleSupport.RenderedPixels(1280, 720, 96));
         Assert.Equal(432L * 432, UpscaleSupport.RenderedPixels(1, 1));
         Assert.Equal(UpscaleSupport.TileMegapixels(4) * 4 * 1_000_000, UpscaleSupport.RenderedPixels(216, 216), 3);
     }

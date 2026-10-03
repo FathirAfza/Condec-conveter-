@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using Condec.Core.Devices;
+using Condec.Core.Upscale;
 
 namespace Condec.Core.Settings;
 
@@ -113,12 +114,13 @@ public sealed class AppSettings
     }
 
     /// <summary>
-    /// The measured speed of an engine in megapixels per second, or null when it hasn't been measured on this device.
-    /// A speed measured on another device name (a new GPU, a different NPU) is ignored.
+    /// The measured speed of an engine in megapixels per second at one tile size, or null when it hasn't been measured on this
+    /// device. A speed measured on another device name (a new GPU, a different NPU) is ignored. Each tile size has its own
+    /// speed: a smaller tile (a small memory limit) runs slower per pixel.
     /// </summary>
-    public double? GetThroughput(RenderEngine engine)
+    public double? GetThroughput(RenderEngine engine, int tileSize = TiledUpscaler.DefaultTileSize)
     {
-        var parts = _store.Get(ThroughputKeyPrefix + engine)?.Split('|', 2);
+        var parts = _store.Get(ThroughputKey(engine, tileSize))?.Split('|', 2);
         return parts is [var speed, var device]
             && device == Device.DeviceName(engine)
             && double.TryParse(speed, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
@@ -127,11 +129,13 @@ public sealed class AppSettings
             : null;
     }
 
-    public void SetThroughput(RenderEngine engine, double megapixelsPerSecond)
+    public void SetThroughput(RenderEngine engine, double megapixelsPerSecond, int tileSize = TiledUpscaler.DefaultTileSize)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(megapixelsPerSecond, 0);
-        Write(ThroughputKeyPrefix + engine, $"{megapixelsPerSecond.ToString("R", CultureInfo.InvariantCulture)}|{Device.DeviceName(engine)}");
+        Write(ThroughputKey(engine, tileSize), $"{megapixelsPerSecond.ToString("R", CultureInfo.InvariantCulture)}|{Device.DeviceName(engine)}");
     }
+
+    private static string ThroughputKey(RenderEngine engine, int tileSize) => $"{ThroughputKeyPrefix}{engine}.{tileSize}";
 
     private void Write(string key, string value)
     {

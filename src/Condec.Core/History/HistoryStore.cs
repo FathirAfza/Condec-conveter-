@@ -12,14 +12,16 @@ public enum VerificationStatus
     Failed,
 }
 
-/// <summary>One finished conversion. Only metadata: nothing of the file's content is stored.</summary>
+/// <summary>One finished conversion or upscale. Only metadata: nothing of the file's content is stored.</summary>
+/// <param name="UpscaleScale">The scale of an upscale (the result's width over the source's); null for a conversion.</param>
 public sealed record HistoryEntry(
     string SourceFileName,
     string SourceExtension,
     string TargetExtension,
     DateTimeOffset CompletedAt,
     string OutputPath,
-    VerificationStatus Verification);
+    VerificationStatus Verification,
+    double? UpscaleScale = null);
 
 /// <summary>
 /// The conversion history in <c>history.json</c>, newest first. Every change is written atomically

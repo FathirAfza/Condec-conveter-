@@ -17,6 +17,7 @@ public sealed class OnnxUpscaleModel : IUpscaleModel
 
     private readonly InferenceSession _session;
     private readonly string _inputName;
+    private float[]? _output;
 
     static OnnxUpscaleModel()
     {
@@ -41,7 +42,8 @@ public sealed class OnnxUpscaleModel : IUpscaleModel
     public string? GpuFailure { get; }
 
     /// <param name="gpu">Run on the GPU. When DirectML can't start or can't run a tile, the CPU takes over (see <see cref="GpuFailure"/>).</param>
-    public static OnnxUpscaleModel Open(string modelPath, bool gpu)
+    /// <param name="tileSize">The tile size the picture will be run at; the GPU compiles the network for it.</param>
+    public static OnnxUpscaleModel Open(string modelPath, bool gpu, int tileSize = TiledUpscaler.DefaultTileSize)
     {
         string? failure = null;
         if (gpu)
@@ -59,7 +61,7 @@ public sealed class OnnxUpscaleModel : IUpscaleModel
                 try
                 {
                     // The first tile compiles the network for the GPU; a GPU that can't run it fails here, not in the middle of a picture.
-                    model.RunTile(new float[3 * TiledUpscaler.TileSize * TiledUpscaler.TileSize]);
+                    model.RunTile(new float[3 * tileSize * tileSize], tileSize);
                     return model;
                 }
                 catch
@@ -74,15 +76,31 @@ public sealed class OnnxUpscaleModel : IUpscaleModel
             }
         }
 
-        using var cpuOptions = new SessionOptions();
+        // The CPU memory arena keeps every buffer the network ever needed; without it a tile needs about a third of the memory
+        // at the same speed (measured), which is what lets the memory limit in Settings mean something (DESIGN §7.5).
+        using var cpuOptions = new SessionOptions { EnableCpuMemArena = false };
         return new OnnxUpscaleModel(new InferenceSession(modelPath, cpuOptions), RenderEngine.Cpu, failure);
     }
 
-    public float[] RunTile(float[] input)
+    public float[] RunTile(float[] input, int tileSize)
     {
-        var tensor = new DenseTensor<float>(input, [1, 3, TiledUpscaler.TileSize, TiledUpscaler.TileSize]);
+        var tensor = new DenseTensor<float>(input, [1, 3, tileSize, tileSize]);
         using var results = _session.Run([NamedOnnxValue.CreateFromTensor(_inputName, tensor)]);
-        return results[0].AsTensor<float>().ToArray();
+        var result = results[0].AsTensor<float>();
+
+        // One buffer for every tile: a new 3 MB array per tile would pile up in the large object heap until the next full
+        // collection, and the memory limit counts that slack.
+        _output = result.Length == _output?.Length ? _output : new float[result.Length];
+        if (result is DenseTensor<float> dense)
+        {
+            dense.Buffer.Span.CopyTo(_output);
+        }
+        else
+        {
+            result.ToArray().CopyTo(_output, 0);
+        }
+
+        return _output;
     }
 
     public void Dispose() => _session.Dispose();

@@ -170,16 +170,6 @@ public class CapabilityPolicyTests
         Assert.Null(CapabilityPolicy.SuggestedArchitectureScale(CapabilityPolicy.EffectiveMaxScale(3840, 2160, 16, 4, 4)));
     }
 
-    [Theory]
-    [InlineData(32, 1.0)]
-    [InlineData(12, 1.0)]
-    [InlineData(11, 1.3)]
-    [InlineData(8, 1.3)]
-    [InlineData(7, 1.8)]
-    [InlineData(4, 1.8)]
-    public void MemoryTimeFactor_GrowsAsTheLimitShrinks(int gb, double factor) =>
-        Assert.Equal(factor, CapabilityPolicy.MemoryTimeFactor(gb));
-
     [Fact]
     public void TheThreeExampleDevices_GetTheLimitsOfTheDesign()
     {

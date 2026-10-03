@@ -24,6 +24,10 @@ public static class ScaleText
     /// <summary>"0,9 MP" or "14,7 MP": one decimal.</summary>
     public static string Megapixels(long pixels, CultureInfo? culture = null) => Number(pixels / 1_000_000d, culture, "0.0") + " MP";
 
+    /// <summary>"5,2 GB": one decimal, rounded up, because it names what is needed.</summary>
+    public static string Gigabytes(long bytes, CultureInfo? culture = null) =>
+        Number(Math.Ceiling(bytes / (1024d * 1024 * 1024) * 10) / 10, culture, "0.0") + " GB";
+
     /// <summary>"± " in front of a figure that is a guess.</summary>
     public static string Approximately(string text) => "± " + text;
 

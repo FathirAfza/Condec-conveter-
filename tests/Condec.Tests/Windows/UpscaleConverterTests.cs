@@ -30,9 +30,11 @@ public sealed class UpscaleConverterTests : IDisposable
     {
         public int Scale => 4;
 
-        public float[] RunTile(float[] input)
+        public HashSet<int> TileSizes { get; } = [];
+
+        public float[] RunTile(float[] input, int size)
         {
-            var size = TiledUpscaler.TileSize;
+            TileSizes.Add(size);
             var big = size * Scale;
             var result = new float[3 * big * big];
             for (var c = 0; c < 3; c++)
@@ -118,6 +120,41 @@ public sealed class UpscaleConverterTests : IDisposable
 
         var white = (await ReadAsync(result.OutputPath)).Pixel(8, 32);
         Assert.All([white.B, white.G, white.R], value => Assert.InRange(value, 245, 255));
+    }
+
+    [Theory]
+    [InlineData(128)]
+    [InlineData(96)]
+    [InlineData(64)]
+    [InlineData(48)]
+    public async Task TheTileSizeInTheOptions_IsTheOneTheNetworkRuns(int tileSize)
+    {
+        var source = _dir.File("gambar.png");
+        await WriteSourceAsync(source);
+        var model = new NearestNeighborModel();
+
+        var result = await CreatePipeline(factory: _ => model).RunAsync(
+            new ConversionJob(source, ".png", _dir.File("hasil.png"), new UpscaleOptions(64, 64, RenderEngine.Cpu, tileSize)), null, Ct);
+
+        Assert.Equal([tileSize], model.TileSizes);
+        var image = await ReadAsync(result.OutputPath);
+        Assert.Equal((64u, 64u), (image.Width, image.Height));
+    }
+
+    [Fact]
+    public async Task ATileSizeTheUpscalerDoesNotUse_IsRefusedBeforeAnythingIsLoaded()
+    {
+        var source = _dir.File("gambar.png");
+        await WriteSourceAsync(source);
+        var opened = false;
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => CreatePipeline(factory: _ =>
+        {
+            opened = true;
+            return new NearestNeighborModel();
+        }).RunAsync(new ConversionJob(source, ".png", _dir.File("hasil.png"), new UpscaleOptions(64, 64, RenderEngine.Cpu, 100)), null, Ct));
+
+        Assert.False(opened);
     }
 
     [Fact]
@@ -266,15 +303,16 @@ public sealed class UpscaleConverterTests : IDisposable
         using var gpu = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, gpu: true);
         Assert.SkipWhen(gpu.Engine != RenderEngine.Gpu, "No GPU can run DirectML here: " + gpu.GpuFailure);
 
-        var tile = new float[3 * TiledUpscaler.TileSize * TiledUpscaler.TileSize];
+        const int size = TiledUpscaler.DefaultTileSize;
+        var tile = new float[3 * size * size];
         var random = new Random(3);
         for (var i = 0; i < tile.Length; i++)
         {
             tile[i] = (float)random.NextDouble();
         }
 
-        var fromCpu = await Task.Run(() => cpu.RunTile(tile), Ct);
-        var fromGpu = await Task.Run(() => gpu.RunTile(tile), Ct);
+        var fromCpu = await Task.Run(() => cpu.RunTile(tile, size), Ct);
+        var fromGpu = await Task.Run(() => gpu.RunTile(tile, size), Ct);
 
         double squares = 0;
         for (var i = 0; i < fromCpu.Length; i++)

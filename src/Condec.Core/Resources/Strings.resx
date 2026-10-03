@@ -186,6 +186,7 @@
   <data name="History.ClearConfirm" xml:space="preserve"><value>Clear all history? Converted files aren't deleted.</value></data>
   <data name="History.ClearConfirmButton" xml:space="preserve"><value>Clear</value></data>
   <data name="History.Verified" xml:space="preserve"><value>Verified</value></data>
+  <data name="History.UpscaleSummary" xml:space="preserve"><value>{0} → {1} · Upscale {2} · {3}</value></data>
   <data name="Limit.Device" xml:space="preserve"><value>Device limit {0}</value></data>
   <data name="Limit.Settings" xml:space="preserve"><value>Limit in Settings {0}</value></data>
   <data name="Limit.Ram" xml:space="preserve"><value>{0} GB of RAM: results up to {1}</value></data>
@@ -237,7 +238,7 @@
   <data name="Settings.ScaleLimitDescription" xml:space="preserve"><value>The largest scale that can be chosen in Upscale Image and Architecture. This device can do up to {0}.</value></data>
   <data name="Settings.ScaleLimitAboveDevice" xml:space="preserve"><value>Above the device limit</value></data>
   <data name="Settings.MemoryLimit" xml:space="preserve"><value>Memory limit</value></data>
-  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>The most RAM Condec may use. A small limit makes rendering slower, not worse.</value></data>
+  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>The most RAM Condec may use. A small limit makes upscaling slower (smaller tiles), not worse; a picture that still doesn't fit isn't started.</value></data>
   <data name="Settings.MemoryLimitSpoken" xml:space="preserve"><value>Memory limit in GB</value></data>
   <data name="Settings.RamRequirement" xml:space="preserve"><value>Installed RAM needed for the size of the result: {0}.</value></data>
   <data name="Settings.Cache" xml:space="preserve"><value>Render dump</value></data>
@@ -322,6 +323,8 @@
   <data name="Upscale.Estimate.NotMeasured" xml:space="preserve"><value>Not measured yet</value></data>
   <data name="Upscale.Estimate.RamEnough" xml:space="preserve"><value>{0} GB installed, enough</value></data>
   <data name="Upscale.Estimate.RamShort" xml:space="preserve"><value>{0} GB installed, not enough</value></data>
+  <data name="Upscale.Estimate.MemoryShort" xml:space="preserve"><value>Memory limit of {0} GB is too low: needs {1}</value></data>
+  <data name="Upscale.Estimate.TimeSmallTiles" xml:space="preserve"><value>{0} · {1} px tiles (memory limit)</value></data>
   <data name="Upscale.Start" xml:space="preserve"><value>Upscale and save…</value></data>
   <data name="Upscale.UnavailableTitle" xml:space="preserve"><value>This device doesn't meet the upscale requirements</value></data>
   <data name="Upscale.UnavailableRam" xml:space="preserve"><value>Upscaling needs at least 8 GB of installed RAM for results up to 2K. This device has only {0} GB.</value></data>

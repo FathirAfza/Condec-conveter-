@@ -37,12 +37,12 @@ public static class UpscaleSupport
     /// edges, so this is the tile count times one tile's useful result. The benchmark measures the same unit
     /// (<see cref="TileMegapixels"/>), which keeps the estimate in step with the render (DESIGN §8).
     /// </summary>
-    public static long RenderedPixels(int width, int height) =>
-        (long)TiledUpscaler.TileCount(width, height) * (TiledUpscaler.InnerSize * 4L) * (TiledUpscaler.InnerSize * 4L);
+    public static long RenderedPixels(int width, int height, int tileSize = TiledUpscaler.DefaultTileSize) =>
+        (long)TiledUpscaler.TileCount(width, height, tileSize) * (TiledUpscaler.InnerSize(tileSize) * 4L) * (TiledUpscaler.InnerSize(tileSize) * 4L);
 
     /// <summary>Megapixels of useful result one tile adds (the tile without its border, 4 times larger).</summary>
-    public static double TileMegapixels(int scale) =>
-        (double)TiledUpscaler.InnerSize * scale * TiledUpscaler.InnerSize * scale / 1_000_000d;
+    public static double TileMegapixels(int scale, int tileSize = TiledUpscaler.DefaultTileSize) =>
+        (double)TiledUpscaler.InnerSize(tileSize) * scale * TiledUpscaler.InnerSize(tileSize) * scale / 1_000_000d;
 
     // The converter reports tiles through the progress detail, so the page can say "Tile n of N".
     public static string TileDetail(int done, int total) => $"{done}/{total}";

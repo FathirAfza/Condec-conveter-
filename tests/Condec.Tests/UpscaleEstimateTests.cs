@@ -43,18 +43,17 @@ public class UpscaleEstimateTests
     }
 
     [Fact]
-    public void EstimatedSeconds_DividesByTheMeasuredSpeedAndAppliesTheMemoryFactor()
+    public void EstimatedSeconds_DividesByTheMeasuredSpeed()
     {
         var pixels = UpscaleEstimator.OutputPixels(1280, 720, 4); // 14.7456 MP
-        Assert.Equal(14.7456 / 2, UpscaleEstimator.EstimatedSeconds(pixels, 2.0, 16)!.Value, 6);
-        Assert.Equal(14.7456 / 2 * 1.8, UpscaleEstimator.EstimatedSeconds(pixels, 2.0, 4)!.Value, 6);
+        Assert.Equal(14.7456 / 2, UpscaleEstimator.EstimatedSeconds(pixels, 2.0)!.Value, 6);
     }
 
     [Fact]
     public void EstimatedSeconds_IsUnknownWithoutAMeasurement()
     {
-        Assert.Null(UpscaleEstimator.EstimatedSeconds(1_000_000, null, 16));
-        Assert.Null(UpscaleEstimator.EstimatedSeconds(1_000_000, 0, 16));
+        Assert.Null(UpscaleEstimator.EstimatedSeconds(1_000_000, null));
+        Assert.Null(UpscaleEstimator.EstimatedSeconds(1_000_000, 0));
     }
 
     [Theory]
@@ -229,6 +228,19 @@ public class AppSettingsTests : IDisposable
     }
 
     [Fact]
+    public void Throughput_IsKeptPerTileSize()
+    {
+        var settings = new AppSettings(new MemoryStore(), Medium);
+        settings.SetThroughput(RenderEngine.Gpu, 0.4, 128);
+        settings.SetThroughput(RenderEngine.Gpu, 0.2, 64);
+
+        Assert.Equal(0.4, settings.GetThroughput(RenderEngine.Gpu, 128));
+        Assert.Equal(0.4, settings.GetThroughput(RenderEngine.Gpu));
+        Assert.Equal(0.2, settings.GetThroughput(RenderEngine.Gpu, 64));
+        Assert.Null(settings.GetThroughput(RenderEngine.Gpu, 96));
+    }
+
+    [Fact]
     public void JsonStore_KeepsValuesAcrossRuns()
     {
         var path = Path.Combine(_directory, "settings.json");
@@ -260,9 +272,12 @@ public class AppSettingsTests : IDisposable
     {
         public int Runs { get; private set; }
 
-        public Task<double> RunTileAsync(RenderEngine engine, CancellationToken ct)
+        public List<int> TileSizes { get; } = [];
+
+        public Task<double> RunTileAsync(RenderEngine engine, int tileSize, CancellationToken ct)
         {
             Runs++;
+            TileSizes.Add(tileSize);
             return Task.FromResult(megapixelsPerTile);
         }
     }
@@ -274,20 +289,37 @@ public class AppSettingsTests : IDisposable
         var benchmark = new EngineBenchmark(settings);
         var workload = new FakeWorkload(0.25);
 
-        var speed = await benchmark.EnsureAsync(RenderEngine.Gpu, workload, TestContext.Current.CancellationToken);
+        var speed = await benchmark.EnsureAsync(RenderEngine.Gpu, workload, ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(1 + EngineBenchmark.TimedTiles, workload.Runs);
         Assert.True(speed > 0);
         Assert.Equal(speed, settings.GetThroughput(RenderEngine.Gpu));
 
-        await benchmark.EnsureAsync(RenderEngine.Gpu, workload, TestContext.Current.CancellationToken);
+        await benchmark.EnsureAsync(RenderEngine.Gpu, workload, ct: TestContext.Current.CancellationToken);
         Assert.Equal(1 + EngineBenchmark.TimedTiles, workload.Runs); // remembered, not measured again
+    }
+
+    [Fact]
+    public async Task Benchmark_MeasuresAndRemembersEachTileSizeApart()
+    {
+        var settings = new AppSettings(new MemoryStore(), Medium);
+        var benchmark = new EngineBenchmark(settings);
+        var workload = new FakeWorkload(0.25);
+
+        await benchmark.EnsureAsync(RenderEngine.Gpu, workload, 128, TestContext.Current.CancellationToken);
+        await benchmark.EnsureAsync(RenderEngine.Gpu, workload, 64, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2 * (1 + EngineBenchmark.TimedTiles), workload.Runs);
+        Assert.All(workload.TileSizes.Take(1 + EngineBenchmark.TimedTiles), size => Assert.Equal(128, size));
+        Assert.All(workload.TileSizes.Skip(1 + EngineBenchmark.TimedTiles), size => Assert.Equal(64, size));
+        Assert.NotNull(settings.GetThroughput(RenderEngine.Gpu, 64));
+        Assert.Null(settings.GetThroughput(RenderEngine.Gpu, 96));
     }
 
     [Fact]
     public async Task Benchmark_RefusesAnEngineTheDeviceDoesNotHave()
     {
         var benchmark = new EngineBenchmark(new AppSettings(new MemoryStore(), NoGpu));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => benchmark.MeasureAsync(RenderEngine.Npu, new FakeWorkload(1), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => benchmark.MeasureAsync(RenderEngine.Npu, new FakeWorkload(1), ct: TestContext.Current.CancellationToken));
     }
 }

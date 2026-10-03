@@ -109,12 +109,15 @@ public sealed class HistoryItemViewModel
     public HistoryItemViewModel(HistoryEntry entry, DateTime nowLocal, Action<HistoryItemViewModel> showInFolder)
     {
         Entry = entry;
-        Summary = string.Concat(
-            FileExtension.ToCode(entry.SourceExtension),
-            " → ",
-            FileExtension.ToCode(entry.TargetExtension),
-            " · ",
-            DisplayFormat.FormatTimestamp(entry.CompletedAt.LocalDateTime, nowLocal));
+        var when = DisplayFormat.FormatTimestamp(entry.CompletedAt.LocalDateTime, nowLocal);
+        Summary = entry.UpscaleScale is { } scale
+            ? Loc.Format("History.UpscaleSummary", FileExtension.ToCode(entry.SourceExtension), FileExtension.ToCode(entry.TargetExtension), ScaleText.Format(scale), when)
+            : string.Concat(
+                FileExtension.ToCode(entry.SourceExtension),
+                " → ",
+                FileExtension.ToCode(entry.TargetExtension),
+                " · ",
+                when);
         ShowInFolderCommand = new RelayCommand(() => showInFolder(this));
     }
 
@@ -122,7 +125,7 @@ public sealed class HistoryItemViewModel
 
     public string Name => Entry.SourceFileName;
 
-    /// <summary>"PNG → JPG · Yesterday, 7:40 PM".</summary>
+    /// <summary>"PNG → JPG · Yesterday, 7:40 PM", or "PNG → PNG · Upscale 2× · Yesterday, 7:40 PM" for an upscale.</summary>
     public string Summary { get; }
 
     public bool IsVerified => Entry.Verification == VerificationStatus.Verified;

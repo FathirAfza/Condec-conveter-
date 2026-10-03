@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.6 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.7 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -249,8 +249,8 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 
 **Riwayat**
 - Header: "Riwayat" (BodyStrong), `CheckBox` "Catat riwayat" (nilai awal hidup; disimpan di `history.json`; saat mati konversi baru tidak dicatat, entri lama tetap sampai dihapus, daftar kosong menampilkan "Riwayat sedang tidak dicatat. Konversi berikutnya tidak akan muncul di sini."), `HyperlinkButton` "Hapus riwayat" (membuka `Flyout` konfirmasi: "Hapus semua riwayat? File hasil konversi tidak ikut terhapus.").
-- `ListView` (`SelectionMode=None`): kotak ikon 32, nama, Caption "ASAL → TUJUAN · waktu", status "Terverifikasi" (Caption, warna sukses, ikon centang 12), tombol ikon folder (`AutomationProperties.Name="Tampilkan di folder"`).
-- Kosong: "Belum ada riwayat konversi."
+- `ListView` (`SelectionMode=None`): kotak ikon 32, nama, Caption "ASAL → TUJUAN · waktu" ("ASAL → TUJUAN · Upscale 2× · waktu" untuk hasil Upscale Image, §6.2), status "Terverifikasi" (Caption, warna sukses, ikon centang 12), tombol ikon folder (`AutomationProperties.Name="Tampilkan di folder"`).
+- Kosong: "Belum ada riwayat konversi." (daftar ini memuat konversi Convert File, Architecture, dan Upscale Image; hanya tampil di Convert File)
 - Data: `%LOCALAPPDATA%\Condec\history.json` (nama, asal → tujuan, waktu, path, status verifikasi). Tanpa salinan isi file. Konversi baru masuk paling atas.
 
 #### 6.1.1 Konverter gambar (Windows Imaging Component)
@@ -313,19 +313,19 @@ Dipakai Convert File untuk audio dan video. Hanya memakai `MediaTranscoder` deng
 **Kartu perkiraan** (grid 4 kolom, nilai `BodyLargeStrongTextBlockStyle`, label dan keterangan Caption):
 - "Resolusi hasil" — "5120 × 2880" / "14,7 MP · 5K"
 - "Perkiraan ukuran file" — "± 23,9 MB" / "PNG"
-- "Perkiraan waktu render" — "± 7 detik" / "GPU · RTX 4060 Laptop"
-- "RAM dibutuhkan" — "32 GB" / "Terpasang 32 GB, cukup" (warna sukses) atau "Terpasang N GB, kurang" (warna galat)
-- Tombol aksen "Upscale dan simpan…" di kanan, **nonaktif** bila upscale tidak tersedia atau RAM kurang.
+- "Perkiraan waktu render" — "± 7 detik" / "GPU · RTX 4060 Laptop" ("GPU · RTX 4060 Laptop · tile 64 px (batas memori)" bila batas memori memaksa tile lebih kecil)
+- "RAM dibutuhkan" — "32 GB" / "Terpasang 32 GB, cukup" (warna sukses), "Terpasang N GB, kurang" (warna galat), atau "Batas memori N GB kurang: butuh X GB" (warna galat; gambar tidak muat di batas memori Settings walau dengan tile terkecil, §7.5)
+- Tombol aksen "Upscale dan simpan…" di kanan, **nonaktif** bila upscale tidak tersedia, RAM kurang, atau gambar tidak muat di batas memori.
 
 **Upscale tidak tersedia** (batas efektif < 1,5): `InfoBar` Error di atas kartu. Judul "Perangkat ini belum memenuhi syarat upscale". Pesan "Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 2K. Perangkat ini hanya punya N GB." Bila RAM cukup tetapi gambarnya terlalu besar untuk diperbesar 1,5× (syarat RAM §7.2 atau batas satu gambar di memori, §13 #20), pesannya "Gambar ini terlalu besar untuk diperbesar di perangkat ini. `<alasan §7.4>`." Skala, slider, dan resolusi nonaktif.
 
-**Proses:** kartu tunggal. Judul "Meng-upscale `<nama>`", Caption "`<skala>` · `<W × H>` · `<mesin>`", "Batal", ProgressBar + persen, tahap: "Menyiapkan mesin render" (0–10%; keterangan "Mengukur kecepatan mesin (sekali saja)" saat benchmark §8 berjalan, lalu "Memuat model"), "Memproses tile" (10–90%, "Tile n dari N"), "Menyimpan hasil" (90–96%, "Menulis .png"), "Verifikasi integritas" (96–100%, "Menghitung SHA-256"). Tile masukan 128 × 128 px dengan tepi 10 px yang dibuang setelah diproses (108 px berguna per tile, 432 px di hasil); tepi gambar diisi pantulan supaya semua tile berukuran sama. Ukuran ini hasil pengukuran di GPU terintegrasi mesin uji (2026-10-02, DirectML): tile 128 menghasilkan 0,47 MP/detik, tile 256 hanya 0,32; tile 48–192 tidak lebih cepat dari 128. Hasil bertile dengan tepi 10 px sama dengan hasil satu gambar utuh pada 52,9 dB PSNR (tanpa sambungan yang terlihat). Bila GPU gagal menjalankan model, render pindah ke CPU dengan catatan Informational "Kartu grafis tidak bisa menjalankan model upscale, jadi CPU yang merender gambar. Ini lebih lama."
+**Proses:** kartu tunggal. Judul "Meng-upscale `<nama>`", Caption "`<skala>` · `<W × H>` · `<mesin>`", "Batal", ProgressBar + persen, tahap: "Menyiapkan mesin render" (0–10%; keterangan "Mengukur kecepatan mesin (sekali saja)" saat benchmark §8 berjalan, lalu "Memuat model"), "Memproses tile" (10–90%, "Tile n dari N"), "Menyimpan hasil" (90–96%, "Menulis .png"), "Verifikasi integritas" (96–100%, "Menghitung SHA-256"). Tile masukan 128 × 128 px dengan tepi 10 px yang dibuang setelah diproses (108 px berguna per tile, 432 px di hasil); tepi gambar diisi pantulan supaya semua tile berukuran sama. Ukuran tile bisa mengecil menjadi 96, 64, atau 48 px (tepi tetap 10 px) bila batas memori di Settings menuntutnya (§7.5); hasilnya sama persis, hanya lebih lambat. Ukuran 128 hasil pengukuran di GPU terintegrasi mesin uji (2026-10-02, DirectML): tile 128 menghasilkan 0,47 MP/detik, tile 256 hanya 0,32; tile 48–192 tidak lebih cepat dari 128. Hasil bertile dengan tepi 10 px sama dengan hasil satu gambar utuh pada 52,9 dB PSNR (tanpa sambungan yang terlihat). Bila GPU gagal menjalankan model, render pindah ke CPU dengan catatan Informational "Kartu grafis tidak bisa menjalankan model upscale, jadi CPU yang merender gambar. Ini lebih lama."
 
 **Selesai:** `InfoBar` Success "Upscale selesai" / "Gambar disimpan dan lolos cek integritas." Detail: Lokasi, Resolusi ("W × H → W' × H' (4×)"), Mesin, Integritas (sama dengan Convert File). Catatan konversi (mis. bingkai pertama saja, render pindah ke CPU) tampil sebagai `InfoBar` di bawah detail. Tombol: "Buka file" (aksen), "Tampilkan di folder", `HyperlinkButton` "Upscale gambar lain".
 
 **Gagal:** `InfoBar` Error "Upscale gagal" dengan pesan dari §6.1 (mis. memori habis = gambar terlalu besar), nama file, tombol "Coba lagi" (aksen) dan "Ubah pilihan". Batal tidak meninggalkan file dan kembali ke pilihan dengan pesan "Upscale dibatalkan. Tidak ada file yang disimpan."
 
-Nama file hasil: `<nama>-<W>x<H>.<ext>`. Upscale tidak dicatat di daftar Riwayat Convert File `[ASUMSI]` (§13 #10).
+Nama file hasil: `<nama>-<W>x<H>.<ext>`. Hasil Upscale dicatat di daftar Riwayat yang sama dengan konversi (keputusan pemilik 2026-10-03, §13 #10), dengan skalanya: "PNG → PNG · Upscale 2× · waktu". Bila entri tidak bisa disimpan, kartu Selesai menampilkan "Konversi berhasil, tetapi entri riwayatnya tidak bisa disimpan.".
 
 ### 6.3 Architecture
 
@@ -401,7 +401,7 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 | Perangkat ini | Kartu info (grid 2 × 2) | Prosesor, RAM terpasang, GPU, NPU ("Tidak terdeteksi" bila tidak ada). Kanan: Caption "Batas upscale perangkat" dan angka `TitleTextBlockStyle` ("4×"). |
 | Render mode | `Expander` | Header: "Render mode" + deskripsi "Mesin yang dipakai untuk upscale dan vektorisasi. GPU paling cepat, CPU selalu tersedia." + nilai terpilih di kanan. Isi: `RadioButtons` vertikal GPU / CPU / NPU, masing-masing dengan nama perangkat dan status ("Terdeteksi · tercepat", "Selalu tersedia · paling lambat", "Terdeteksi" / "Tidak terdeteksi"). NPU nonaktif bila tidak terdeteksi. |
 | Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
-| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat render lebih lambat, bukan lebih buruk kualitasnya." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–2K 8 GB · 2K–4K 16 GB · 4K–8K 32 GB · di atas 8K 64 GB." |
+| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat (tile lebih kecil), bukan lebih buruk kualitasnya; gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–2K 8 GB · 2K–4K 16 GB · 4K–8K 32 GB · di atas 8K 64 GB." |
 | Render dump | `Button` "Bersihkan cache" | Deskripsi: "Hapus cache render (tile dan data sementara). Ukuran sekarang: 1,8 GB." Setelah dibersihkan: "Cache kosong. Ukuran sekarang: 0 MB." dan tombol nonaktif. Folder cache: `%LOCALAPPDATA%\Condec\cache` (belum ada isinya sampai tahap 6). Bila ada file yang sedang dipakai: "Sebagian file cache sedang dipakai dan tidak terhapus. Ukuran sekarang: …". |
 
 #### Tab "Umum"
@@ -492,9 +492,15 @@ tersedia     = efektif >= 1.5
 "Menjadi penentu" = nilainya sama dengan `raw`. Beberapa alasan bisa muncul bersamaan.
 
 ### 7.5 Batas memori (Settings)
-Tidak menutup akses skala. Batas kecil memperlambat render karena tile lebih kecil dan paralelisme lebih rendah `[ASUMSI]`: faktor waktu ×1,0 bila ≥ 12 GB, ×1,3 bila 8–11 GB, ×1,8 bila < 8 GB.
+Batas ini nyata (keputusan pemilik 2026-10-03): Upscale Image tidak memakai lebih banyak memori daripada batas ini, menurut perhitungan di bawah. Batas ini tidak menutup akses skala.
 
-Kenyataan di tahap 6: renderer memakai tile 128 px tetap (§6.2) dan **tidak membaca batas ini**, jadi faktor di atas hanya memperbesar perkiraan waktu, bukan waktu nyata (lihat §13 #26).
+Memori puncak proses = `app + model + tile + gambar`:
+- app: 300 MB (WinUI, halaman, heap sebelum gambar).
+- model: 180 MB di GPU, 120 MB di CPU (bobot dan mesin).
+- tile: 22 KB (GPU) atau 14 KB (CPU) per piksel tile, jadi tile 128 px memakai 360 MB di GPU dan 230 MB di CPU. Di CPU, arena memori ONNX Runtime dimatikan (tile 128 butuh 183 MB, bukan 542 MB, tanpa jadi lebih lambat).
+- gambar: sumber (4 B/px) + hasil jaringan (64 B per piksel sumber) + langkah pertama resize (16 B × lebar hasil × tinggi sumber) + hasil (4 B/px hasil) + salinan saat menyimpan (6 B/px hasil) + transparansi bila hasilnya PNG. Gambar jaringan dan langkah pertama dilepas (GC paksa) sebelum hasil disimpan.
+
+Aturan: dari ukuran tile 128, 96, 64, 48 dipakai yang terbesar yang puncaknya masih ≤ batas. Tile yang lebih kecil lebih lambat per piksel (di GPU uji: 48 → 0,13, 64 → 0,20, 96 → 0,28, 128 → 0,32 MP/detik); hasilnya sama persis. Bila tile 48 pun tidak muat, upscale tidak dimulai dan kartu perkiraan menulis "Batas memori N GB kurang: butuh X GB". Angka di atas diukur dengan proses penuh (§13 #26) dan setiap konstanta sedikit di atas hasil ukur.
 
 ## 8. Estimasi
 
@@ -503,8 +509,8 @@ Kenyataan di tahap 6: renderer memakai tile 128 px tetap (§6.2) dan **tidak mem
 | Piksel hasil | `round(W × skala) × round(H × skala)` | |
 | Ukuran file PNG | piksel × 1,7 byte | `[ASUMSI]` |
 | Ukuran file JPG | piksel × 0,4 byte | `[ASUMSI]` |
-| Waktu render | `MP kerja ÷ throughput(mesin) × faktorMemori`. MP kerja = jumlah tile × 0,186624 MP (satu tile 108 px berguna, 4× = 432 × 432 px). Tile di tepi kanan dan bawah dihitung utuh karena model tetap memproses tile penuh. Tidak bergantung pada skala yang dipilih, karena model selalu bekerja 4× (§6.2) | |
-| Throughput | hasil benchmark singkat pada eksekusi pertama (tile 128 px yang sama dengan render), disimpan per mesin dan nama perangkat; ganti GPU atau NPU berarti diukur ulang. Protokol: 1 tile pemanasan tanpa hitung waktu, lalu 3 tile diukur; satuannya MP berguna per detik. Diukur saat upscale pertama dengan mesin itu, pada tahap "Menyiapkan mesin render" | protokol `[ASUMSI]` |
+| Waktu render | `MP kerja ÷ throughput(mesin, ukuran tile)`. MP kerja = jumlah tile × MP berguna satu tile (tile 128: 108 px berguna, 4× = 432 × 432 px = 0,186624 MP; tile 96: 304 × 304; 64: 176 × 176; 48: 112 × 112). Tile di tepi kanan dan bawah dihitung utuh karena model tetap memproses tile penuh. Tidak bergantung pada skala yang dipilih, karena model selalu bekerja 4× (§6.2) | |
+| Throughput | hasil benchmark singkat pada eksekusi pertama (tile yang sama dengan render), disimpan per mesin, ukuran tile (`bench.<mesin>.<tile>`), dan nama perangkat; ganti GPU atau NPU berarti diukur ulang, dan ukuran tile yang belum pernah dipakai diukur saat pertama kali dipakai. Protokol: 1 tile pemanasan tanpa hitung waktu, lalu 3 tile diukur; satuannya MP berguna per detik. Diukur saat upscale pertama dengan mesin itu, pada tahap "Menyiapkan mesin render" | protokol `[ASUMSI]` |
 | Format waktu | < 1 dtk: "< 1 detik"; < 60: "N detik"; < 60 mnt: "N menit M detik"; selain itu "N jam M menit" | |
 
 Selalu tampil dengan awalan "± ". Angka throughput di mock hanya contoh dan tidak boleh dipakai di aplikasi nyata. Sebelum ada hasil benchmark untuk mesin terpilih, "Perkiraan waktu render" menampilkan "—" dan keterangan "Belum diukur", bukan angka karangan.
@@ -592,7 +598,7 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 7 | Versi DWG yang ditulis ACadSharp | diputuskan: AC1015 (AutoCAD 2000). ACadSharp 3.8.0 menulis DWG AC1014, AC1015, AC1018, AC1024, AC1027, AC1032 |
 | 8 | Model upscale (lisensi kode dan bobot harus kompatibel GPL-3.0) dan apakah bisa jalan di NPU | Model diputuskan pemilik 2026-10-02: hanya Real-ESRGAN x4plus (BSD-3-Clause), ekspor ONNX pihak ketiga (SkillSafe) yang diverifikasi identik dengan bobot resmi (THIRD-PARTY-NOTICES.md). NPU: `[TERBUKA]`. Paket ONNX Runtime DirectML tidak bisa diarahkan ke NPU, dan belum ada perangkat ber-NPU untuk dicoba; pilihan NPU merender di GPU (atau CPU) dengan keterangan (§6.2) |
 | 9 | OCR teks gambar: `Windows.Media.Ocr`, bahasa terpasang | `[TERBUKA]`, cek dokumentasi |
-| 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | `[TERBUKA]`. Sementara (tahap 3): konversi di Architecture tercatat di daftar yang sama dengan Convert File (satu `history.json`), supaya riwayat konversi DXF/DWG yang sudah ada tidak hilang; daftar hanya ditampilkan di Convert File. Tahap 6: hasil Upscale **tidak** dicatat di daftar itu `[ASUMSI]`, karena daftarnya hanya tampil di Convert File dan berisi konversi format; menambahkan upscale menunggu jawaban pertanyaan ini. |
+| 10 | Apakah riwayat Upscale dan Architecture masuk ke satu daftar Riwayat | Diputuskan pemilik 2026-10-03: ya, satu `history.json`. Konversi Convert File, Architecture, dan Upscale Image (dengan skalanya) ada di daftar yang sama, yang hanya ditampilkan di Convert File. |
 | 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`, kalibrasi |
 | 12 | Perkiraan ukuran file (§8) dan hasil DWG → gambar (§6.3.2) | `[ASUMSI]` |
 | 13 | Win2D untuk render DWG | `[TERBUKA]`, hanya kalau kontrol stock tidak cukup |
@@ -606,7 +612,7 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 23 | Opsi kualitas audio dan ukuran video (§6.1, §6.1.2) | Diputuskan pemilik 2026-10-02 ("justru itu yang aku butuhkan"). Tiga tingkat audio dan tiga ukuran video adalah usulan; bitrate kustom tidak ada |
 | 24 | Ukuran video yang dipilih untuk video dengan metadata rotasi (rekaman ponsel tegak) | `[TERBUKA]`, belum diuji; butuh contoh file dari ponsel |
 | 25 | Data latih Real-ESRGAN (DIV2K, Flickr2K, OST) punya ketentuan sendiri yang tidak dijelaskan repo Real-ESRGAN untuk bobotnya | Diputuskan pemilik 2026-10-02: dicatat apa adanya di THIRD-PARTY-NOTICES.md, model tetap dibawa |
-| 26 | Batas memori di Settings (§7.5) tidak dipakai renderer, tetapi faktor ×1,3/×1,8 tetap memperbesar perkiraan waktu (di mesin uji RAM 8 GB, CPU: tampil "± 2 menit 11 detik" untuk render nyata 61 detik). Render CPU 640 × 360 memakai puncak ±790 MB memori privat lalu turun lagi; Windows mencatat event `RADAR_PRE_LEAK_64` (deteksi pemakaian memori, bukan crash) saat render pertama | `[TERBUKA]`: buang faktornya, atau buat batasnya nyata (mis. tile lebih kecil atau satu inti CPU lebih sedikit) |
+| 26 | Batas memori di Settings (§7.5) | Diputuskan pemilik 2026-10-03: dibuat nyata. Diukur dengan proses penuh (puncak memori privat di atas proses kosong): GPU 640 × 360 → 1280 × 720 tile 128 +400 MB, 2000 × 1500 → 4000 × 3000 tile 128 +782 MB (PNG) / +777 MB (JPG), 1000 × 600 → 2000 × 1200 tile 96 +436 MB dan tile 48 +305 MB; CPU tile 128 +300 MB (640 × 360) dan +322 MB (1000 × 600), tile 64 +191 MB, tile 48 +187 MB. Perkiraan selalu di atas hasil ukur dan paling jauh 1,5× di atasnya (test). Di mesin uji (RAM 8 GB, sumber paling besar ±1,6 MP) batas 4 GB tidak pernah tercapai; tile mengecil hanya untuk gambar besar di perangkat dengan RAM besar dan batas yang rendah. `[ASUMSI]`: aplikasi diukur 104–210 MB saat idle, dihitung 300 MB; transparansi PNG dianggap ada, karena baru ketahuan setelah gambar dibaca |
 | 27 | Laptop dengan dua GPU: DirectML memakai adaptor 0, yang belum tentu GPU yang ditampilkan Settings | `[TERBUKA]`, belum ada perangkat untuk diuji |
 | 28 | Microsoft menyatakan DirectML dalam mode pemeliharaan (Windows ML disarankan untuk proyek baru) | `[TERBUKA]`. DirectML dipakai karena berjalan tanpa identitas paket (build portabel) dan sudah diuji di mesin ini; pindah ke Windows ML dipertimbangkan setelah beta |
 | 29 | Skala di atas 4×: model berhenti di 4×, sisanya diperbesar dengan Lanczos3, jadi 8× dan 16× tidak menambah detail baru | `[ASUMSI]`. Alternatifnya (model dijalankan dua kali) jauh lebih lama dan butuh jauh lebih banyak memori; belum bisa dicoba di mesin uji (batas 2×) |
@@ -617,6 +623,12 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.7] 2026-10-03 (batas memori nyata, Upscale masuk Riwayat)
+- **Diubah (keputusan pemilik):** batas memori di Settings kini nyata (§7.5, §6.4): ukuran tile (128, 96, 64, 48) mengikuti batas, gambar yang tidak muat tidak dimulai (§6.2). Faktor waktu ×1,3/×1,8 dibuang; throughput diukur per ukuran tile (§8). §13 #26 selesai.
+- **Diubah:** arena memori CPU ONNX Runtime dimatikan, buffer hasil tile dipakai ulang, dan hasil jaringan dilepas sebelum gambar disimpan: memori puncak render CPU tile 128 turun dari ±790 MB ke ±300 MB, tanpa jadi lebih lambat.
+- **Diubah (keputusan pemilik):** hasil Upscale Image masuk ke Riwayat yang sama dengan konversi, dengan skalanya (§6.1, §6.2, §13 #10).
+- **Dicek:** uji langsung di build portabel: benchmark GPU tersimpan sebagai `bench.Gpu.128`, entri Riwayat "PNG → PNG · Upscale 2× · Just now" di Convert File, perkiraan waktu ±15 detik dari ukuran tile yang diukur. Memori diukur dengan proses penuh pada 9 kombinasi mesin, ukuran gambar, dan ukuran tile (§13 #26); test memastikan perkiraan tidak di bawah hasil ukur. **Belum dicoba langsung:** tampilan "Batas memori kurang" (tidak tercapai di mesin uji, ada unit test) dan tile kecil di UI.
 
 ### [0.2.6] 2026-10-03 (tahap 6: Upscale Image)
 - **Ditambah:** halaman Upscale Image berfungsi penuh (§6.2): Real-ESRGAN x4plus lewat ONNX Runtime di CPU atau GPU (DirectML), sepenuhnya lokal; tile 128 px dengan tepi 10 px; hasil diubah ukurannya ke ukuran persis dengan Lanczos3; PNG mempertahankan transparansi. Keadaan "belum ada gambar" dengan area seret, keadaan gagal, dan catatan saat NPU atau GPU tidak bisa dipakai.

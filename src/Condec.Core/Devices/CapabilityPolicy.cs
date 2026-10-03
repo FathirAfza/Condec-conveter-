@@ -137,14 +137,6 @@ public static class CapabilityPolicy
     /// <summary>The presets that are locked for this picture, in order.</summary>
     public static IEnumerable<int> LockedPresets(ScaleLimit limit) => Presets.Where(p => p > limit.Effective);
 
-    /// <summary>How much slower rendering gets when the memory limit in Settings is small (DESIGN §7.5, an assumption).</summary>
-    public static double MemoryTimeFactor(int memoryLimitGb) => memoryLimitGb switch
-    {
-        >= 12 => 1.0,
-        >= 8 => 1.3,
-        _ => 1.8,
-    };
-
     private static List<LimitReason> Reasons(double raw, double gpuLimit, double settingsLimit, double ramMax, int ramGb, RamTier? tier)
     {
         var reasons = new List<LimitReason>();

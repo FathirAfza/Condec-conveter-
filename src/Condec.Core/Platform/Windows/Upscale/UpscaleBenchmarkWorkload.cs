@@ -11,18 +11,21 @@ namespace Condec.Core.Upscale;
 /// </summary>
 public sealed class UpscaleBenchmarkWorkload : IBenchmarkWorkload, IDisposable
 {
-    private readonly float[] _tile = MakeTile();
+    private float[]? _tile;
     private OnnxUpscaleModel? _model;
     private RenderEngine? _engine;
+    private int _tileSize;
 
-    public Task<double> RunTileAsync(RenderEngine engine, CancellationToken ct) => Task.Run(() =>
+    public Task<double> RunTileAsync(RenderEngine engine, int tileSize, CancellationToken ct) => Task.Run(() =>
     {
         ct.ThrowIfCancellationRequested();
-        if (_model is null || _engine != engine)
+        if (_model is null || _engine != engine || _tileSize != tileSize)
         {
             _model?.Dispose();
-            _model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, engine == RenderEngine.Gpu);
+            _model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, engine == RenderEngine.Gpu, tileSize);
             _engine = engine;
+            _tileSize = tileSize;
+            _tile = MakeTile(tileSize);
             if (_model.Engine != engine)
             {
                 // A speed measured on the CPU must never be stored as the GPU's.
@@ -30,16 +33,15 @@ public sealed class UpscaleBenchmarkWorkload : IBenchmarkWorkload, IDisposable
             }
         }
 
-        _model.RunTile(_tile);
-        return UpscaleSupport.TileMegapixels(_model.Scale);
+        _model.RunTile(_tile!, tileSize);
+        return UpscaleSupport.TileMegapixels(_model.Scale, tileSize);
     }, ct);
 
     public void Dispose() => _model?.Dispose();
 
     /// <summary>A smooth picture with a little noise, the same on every run.</summary>
-    private static float[] MakeTile()
+    private static float[] MakeTile(int size)
     {
-        var size = TiledUpscaler.TileSize;
         var random = new Random(11);
         var data = new float[3 * size * size];
         for (var c = 0; c < 3; c++)

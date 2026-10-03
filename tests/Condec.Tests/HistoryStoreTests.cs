@@ -46,6 +46,28 @@ public sealed class HistoryStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AnUpscale_KeepsItsScale_AndAnOldEntryWithoutOneStillReads()
+    {
+        var store = new HistoryStore(_file);
+        var upscale = Entry("foto.jpg", ".jpg", ".png", 3) with { UpscaleScale = 2.5 };
+        await store.AddAsync(upscale, Ct);
+
+        var reloaded = new HistoryStore(_file);
+        await reloaded.LoadAsync(Ct);
+        Assert.Equal(2.5, reloaded.Entries[0].UpscaleScale);
+        Assert.Equal(upscale, reloaded.Entries[0]);
+
+        // A history.json written before upscales were recorded has no such field.
+        await File.WriteAllTextAsync(_file, """
+            {"enabled":true,"entries":[{"sourceFileName":"a.docx","sourceExtension":".docx","targetExtension":".pdf","completedAt":"2026-10-01T10:00:00+07:00","outputPath":"C:\\a.pdf","verification":"Verified"}]}
+            """, Ct);
+        var old = new HistoryStore(_file);
+        await old.LoadAsync(Ct);
+        Assert.Equal("a.docx", Assert.Single(old.Entries).SourceFileName);
+        Assert.Null(old.Entries[0].UpscaleScale);
+    }
+
+    [Fact]
     public async Task Clear_IsPersisted()
     {
         var store = new HistoryStore(_file);
