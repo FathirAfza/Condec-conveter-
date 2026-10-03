@@ -221,7 +221,7 @@
   <data name="Settings.ScaleLimitDescription" xml:space="preserve"><value>Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai {0}.</value></data>
   <data name="Settings.ScaleLimitAboveDevice" xml:space="preserve"><value>Di atas batas perangkat</value></data>
   <data name="Settings.MemoryLimit" xml:space="preserve"><value>Batas memori</value></data>
-  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat (tile lebih kecil), bukan lebih buruk kualitasnya; gambar yang tetap tidak muat tidak dimulai.</value></data>
+  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai.</value></data>
   <data name="Settings.MemoryLimitSpoken" xml:space="preserve"><value>Batas memori dalam GB</value></data>
   <data name="Settings.RamRequirement" xml:space="preserve"><value>Syarat RAM terpasang menurut resolusi hasil: {0}.</value></data>
   <data name="Settings.Cache" xml:space="preserve"><value>Render dump</value></data>

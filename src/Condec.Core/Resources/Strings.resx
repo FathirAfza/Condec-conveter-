@@ -221,7 +221,7 @@
   <data name="Settings.ScaleLimitDescription" xml:space="preserve"><value>The largest scale that can be chosen in Upscale Image and Architecture. This device can do up to {0}.</value></data>
   <data name="Settings.ScaleLimitAboveDevice" xml:space="preserve"><value>Above the device limit</value></data>
   <data name="Settings.MemoryLimit" xml:space="preserve"><value>Memory limit</value></data>
-  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>The most RAM Condec may use. A small limit makes upscaling slower (smaller tiles), not worse; a picture that still doesn't fit isn't started.</value></data>
+  <data name="Settings.MemoryLimitDescription" xml:space="preserve"><value>The most RAM Condec may use. A small limit makes upscaling slower and the result can be slightly less clean (smaller tiles); a picture that still doesn't fit isn't started.</value></data>
   <data name="Settings.MemoryLimitSpoken" xml:space="preserve"><value>Memory limit in GB</value></data>
   <data name="Settings.RamRequirement" xml:space="preserve"><value>Installed RAM needed for the size of the result: {0}.</value></data>
   <data name="Settings.Cache" xml:space="preserve"><value>Render dump</value></data>
