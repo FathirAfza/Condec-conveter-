@@ -275,11 +275,10 @@
   <data name="Note.UpscaleGpuFallback" xml:space="preserve"><value>The graphics card couldn't run the upscale model, so the CPU rendered the picture. This takes longer.</value></data>
   <data name="Error.UpscaleModelMissing" xml:space="preserve"><value>The upscale model isn't in this copy of Condec, so pictures can't be enlarged. Reinstall Condec, or run tools\fetch-model.ps1 if you built it yourself.</value></data>
   <data name="Error.UpscaleModelDamaged" xml:space="preserve"><value>The upscale model file is damaged or isn't the one released with Condec, so it wasn't used. Reinstall Condec to get a good copy.</value></data>
-  <data name="Upscale.DropHere" xml:space="preserve"><value>Drag a picture here</value></data>
+  <data name="Upscale.DropHere" xml:space="preserve"><value>Drag one or more pictures here</value></data>
   <data name="Upscale.Choose" xml:space="preserve"><value>Choose picture…</value></data>
   <data name="Upscale.Unsupported" xml:space="preserve"><value>{0} files can't be enlarged. Choose a picture ({1}).</value></data>
   <data name="Upscale.UnsupportedNoExtension" xml:space="preserve"><value>A file without an extension can't be enlarged. Choose a picture ({0}).</value></data>
-  <data name="Upscale.DropMany" xml:space="preserve"><value>Drag a single picture. Condec enlarges pictures one at a time.</value></data>
   <data name="Upscale.Cancelled" xml:space="preserve"><value>Upscaling cancelled. No file was saved.</value></data>
   <data name="Upscale.OriginalLegend" xml:space="preserve"><value>Original · {0}</value></data>
   <data name="Upscale.ResultLegend" xml:space="preserve"><value>Result · {0}</value></data>
@@ -541,4 +540,23 @@
   <data name="Architecture.Reading.CancelledSome" xml:space="preserve"><value>Reading was stopped. What was already read stays in the queue.</value></data>
   <data name="Queue.Blocked.NoLayer" xml:space="preserve"><value>Item {0} shows no layer. Show at least one layer, or remove it from the queue.</value></data>
   <data name="Queue.OverLimitDropped" xml:space="preserve"><value>The queue holds at most {0} items, so {1} files were left out.</value></data>
+  <data name="Upscale.AddFiles" xml:space="preserve"><value>Add pictures…</value></data>
+  <data name="Upscale.StartMany" xml:space="preserve"><value>Upscale and save {0} pictures…</value></data>
+  <data name="Upscale.Queue.ItemLabel" xml:space="preserve"><value>{0}. {1} · {2} · {3}</value></data>
+  <data name="Upscale.Queue.Status.Blocked" xml:space="preserve"><value>Can't be upscaled</value></data>
+  <data name="Upscale.Queue.BlockedTooBig" xml:space="preserve"><value>Item {0} can't be upscaled on this device. Remove it from the queue to upscale the rest.</value></data>
+  <data name="Upscale.Queue.BlockedMemory" xml:space="preserve"><value>Item {0} needs more memory than there is. Choose a smaller scale for it, or remove it from the queue.</value></data>
+  <data name="Skip.TooLarge" xml:space="preserve"><value>too large</value></data>
+  <data name="Upscale.Batch.ProcessingTitle" xml:space="preserve"><value>Upscaling {0} pictures</value></data>
+  <data name="Upscale.Batch.ProcessingCaption" xml:space="preserve"><value>{0} · saved in {1}</value></data>
+  <data name="Upscale.Batch.Current" xml:space="preserve"><value>Picture {0} of {1}: {2} · {3} · {4}</value></data>
+  <data name="Upscale.Batch.AllDone" xml:space="preserve"><value>All {0} pictures were saved and passed the integrity check.</value></data>
+  <data name="Upscale.Batch.SomeFailedTitle" xml:space="preserve"><value>Some pictures failed</value></data>
+  <data name="Upscale.Batch.SomeFailed" xml:space="preserve"><value>{0} of {1} pictures were saved. The others were not saved; the list says why.</value></data>
+  <data name="Upscale.Batch.StoppedTitle" xml:space="preserve"><value>Upscale stopped</value></data>
+  <data name="Upscale.Batch.Stopped" xml:space="preserve"><value>{0} of {1} pictures were saved before you stopped. The rest were not upscaled.</value></data>
+  <data name="Upscale.Batch.None" xml:space="preserve"><value>None of the pictures could be upscaled. The list says why.</value></data>
+  <data name="Upscale.Batch.SavedCount" xml:space="preserve"><value>{0} of {1} pictures</value></data>
+  <data name="Upscale.Batch.RetryFailed" xml:space="preserve"><value>Try the failed pictures again</value></data>
+  <data name="Upscale.Batch.RetryRest" xml:space="preserve"><value>Upscale the rest</value></data>
 </root>

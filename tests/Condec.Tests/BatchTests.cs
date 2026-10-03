@@ -4,6 +4,7 @@
 using Condec.Core.Batch;
 using Condec.Core.Conversion;
 using Condec.Core.Pipeline;
+using Condec.Core.Upscale;
 
 namespace Condec.Tests;
 
@@ -146,6 +147,30 @@ public sealed class OutputNameTests
     [Fact]
     public void FreeLeavesAFreeNameAlone() =>
         Assert.Equal(Path.Combine(Folder, "a.png"), OutputNames.Free(Path.Combine(Folder, "a.png"), _ => false));
+
+    [Fact]
+    public void UpscaleResultsAreNamedAfterTheirSize()
+    {
+        Assert.Equal("foto-2560x1440.png", UpscalePlan.ResultName(@"D:\a\foto.jpg", 2560, 1440, ".png"));
+
+        // Two pictures called foto.jpg made the same size, and one name already in the folder: none shares a result or overwrites.
+        var taken = new HashSet<string>([Path.Combine(Folder, "pantai-1280x720.jpg")], StringComparer.OrdinalIgnoreCase);
+        var names = OutputNames.PlanNamed(
+            [
+                (@"D:\a\foto.jpg", UpscalePlan.ResultName(@"D:\a\foto.jpg", 2560, 1440, ".png")),
+                (@"D:\b\foto.jpg", UpscalePlan.ResultName(@"D:\b\foto.jpg", 2560, 1440, ".png")),
+                (@"D:\a\pantai.jpg", UpscalePlan.ResultName(@"D:\a\pantai.jpg", 1280, 720, ".jpg")),
+            ],
+            Folder,
+            taken.Contains);
+        Assert.Equal(["foto-2560x1440.png", "foto-2560x1440 (2).png", "pantai-1280x720 (2).jpg"], names.Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void ANamedResultIsNeverItsOwnSource() =>
+        Assert.Equal(
+            Path.Combine(Folder, "x (2).png"),
+            OutputNames.PlanNamed([(Path.Combine(Folder, "x.png"), "x.png")], Folder, _ => false)[0]);
 }
 
 public sealed class ConversionBatchTests : IDisposable

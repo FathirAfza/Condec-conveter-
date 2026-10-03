@@ -7,6 +7,7 @@ using Condec.ViewModels;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 
@@ -22,6 +23,7 @@ public sealed partial class UpscalePage : Page
     {
         ViewModel = App.Current.Services.Upscale;
         InitializeComponent();
+        BatchList.Items = ViewModel.BatchResults;
         PageLayout.FitColumn(Scroller, Column);
 
         // The page is cached and its view model outlives it: the handler lives only while the page is shown.
@@ -35,7 +37,8 @@ public sealed partial class UpscalePage : Page
 
     public UpscaleViewModel ViewModel { get; }
 
-    // Keep keyboard focus on the next useful control when a view is swapped out under it.
+    // Keep keyboard focus on the next useful control when a view is swapped out under it. Moving through the queue keeps it
+    // where it is, so Next can be pressed again.
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(UpscaleViewModel.Diagram))
@@ -45,13 +48,22 @@ public sealed partial class UpscalePage : Page
         else if (e.PropertyName is nameof(UpscaleViewModel.State)
             || (e.PropertyName is nameof(UpscaleViewModel.Source) && ViewModel is { IsInput: true, HasSource: true }))
         {
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusTarget()?.Focus(FocusState.Programmatic));
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+            {
+                if (ViewModel.IsInput && FocusManager.GetFocusedElement(XamlRoot) is DependencyObject focused && ViewTree.IsInside(focused, QueueBar))
+                {
+                    return;
+                }
+
+                FocusTarget()?.Focus(FocusState.Programmatic);
+            });
         }
     }
 
     private Control? FocusTarget() => ViewModel.State switch
     {
         ConverterState.Processing => CancelButton,
+        ConverterState.Done when ViewModel.IsBatch => ViewModel.BatchHasSaved ? OpenFolderButton : RetryBatchButton,
         ConverterState.Done => OpenResultButton,
         ConverterState.Failed => RetryButton,
         _ when !ViewModel.HasSource => PickFileButton,

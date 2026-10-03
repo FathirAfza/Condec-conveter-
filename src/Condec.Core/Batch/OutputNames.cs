@@ -28,11 +28,22 @@ public static class OutputNames
     public static IReadOnlyList<string> Plan(IReadOnlyList<OutputRequest> requests, string folder, string sameFormatSuffix, Func<string, bool> exists)
     {
         ArgumentNullException.ThrowIfNull(requests);
-        var taken = new HashSet<string>(requests.Select(r => Path.GetFullPath(r.SourcePath)), StringComparer.OrdinalIgnoreCase);
-        var names = new List<string>(requests.Count);
-        foreach (var request in requests)
+        return PlanNamed([.. requests.Select(r => (r.SourcePath, BaseName(r, sameFormatSuffix)))], folder, exists);
+    }
+
+    /// <summary>
+    /// The same rules as <see cref="Plan"/> for results whose names are made elsewhere ("foto-2560x1440.png" in Upscale Image):
+    /// a name taken by a file in the folder, a source file, or an earlier result gets " (2)", " (3)" and so on.
+    /// </summary>
+    /// <param name="results">Result n: the file it comes from and the name it should have.</param>
+    public static IReadOnlyList<string> PlanNamed(IReadOnlyList<(string SourcePath, string FileName)> results, string folder, Func<string, bool> exists)
+    {
+        ArgumentNullException.ThrowIfNull(results);
+        var taken = new HashSet<string>(results.Select(r => Path.GetFullPath(r.SourcePath)), StringComparer.OrdinalIgnoreCase);
+        var names = new List<string>(results.Count);
+        foreach (var (_, fileName) in results)
         {
-            var path = Free(Path.Combine(folder, BaseName(request, sameFormatSuffix)), p => taken.Contains(p) || exists(p));
+            var path = Free(Path.Combine(folder, fileName), p => taken.Contains(p) || exists(p));
             taken.Add(path);
             names.Add(path);
         }

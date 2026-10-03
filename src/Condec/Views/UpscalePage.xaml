@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--  Upscale Image (DESIGN §6.2): the picture and the size of the result, the estimate, then the progress and the result.  -->
+<!--  Upscale Image (DESIGN §6.2): the pictures (a queue when there are several) and the size of each result, the estimate, then the progress and the results.  -->
 <Page
     x:Class="Condec.Views.UpscalePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -93,8 +93,65 @@
                     </Grid>
                 </Border>
 
-                <!--  A picture is chosen: the diagram and the choices side by side, then the estimate.  -->
+                <!--  A picture is chosen: the queue, the diagram and the choices side by side, then the estimate.  -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasSource, Mode=OneWay}">
+                    <!--  The queue (DESIGN §6.2): which picture is shown  -->
+                    <Border
+                        x:Name="QueueBar"
+                        Padding="16"
+                        Style="{StaticResource CardBorderStyle}"
+                        Visibility="{x:Bind ViewModel.ShowsQueue, Mode=OneWay}">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox
+                                    HorizontalAlignment="Stretch"
+                                    ItemsSource="{x:Bind ViewModel.Items}"
+                                    SelectedIndex="{x:Bind ViewModel.CurrentIndex, Mode=TwoWay}"
+                                    local:L.Header="Queue.Header">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:UpscaleItem">
+                                            <TextBlock
+                                                Text="{x:Bind Label, Mode=OneWay}"
+                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="NoWrap" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button
+                                    Grid.Column="1"
+                                    VerticalAlignment="Bottom"
+                                    Command="{x:Bind ViewModel.PreviousCommand}"
+                                    local:L.AutomationName="Queue.Previous"
+                                    local:L.ToolTip="Queue.Previous">
+                                    <FontIcon FontSize="14" Glyph="&#xE76B;" />
+                                </Button>
+                                <Button
+                                    Grid.Column="2"
+                                    VerticalAlignment="Bottom"
+                                    Command="{x:Bind ViewModel.NextCommand}"
+                                    local:L.AutomationName="Queue.Next"
+                                    local:L.ToolTip="Queue.Next">
+                                    <FontIcon FontSize="14" Glyph="&#xE76C;" />
+                                </Button>
+                                <Button
+                                    Grid.Column="3"
+                                    VerticalAlignment="Bottom"
+                                    Command="{x:Bind ViewModel.RemoveCurrentCommand}"
+                                    local:L.Content="Queue.Remove" />
+                            </Grid>
+                            <TextBlock
+                                Style="{StaticResource SecondaryCaptionTextStyle}"
+                                Text="{x:Bind ViewModel.QueueStatusText, Mode=OneWay}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -137,13 +194,17 @@
                                             ToolTipService.ToolTip="{x:Bind ViewModel.Source.Path, Mode=OneWay, FallbackValue=''}" />
                                         <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.SourceCaption, Mode=OneWay}" />
                                     </StackPanel>
-                                    <HyperlinkButton
-                                        x:Name="ChangeFileButton"
+                                    <StackPanel
                                         Grid.Column="2"
                                         VerticalAlignment="Center"
-                                        local:L.AutomationName="Source.ChangeSpoken"
-                                        Command="{x:Bind ViewModel.PickSourceCommand}"
-                                        local:L.Content="Source.Change" />
+                                        Orientation="Horizontal">
+                                        <HyperlinkButton Command="{x:Bind ViewModel.AddSourcesCommand}" local:L.Content="Upscale.AddFiles" />
+                                        <HyperlinkButton
+                                            x:Name="ChangeFileButton"
+                                            local:L.AutomationName="Source.ChangeSpoken"
+                                            Command="{x:Bind ViewModel.PickSourceCommand}"
+                                            local:L.Content="Source.Change" />
+                                    </StackPanel>
                                 </Grid>
 
                                 <!--  The result is the dashed box; the original, drawn small in its corner, is 100 / scale percent of it.  -->
@@ -395,8 +456,8 @@
                                 Grid.Column="4"
                                 VerticalAlignment="Center"
                                 Command="{x:Bind ViewModel.StartCommand}"
-                                Style="{StaticResource AccentButtonStyle}"
-                                local:L.Content="Upscale.Start" />
+                                Content="{x:Bind ViewModel.StartLabel, Mode=OneWay}"
+                                Style="{StaticResource AccentButtonStyle}" />
                         </Grid>
                     </Border>
 
@@ -469,6 +530,14 @@
                             Text="{x:Bind ViewModel.ProgressText, Mode=OneWay}" />
                     </Grid>
 
+                    <!--  A batch: which picture the four stages below belong to.  -->
+                    <TextBlock
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        Text="{x:Bind ViewModel.BatchCurrentText, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap"
+                        Visibility="{x:Bind ViewModel.IsBatch, Mode=OneWay}" />
+
                     <ItemsControl IsTabStop="False" ItemsSource="{x:Bind ViewModel.Steps}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:ConversionStepViewModel">
@@ -522,12 +591,12 @@
                 </StackPanel>
             </Border>
 
-            <!--  Done  -->
+            <!--  Done: one picture  -->
             <Border
                 Margin="0,20,0,0"
                 Padding="24"
                 Style="{StaticResource CardBorderStyle}"
-                Visibility="{x:Bind ViewModel.IsDone, Mode=OneWay}">
+                Visibility="{x:Bind ViewModel.IsSingleDone, Mode=OneWay}">
                 <StackPanel Spacing="20">
                     <InfoBar
                         IsClosable="False"
@@ -612,6 +681,85 @@
                             <Button Command="{x:Bind ViewModel.ShowResultInFolderCommand}" local:L.Content="Done.ShowInFolder" />
                             <HyperlinkButton Command="{x:Bind ViewModel.UpscaleAnotherCommand}" local:L.Content="Upscale.Done.Another" />
                         </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Done: a batch (DESIGN §6.2, §6.1.3), whether all, some or none of its pictures were saved  -->
+            <Border
+                Margin="0,20,0,0"
+                Padding="24"
+                Style="{StaticResource CardBorderStyle}"
+                Visibility="{x:Bind ViewModel.IsBatchDone, Mode=OneWay}">
+                <StackPanel Spacing="20">
+                    <InfoBar
+                        IsClosable="False"
+                        IsOpen="True"
+                        Message="{x:Bind ViewModel.BatchMessage, Mode=OneWay}"
+                        Severity="{x:Bind ViewModel.BatchSeverity, Mode=OneWay}"
+                        Title="{x:Bind ViewModel.BatchTitle, Mode=OneWay}" />
+                    <Grid ColumnSpacing="16" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="96" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" local:L.Text="Done.Location" />
+                        <TextBlock
+                            Grid.Column="1"
+                            IsTextSelectionEnabled="True"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Text="{x:Bind ViewModel.BatchFolder, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.BatchFolder, Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Style="{StaticResource SecondaryBodyTextStyle}"
+                            local:L.Text="Upscale.Done.Engine" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Text="{x:Bind ViewModel.ResultEngine, Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Row="2"
+                            Style="{StaticResource SecondaryBodyTextStyle}"
+                            local:L.Text="Batch.ResultLabel" />
+                        <TextBlock
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Text="{x:Bind ViewModel.BatchSavedText, Mode=OneWay}" />
+                    </Grid>
+                    <views:BatchResultList x:Name="BatchList" />
+                    <InfoBar
+                        IsClosable="False"
+                        IsOpen="{x:Bind ViewModel.HasResultMessage, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.ResultMessage, Mode=OneWay}"
+                        Severity="Warning"
+                        Visibility="{x:Bind ViewModel.HasResultMessage, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button
+                            x:Name="OpenFolderButton"
+                            Command="{x:Bind ViewModel.OpenBatchFolderCommand}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Visibility="{x:Bind ViewModel.BatchHasSaved, Mode=OneWay}"
+                            local:L.Content="Batch.OpenFolder" />
+                        <Button
+                            x:Name="RetryBatchButton"
+                            Command="{x:Bind ViewModel.RetryBatchCommand}"
+                            Content="{x:Bind ViewModel.BatchRetryLabel, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.BatchHasUnsaved, Mode=OneWay}" />
+                        <Button
+                            Command="{x:Bind ViewModel.BackToInputCommand}"
+                            Visibility="{x:Bind ViewModel.BatchSavedNothing, Mode=OneWay}"
+                            local:L.Content="Failed.ChangeChoice" />
+                        <HyperlinkButton Command="{x:Bind ViewModel.UpscaleAnotherCommand}" local:L.Content="Upscale.Done.Another" />
                     </StackPanel>
                 </StackPanel>
             </Border>

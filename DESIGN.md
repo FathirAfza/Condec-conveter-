@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.11 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.12 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -330,7 +330,16 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonver
 
 **Mesin upscale.** Real-ESRGAN x4plus (BSD-3-Clause) sebagai ONNX, dijalankan ONNX Runtime di CPU atau, lewat DirectML, di GPU; seluruhnya di perangkat. Model selalu memperbesar 4×; hasil 4× itu lalu diubah ukurannya dengan Lanczos3 ke ukuran yang dipilih persis (lebih kecil untuk 1,5×–3,5×, lebih besar untuk di atas 4×; di atas 4× detail tambahan berasal dari interpolasi, bukan dari model). PNG dengan transparansi: kanal alfa diubah ukurannya terpisah dengan Lanczos3, warna lewat model. JPG: transparansi dilebur ke putih sebelum masuk model. Metadata tidak dibawa (§13 #19); DPI sumber dipertahankan. Gambar beranimasi: hanya bingkai pertama, dengan catatan. Model dicek SHA-256-nya saat aplikasi mulai; bila hilang atau rusak, halaman menampilkan `InfoBar` Error "Upscale tidak tersedia" dengan pesan yang sesuai (model tidak ada / model rusak); gambar masih bisa dipilih, tetapi skala, slider, resolusi, format, dan tombol "Upscale dan simpan…" nonaktif.
 
-**Belum ada gambar:** kartu tunggal sebagai area seret: ikon gambar, "Seret gambar ke sini", tombol "Pilih gambar…". Hanya satu gambar; menyeret beberapa file atau folder memberi pesan "Seret satu gambar saja.". Sumbernya format gambar yang bisa dibaca konverter gambar (§6.1.1); format lain ditolak dengan pesan berisi daftar format.
+**Belum ada gambar:** kartu tunggal sebagai area seret: ikon gambar, "Seret satu atau beberapa gambar ke sini", tombol "Pilih gambar…" (boleh pilih banyak; antrean di bawah). Sumbernya format gambar yang bisa dibaca konverter gambar (§6.1.1); satu file format lain ditolak dengan pesan berisi daftar format.
+
+**Banyak gambar (antrean)** (keputusan pemilik 2026-10-03, §14 [0.2.9] dan [0.2.12]): beberapa gambar ditinjau satu per satu, lalu di-upscale satu per satu ke folder yang dipilih. Hasil ke-n milik gambar ke-n, dan tidak ada file yang ditimpa.
+- Memilih: "Pilih gambar…" dan seret-lepas menerima banyak gambar (semua format §6.1.1, boleh campur). File yang bukan gambar, tidak bisa dibaca, atau terlalu besar untuk jaringan tidak diambil, dengan `InfoBar` Warning "Beberapa file tidak diambil: `<nama>` (`<alasan>`)" (alasan "format tidak didukung", "tidak bisa dibaca", "terlalu besar"). Duplikat diabaikan; folder yang ikut diseret diabaikan dengan pesan. Satu gambar saja tetap mendapat pesan di atas. Paling banyak **20 gambar** (§13 #54): selebihnya tidak diambil, dengan pesan "Antrean memuat paling banyak 20 item, jadi N file tidak diambil." "Ganti" dan seret ke kartu kiri memulai antrean baru; `HyperlinkButton` "Tambah gambar…" di sebelah "Ganti" (dialog dibuka di folder gambar pertama) menambah gambar ke akhir antrean.
+- Kartu antrean (di atas kartu kiri dan kanan, `CardBorderStyle`, padding 16), tampil bila ada lebih dari satu gambar, bentuknya sama dengan §6.3.4: `ComboBox` "Antrean" berisi "2. pantai.jpg · 2× · Belum ditinjau" (status "Belum ditinjau", "Sudah ditinjau", "Tidak bisa di-upscale"), tombol ikon "Item sebelumnya" dan "Item berikutnya", `Button` "Hapus dari antrean", dan Caption "3 item · 2 sudah ditinjau" atau alasan tombol nonaktif: "Item 2 tidak bisa di-upscale di perangkat ini. Hapus dari antrean untuk meng-upscale sisanya." atau "Item 2 butuh memori lebih banyak daripada yang ada. Pilih skala yang lebih kecil untuknya, atau hapus dari antrean."
+- Per gambar: skala, persentase, dan resolusi hasil milik masing-masing dan tetap saat berpindah gambar; gambar baru mulai di skala awal yang sama dengan satu gambar. Diagram, kartu perkiraan, dan `InfoBar` "Upscale tidak tersedia" mengikuti gambar yang tampil (§13 #55). Format hasil satu untuk semua gambar (§13 #53). Bila Settings menurunkan batas, skala gambar lain ikut turun ke batas baru.
+- Tombol "Upscale dan simpan N gambar…" aktif bila setiap gambar bisa di-upscale pada ukuran pilihannya. `FolderPicker` (dibuka di folder gambar pertama); nama `<nama>-<W>x<H>.<ext>`, nama yang terpakai di folder, oleh sumber, atau oleh hasil sebelumnya di batch yang sama mendapat " (2)" (§6.1.3).
+- Proses: kartu yang sama dengan judul "Meng-upscale N gambar", Caption "`<mesin>` · disimpan di `<folder>`", ProgressBar untuk seluruh batch, baris BodyStrong "Gambar 2 dari 5: pantai.jpg · 2× · 2560 × 1440", dan empat tahap di atas untuk gambar itu. Pengukuran mesin (§8) dijalankan sekali per ukuran tile sebelum gambar pertama. "Batal" menghentikan gambar yang sedang dibuat (file sementaranya dihapus) dan semua sesudahnya.
+- Selesai: `InfoBar` "Upscale selesai" / "Semua N gambar disimpan dan lolos cek integritas.", "Sebagian gambar gagal", "Upscale dihentikan", atau "Upscale gagal"; detail Lokasi (folder), Mesin, Disimpan ("2 dari 3 gambar"); daftar hasil tiap gambar yang sama dengan §6.1.3; tombol "Buka folder" (aksen), "Coba lagi gambar yang gagal" atau "Upscale sisanya", "Ubah pilihan" bila tidak ada yang tersimpan, dan "Upscale gambar lain". Batal sebelum ada yang tersimpan kembali ke pilihan dengan "Upscale dibatalkan. Tidak ada file yang disimpan." Setiap gambar yang tersimpan dicatat di Riwayat dengan skalanya sendiri.
+
 
 **Kartu kiri**
 - Baris info: ikon gambar 32, nama (BodyStrong), Caption "W × H · X,X MP · ukuran file", `HyperlinkButton` "Ganti".
@@ -359,7 +368,7 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonver
 
 **Gagal:** `InfoBar` Error "Upscale gagal" dengan pesan dari §6.1 (mis. memori habis = gambar terlalu besar), nama file, tombol "Coba lagi" (aksen) dan "Ubah pilihan". Batal tidak meninggalkan file dan kembali ke pilihan dengan pesan "Upscale dibatalkan. Tidak ada file yang disimpan."
 
-Nama file hasil: `<nama>-<W>x<H>.<ext>`. Hasil Upscale dicatat di daftar Riwayat yang sama dengan konversi (keputusan pemilik 2026-10-03, §13 #10), dengan skalanya: "PNG → PNG · Upscale 2× · waktu". Bila entri tidak bisa disimpan, kartu Selesai menampilkan "Konversi berhasil, tetapi entri riwayatnya tidak bisa disimpan.".
+Nama file hasil: `<nama>-<W>x<H>.<ext>` (satu gambar dan antrean). Hasil Upscale dicatat di daftar Riwayat yang sama dengan konversi (keputusan pemilik 2026-10-03, §13 #10), dengan skalanya: "PNG → PNG · Upscale 2× · waktu". Bila entri tidak bisa disimpan, kartu Selesai menampilkan "Konversi berhasil, tetapi entri riwayatnya tidak bisa disimpan.".
 
 ### 6.3 Architecture
 
@@ -739,16 +748,28 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 46 | Bawaan hasil PDF banyak halaman: "Satu file per halaman" | `[ASUMSI]`; pilihan gabungan diputuskan pemilik 2026-10-03 |
 | 47 | Item antrean dibaca otomatis di latar belakang, satu per satu, item yang ditampilkan didahulukan; "Hentikan" mengeluarkan yang belum terbaca | `[ASUMSI]` |
 | 48 | Setelah "Hentikan", pilihan halaman tidak lagi menggambarkan antrean sampai diubah (mengubahnya menyusun ulang dari semua halaman PDF) | `[ASUMSI]` |
-| 49 | Seret-lepas banyak file ke Architecture, jalur Tab di kartu antrean, dan antrean di Windows berbahasa Indonesia | `[TERBUKA]` belum dicoba langsung (alasan sama dengan #44) |
+| 49 | Seret-lepas banyak file ke Architecture, jalur Tab di kartu antrean, dan antrean di Windows berbahasa Indonesia | `[TERBUKA]` belum dicoba langsung (alasan sama dengan #44); berlaku juga untuk antrean Upscale Image (§6.2) |
 | 50 | Antrean "dari CAD": format, kertas, DPI, dan latar satu untuk semua item; layer per item | `[ASUMSI]`. Hasil satu batch biasanya dicetak atau dikirim bersama, jadi satu ukuran kertas dan format |
 | 51 | Antrean "dari CAD": file di atas 20 item tidak diambil (bukan diambil lalu tombol nonaktif seperti "ke CAD") | `[ASUMSI]`. "Ke CAD" bisa dipendekkan lewat pilihan halaman; "dari CAD" tidak punya pilihan itu |
 | 52 | DWG/DXF yang rusak mendapat pesan umum `Error.Decode` ("…atau codec untuk format ini belum terpasang di Windows"), padahal DWG/DXF tidak memakai codec Windows | `[TERBUKA]`, sudah begitu sejak [0.2.8]; usul: pesan khusus CAD ("File ini rusak atau bukan DWG/DXF yang sah") bila pemilik setuju |
+| 53 | Antrean Upscale: format hasil (PNG/JPG) satu untuk semua gambar; skala per gambar | `[ASUMSI]`, sama dengan opsi hasil bersama di Architecture "dari CAD" (#50) |
+| 54 | Antrean Upscale paling banyak 20 gambar; selebihnya tidak diambil | `[ASUMSI]`. Batas dibuat nyata atas keputusan pemilik ("batasannya dibuat nyata"); angka 20 sama dengan #45 |
+| 55 | Kartu perkiraan (ukuran, waktu, RAM) hanya untuk gambar yang tampil; tidak ada jumlah untuk seluruh antrean | `[ASUMSI]` |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.12] 2026-10-03 (banyak gambar: Upscale Image)
+- **Keputusan pemilik (2026-10-03, lanjutan [0.2.9]):** Upscale Image menerima banyak gambar yang ditinjau satu per satu dalam antrean, lalu disimpan ke folder dengan nama otomatis tanpa menimpa. Mengubah §6.2 yang sebelumnya hanya menerima satu gambar ("Seret satu gambar saja.").
+- **Ditambah:** antrean Upscale (§6.2 "Banyak gambar"): pilih dan seret banyak gambar, "Tambah gambar…", kartu antrean, skala dan resolusi per gambar, alasan bila gambar tidak bisa di-upscale, batas 20 gambar, proses satu per satu dengan "Gambar n dari N", Batal, layar Selesai dengan daftar hasil, "Buka folder", "Coba lagi gambar yang gagal" / "Upscale sisanya", dan Riwayat per gambar dengan skalanya.
+- **Ditambah (Core):** `OutputNames.PlanNamed` (aturan nama batch untuk nama yang dibuat di luar `OutputNames`) dan `UpscalePlan.ResultName` ("foto-2560x1440.png", dipakai satu gambar dan antrean). 2 test baru.
+- **Diubah:** teks area seret "Seret satu atau beberapa gambar ke sini"; label tombol "Upscale dan simpan N gambar…" untuk antrean.
+- **Dihapus:** kunci `Upscale.DropMany` ("Seret satu gambar saja…").
+- **Diajukan:** §13 #53 sampai #55; §13 #49 diperluas ke Upscale.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1379 lulus, 0 gagal. Audit key resource: 0 tidak terpakai, kunci ID dan EN sama. Uji langsung di build portabel (GPU terintegrasi, batas perangkat 2×): 3 gambar + TXT (TXT tidak diambil dengan alasan) → antrean 3 item; skala 150% di gambar 1 tetap saat pindah ke gambar 2 (2×) dan kembali; memilih item dari daftar; "Tambah gambar…" dengan satu.png dari subfolder (nama sama) dan satu.png yang sudah ada (duplikat diabaikan) → 4 item; batch ke folder yang sudah berisi `dua-400x400.png` → `satu-360x240.png`, `dua-400x400 (2).png` (file lama utuh), `tiga-320x480.png`, `satu-480x320.png`, ukuran piksel cocok, Riwayat mencatat skala 1.5 dan 2 per gambar, pengukuran mesin sekali sebelum gambar pertama; gambar 2000 × 1500 (terlalu besar untuk perangkat 8 GB) → "Tidak bisa di-upscale", alasan di Caption, tombol nonaktif, dihapus → aktif dan kartu antrean hilang; satu gambar → `FileSavePicker` dengan nama `satu-480x320` seperti sebelumnya; batch 3 gambar dibatalkan di gambar 2 → "Upscale dihentikan", 1 dari 3, tanpa file sisa → "Upscale sisanya" menyimpan dua sisanya; satu sumber dihapus sebelum batch → "Sebagian gambar gagal" dengan alasan → dikembalikan → "Coba lagi gambar yang gagal" menyimpannya. **Belum dicoba langsung:** seret-lepas banyak gambar, jalur Tab di kartu antrean, gambar yang terhalang batas memori (bukan RAM), Windows berbahasa Indonesia, tema kontras tinggi, paket MSIX terpasang.
 
 ### [0.2.11] 2026-10-03 (banyak file: Architecture dari CAD)
 - **Keputusan pemilik (2026-10-03, lanjutan [0.2.9]):** banyak file sejenis bisa dipilih sekaligus, hasil ke-n milik file ke-n, dan Architecture memakai antrean yang ditinjau satu per satu. Mengubah §6.3.2 dan §6.3.3 yang sebelumnya menerima satu file DWG/DXF.

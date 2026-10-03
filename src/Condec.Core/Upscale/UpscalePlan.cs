@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
+using System.Globalization;
 using Condec.Core.Devices;
 
 namespace Condec.Core.Upscale;
@@ -57,6 +58,10 @@ public static class UpscalePlan
     /// <summary>The named resolution with exactly this size, or null for a custom one.</summary>
     public static ResolutionPreset? MatchPreset(int sourceWidth, int sourceHeight, int outputWidth, int outputHeight) =>
         Presets.FirstOrDefault(p => SizeForLongSide(sourceWidth, sourceHeight, p.LongSide) == (outputWidth, outputHeight));
+
+    /// <summary>"foto-2560x1440.png": the result's file name, for one picture and for each picture of a batch (DESIGN §6.2).</summary>
+    public static string ResultName(string sourcePath, int outputWidth, int outputHeight, string extension) =>
+        string.Create(CultureInfo.InvariantCulture, $"{Path.GetFileNameWithoutExtension(sourcePath)}-{outputWidth}x{outputHeight}{extension}");
 
     /// <summary>The size of the result at a scale (<see cref="UpscaleEstimator.OutputSize"/>), as the options the converter takes.</summary>
     public static UpscaleOptions OptionsFor(int width, int height, double scale, RenderEngine engine)
