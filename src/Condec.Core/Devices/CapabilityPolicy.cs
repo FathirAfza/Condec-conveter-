@@ -66,13 +66,12 @@ public static class CapabilityPolicy
     public static IReadOnlyList<int> Presets { get; } = [2, 4, 8, 16];
 
     /// <summary>
-    /// Installed RAM needed for a result of a given size. 8 and 16 GB were asked for by the owner; 32 and 64 GB are an
-    /// assumption (DESIGN §13 #1).
+    /// Installed RAM needed for a result of a given size. 8 GB up to 4K was decided by the owner (2026-10-03: a 4000 × 3000
+    /// result was measured at about 0.8 GB, and the memory limit guards the rest); 32 and 64 GB are an assumption (DESIGN §13 #1).
     /// </summary>
     public static IReadOnlyList<RamTier> RamTiers { get; } =
     [
-        new(8, 2560L * 1440, "Ram.Tier.HdTo2K"),
-        new(16, 3840L * 2160, "Ram.Tier.2KTo4K"),
+        new(8, 3840L * 2160, "Ram.Tier.HdTo4K"),
         new(32, 7680L * 4320, "Ram.Tier.4KTo8K"),
         new(64, null, "Ram.Tier.Above8K"),
     ];

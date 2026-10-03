@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.14 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.15 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -363,7 +363,7 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonver
 - "RAM dibutuhkan" — "32 GB" / "Terpasang 32 GB, cukup" (warna sukses), "Terpasang N GB, kurang" (warna galat), atau "Batas memori N GB kurang: butuh X GB" (warna galat; gambar tidak muat di batas memori Settings walau dengan tile terkecil, §7.5)
 - Tombol aksen "Upscale dan simpan…" di kanan, **nonaktif** bila upscale tidak tersedia, RAM kurang, atau gambar tidak muat di batas memori.
 
-**Upscale tidak tersedia** (batas efektif < 1,5): `InfoBar` Error di atas kartu. Judul "Perangkat ini belum memenuhi syarat upscale". Pesan "Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 2K. Perangkat ini hanya punya N GB." Bila RAM cukup tetapi gambarnya terlalu besar untuk diperbesar 1,5× (syarat RAM §7.2 atau batas satu gambar di memori, §13 #20), pesannya "Gambar ini terlalu besar untuk diperbesar di perangkat ini. `<alasan §7.4>`." Skala, slider, dan resolusi nonaktif.
+**Upscale tidak tersedia** (batas efektif < 1,5): `InfoBar` Error di atas kartu. Judul "Perangkat ini belum memenuhi syarat upscale". Pesan "Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 4K. Perangkat ini hanya punya N GB." Bila RAM cukup tetapi gambarnya terlalu besar untuk diperbesar 1,5× (syarat RAM §7.2 atau batas satu gambar di memori, §13 #20), pesannya "Gambar ini terlalu besar untuk diperbesar di perangkat ini. `<alasan §7.4>`." Skala, slider, dan resolusi nonaktif.
 
 **Proses:** kartu tunggal. Judul "Meng-upscale `<nama>`", Caption "`<skala>` · `<W × H>` · `<mesin>`", "Batal", ProgressBar + persen, tahap: "Menyiapkan mesin render" (0–10%; keterangan "Mengukur kecepatan mesin (sekali saja)" saat benchmark §8 berjalan, lalu "Memuat model"), "Memproses tile" (10–90%, "Tile n dari N"), "Menyimpan hasil" (90–96%, "Menulis .png"), "Verifikasi integritas" (96–100%, "Menghitung SHA-256"). Tile masukan 128 × 128 px. Tepi 4 px tiap tile dibuang setelah diproses, dan tile yang bersebelahan bertumpuk 12 px: di bagian itu hasil tile yang satu memudar linear ke hasil tile berikutnya, jadi tidak ada garis potong. Tiap tile menambah 108 px (432 px di hasil); tile terakhir di tiap sisi dibaca sampai tepi gambar, dan satu piksel paling banyak dibagi dua tile per sisi. Tepi gambar diisi pantulan supaya semua tile berukuran sama. Ukuran tile bisa mengecil menjadi 96, 64, atau 48 px (tepi 4 px dan tumpang tindih 12 px tetap) bila batas memori di Settings menuntutnya (§7.5); langkah antartile sama dengan sebelum [0.2.13], dan jumlah tile sama atau lebih sedikit karena tile pertama di tiap sisi menutup 120 px; tile kecil lebih lambat (§13 #56). Ukuran 128 hasil pengukuran di GPU terintegrasi mesin uji (2026-10-02, DirectML): tile 128 menghasilkan 0,47 MP/detik, tile 256 hanya 0,32; tile 48–192 tidak lebih cepat dari 128. Dibanding hasil satu gambar utuh (2026-10-03, model yang dibundel, tiga gambar uji kecil yang buram dan berkompresi berat): tile 128 yang dibaurkan 37,4–39,9 dB PSNR, 1,3–2,9 dB lebih dekat daripada tile yang dipotong di tepi 10 px (sebelum [0.2.13]), yang meninggalkan garis sambungan terlihat setiap 108 px sumber. Di aplikasi (GPU, 8x07ex 2×): 36,6 dB sebelumnya, 39,8 dB sekarang. Bila GPU gagal menjalankan model, render pindah ke CPU dengan catatan Informational "Kartu grafis tidak bisa menjalankan model upscale, jadi CPU yang merender gambar. Ini lebih lama."
 
@@ -516,7 +516,7 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9], [0.2.10]): PDF ke DWG/DXF bisa banya
 | Perangkat ini | Kartu info (grid 2 × 2) | Prosesor, RAM terpasang, GPU, NPU ("Tidak terdeteksi" bila tidak ada). Kanan: Caption "Batas upscale perangkat" dan angka `TitleTextBlockStyle` ("4×"). |
 | Render mode | `Expander` | Header: "Render mode" + deskripsi "Mesin yang dipakai untuk upscale dan vektorisasi. GPU paling cepat, CPU selalu tersedia." + nilai terpilih di kanan. Isi: `RadioButtons` vertikal GPU / CPU / NPU, masing-masing dengan nama perangkat dan status ("Terdeteksi · tercepat", "Selalu tersedia · paling lambat", "Terdeteksi" / "Tidak terdeteksi"). NPU nonaktif bila tidak terdeteksi. |
 | Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
-| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–2K 8 GB · 2K–4K 16 GB · 4K–8K 32 GB · di atas 8K 64 GB." |
+| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–4K 8 GB · 4K–8K 32 GB · di atas 8K 64 GB." |
 | Render dump | `Button` "Bersihkan cache" | Deskripsi: "Hapus cache render (tile dan data sementara). Ukuran sekarang: 1,8 GB." Setelah dibersihkan: "Cache kosong. Ukuran sekarang: 0 MB." dan tombol nonaktif. Folder cache: `%LOCALAPPDATA%\Condec\cache` (belum ada isinya sampai tahap 6). Bila ada file yang sedang dipakai: "Sebagian file cache sedang dipakai dan tidak terhapus. Ukuran sekarang: …". |
 
 #### Tab "Umum"
@@ -577,8 +577,7 @@ Dihitung dari **RAM terpasang**, bukan RAM yang dipakai Condec. Nilainya dari `G
 
 | Resolusi hasil (piksel) | RAM terpasang minimal | Label | Tag |
 |---|---|---|---|
-| ≤ 2560 × 1440 | 8 GB | HD–2K | sesuai permintaan |
-| ≤ 3840 × 2160 | 16 GB | 2K–4K | sesuai permintaan |
+| ≤ 3840 × 2160 | 8 GB | HD–4K | keputusan pemilik 2026-10-03 (sebelumnya 8 GB sampai 2K dan 16 GB sampai 4K) |
 | ≤ 7680 × 4320 | 32 GB | 4K–8K | `[ASUMSI]` |
 | lebih besar | 64 GB | di atas 8K | `[ASUMSI]` |
 
@@ -646,16 +645,18 @@ Tiga profil untuk mock dan unit test:
 |---|---|---|---|---|---|---|
 | 1280 × 720 | 32 GB | 4× | 4× | 6,0 | 4,0 | ya |
 | 1280 × 720 | 64 GB | 16× | 16× | 16 | 16,0 | ya |
-| 1280 × 720 | 8 GB | 2× | 2× | 2,0 | 2,0 | ya |
+| 1280 × 720 | 8 GB | 2× | 2× | 3,0 | 2,0 | ya |
 | 1280 × 720 | 16 GB | 4× | 4× | 3,0 | 3,0 | ya |
 | 1280 × 720 | 32 GB | 4× | 2× | 6,0 | 2,0 | ya |
 | 3840 × 2160 | 32 GB | 4× | 4× | 2,0 | 2,0 | ya |
 | 3840 × 2160 | 16 GB | 4× | 4× | 1,0 | 1,0 | tidak |
 | 1600 × 1200 | 32 GB | 4× | 4× | 4,157 | 4,0 | ya |
-| 1600 × 1200 | 8 GB | 2× | 2× | 1,386 | 1,0 | tidak |
+| 1600 × 1200 | 8 GB | 2× | 2× | 2,078 | 2,0 | ya |
+| 2000 × 1500 | 8 GB | 2× | 2× | 1,663 | 1,5 | ya |
+| 3840 × 2160 | 8 GB | 2× | 2× | 1,0 | 1,0 | tidak |
 | 1600 × 1200 | 4 GB | 2× | 2× | 0 | 0 | tidak |
 
-Turunan: RAM yang dibutuhkan untuk upscale 2× gambar 1600 × 1200 = 16 GB. Upscale 4× gambar 1280 × 720 → 5120 × 2880 = 14,7 MP, PNG ± 23,9 MB, butuh tingkat 32 GB.
+Turunan: RAM yang dibutuhkan untuk upscale 2× gambar 1600 × 1200 (3200 × 2400) = 8 GB. Upscale 4× gambar 1280 × 720 → 5120 × 2880 = 14,7 MP, PNG ± 23,9 MB, butuh tingkat 32 GB.
 
 ## 10. Aksesibilitas
 
@@ -705,7 +706,7 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 
 | # | Hal | Status |
 |---|---|---|
-| 1 | Tingkat RAM 32 GB (4K–8K) dan 64 GB (di atas 8K) | `[ASUMSI]` usulan, hanya 8 dan 16 GB yang diminta pemilik |
+| 1 | Tingkat RAM 32 GB (4K–8K) dan 64 GB (di atas 8K) | `[ASUMSI]` usulan. Tingkat 8 GB diperluas pemilik sampai 4K (2026-10-03), sehingga tingkat 16 GB tidak ada lagi |
 | 2 | Ambang batas GPU 2×/4×/8×/16× (§7.1) | `[ASUMSI]`, ganti setelah benchmark |
 | 3 | RAM dihitung dari RAM terpasang, bukan RAM yang dipakai Condec | `[ASUMSI]` |
 | 4 | Ukuran thumb `Slider` 20 px | `[ASUMSI]`, tidak ada di source yang dibaca |
@@ -767,6 +768,11 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.15] 2026-10-03 (RAM 8 GB sampai 4K)
+- **Keputusan pemilik (2026-10-03):** hasil sampai 4K (3840 × 2160) cukup dengan RAM terpasang 8 GB. Mengubah §7.2 yang sebelumnya meminta 16 GB untuk 2K–4K atas permintaan pemilik sendiri. Dasar: hasil ukur §13 #26 (4000 × 3000 butuh ±0,8 GB di proses Condec), dan Batas memori di Settings tetap menolak gambar yang tidak muat.
+- **Diubah:** tabel §7.2 menjadi HD–4K 8 GB · 4K–8K 32 GB · di atas 8K 64 GB; vektor test §9 (1280 × 720 di 8 GB ramMax 3,0; 1600 × 1200 di 8 GB kini tersedia 2×; dua vektor baru); keterangan RAM di Settings dan pesan "Upscale tidak tersedia" ("…untuk hasil sampai 4K"). Kunci `Ram.Tier.HdTo2K` dan `Ram.Tier.2KTo4K` diganti `Ram.Tier.HdTo4K`. Batas GPU §7.1 tidak berubah.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1402 lulus, 0 gagal, 0 dilewati. Uji langsung di laptop pemilik (RAM 8 GB, GPU terintegrasi): gambar 1920 × 1080 menampilkan hasil 3840 × 2160, "Terpasang 8 GB, cukup", dan alasan kunci "Batas perangkat 2× · RAM 8 GB: hasil maksimal HD–4K"; upscale 2× selesai dalam ±2 menit (perkiraan 1 menit 44 detik), puncak memori privat Condec 755 MB, lolos cek integritas.
 
 ### [0.2.14] 2026-10-03 (Upscale: gaya Tajam dan Setia)
 - **Keputusan pemilik (2026-10-03, §13 #8):** setelah melihat perbandingan x4plus, Real-ESRNet x4plus, dan realesr-general-x4v3 (denoise 0,5 dan 1,0) pada tiga gambar 150 × 150, pemilik memilih pilihan gaya "Tajam + Setia". Mengubah keputusan 2026-10-02 "hanya Real-ESRGAN x4plus".

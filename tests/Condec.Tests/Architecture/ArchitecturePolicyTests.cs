@@ -71,14 +71,14 @@ public class ArchitecturePolicyTests
     [Fact]
     public void ADeviceWithTooLittleRam_IsNotEligible_AndTheRamIsTheReason()
     {
-        // 1600 × 1200 at 2× is 7.7 MP, which wants 16 GB; this device has 8.
-        var advice = Advise(12, Device(8), settingsLimit: 2);
+        // 3000 × 2000 at 2× is 24 MP, which wants 32 GB; this device has 8.
+        var advice = Advise(12, Device(8), 3000, 2000, settingsLimit: 2);
 
         Assert.Equal(UpscaleAdviceKind.NotEligible, advice.Kind);
         Assert.False(advice.CanUpscale);
         Assert.Null(advice.DefaultScale);
         Assert.True(advice.IsRamShort);
-        Assert.Equal(16, advice.RequiredRamGb);
+        Assert.Equal(32, advice.RequiredRamGb);
         Assert.Equal(8, advice.InstalledRamGb);
     }
 
@@ -111,10 +111,10 @@ public class ArchitecturePolicyTests
     [Fact]
     public void TheRequiredRamIsThatOfTheTwoTimesResult()
     {
-        // 1600 × 1200 → 3200 × 2400 = 7.68 MP, in the 2K–4K row (16 GB).
-        Assert.Equal(16, Advise(5, Device(32, 8)).RequiredRamGb);
-        // 1000 × 800 → 2000 × 1600 = 3.2 MP, in the HD–2K row (8 GB).
-        Assert.Equal(8, Advise(5, Device(32, 8), 1000, 800).RequiredRamGb);
+        // 1600 × 1200 → 3200 × 2400 = 7.68 MP, in the HD–4K row (8 GB).
+        Assert.Equal(8, Advise(5, Device(32, 8)).RequiredRamGb);
+        // 2000 × 1500 → 4000 × 3000 = 12 MP, in the 4K–8K row (32 GB).
+        Assert.Equal(32, Advise(5, Device(32, 8), 2000, 1500).RequiredRamGb);
     }
 
     [Fact]
