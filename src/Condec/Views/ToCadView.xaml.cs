@@ -8,6 +8,7 @@ using Condec.ViewModels;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 
@@ -17,6 +18,7 @@ namespace Condec.Views;
 public sealed partial class ToCadView : UserControl
 {
     private readonly MultiSelectSync<ObjectRow> _objects;
+    private (bool Empty, bool Reading, bool Review, bool Failed, bool Upscaling) _section;
 
     public ToCadView()
     {
@@ -46,7 +48,8 @@ public sealed partial class ToCadView : UserControl
             case nameof(ToCadViewModel.Overlay):
                 ShowOverlay();
                 break;
-            case nameof(ToCadViewModel.ShowsEmpty) or nameof(ToCadViewModel.ShowsReading) or nameof(ToCadViewModel.ShowsReview) or nameof(ToCadViewModel.Banner):
+            case nameof(ToCadViewModel.ShowsEmpty) or nameof(ToCadViewModel.ShowsReading) or nameof(ToCadViewModel.ShowsReview)
+                or nameof(ToCadViewModel.ShowsFailedItem) or nameof(ToCadViewModel.Banner):
                 MoveFocus();
                 break;
         }
@@ -214,7 +217,8 @@ public sealed partial class ToCadView : UserControl
 
     // ---- Focus ----
 
-    // Keep keyboard focus on the next useful control when a view is swapped out under it.
+    // Keep keyboard focus on the next useful control when a view is swapped out under it. Moving through the queue keeps it
+    // where it is, so Next can be pressed again.
     private void MoveFocus()
     {
         if (!IsLoaded)
@@ -224,6 +228,18 @@ public sealed partial class ToCadView : UserControl
 
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
+            var section = (ViewModel.ShowsEmpty, ViewModel.ShowsReading, ViewModel.ShowsReview, ViewModel.ShowsFailedItem, ViewModel.IsUpscaling);
+            if (section == _section)
+            {
+                return;
+            }
+
+            _section = section;
+            if (FocusManager.GetFocusedElement(XamlRoot) is DependencyObject focused && IsInside(focused, QueueBar))
+            {
+                return;
+            }
+
             Control? target = null;
             if (ViewModel.ShowsEmpty)
             {
@@ -233,6 +249,10 @@ public sealed partial class ToCadView : UserControl
             {
                 target = CancelReadingButton;
             }
+            else if (ViewModel.ShowsFailedItem)
+            {
+                target = RemoveFailedButton;
+            }
             else if (ViewModel.ShowsReview)
             {
                 target = ViewModel.IsUpscaling ? CancelUpscaleButton : ConvertButton.IsEnabled ? ConvertButton : PickAnotherButton;
@@ -240,5 +260,18 @@ public sealed partial class ToCadView : UserControl
 
             target?.Focus(FocusState.Programmatic);
         });
+    }
+
+    private static bool IsInside(DependencyObject element, DependencyObject container)
+    {
+        for (var current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (ReferenceEquals(current, container))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -336,7 +336,7 @@
   <data name="Progress.DrawingSheet" xml:space="preserve"><value>Menggambar lembar</value></data>
   <data name="Architecture.TabToCad" xml:space="preserve"><value>Gambar, PDF, DXF → DWG</value></data>
   <data name="Architecture.TabFromCad" xml:space="preserve"><value>DWG, DXF → Gambar, PDF</value></data>
-  <data name="Architecture.ToCad.DropHere" xml:space="preserve"><value>Seret gambar, PDF, atau DXF ke sini</value></data>
+  <data name="Architecture.ToCad.DropHere" xml:space="preserve"><value>Seret satu atau beberapa gambar, PDF, atau DXF ke sini</value></data>
   <data name="Architecture.ToCad.DropFormats" xml:space="preserve"><value>DXF, PNG, JPG, HEIC, HEIF, PDF → DWG</value></data>
   <data name="Architecture.ToCad.Unsupported" xml:space="preserve"><value>File {0} tidak bisa dijadikan CAD di sini. Pakai file DXF, PNG, JPG, HEIC, HEIF, atau PDF.</value></data>
   <data name="Architecture.ToCad.UnsupportedNoExtension" xml:space="preserve"><value>File ini tidak punya ekstensi. Pakai file DXF, PNG, JPG, HEIC, HEIF, atau PDF.</value></data>
@@ -371,7 +371,6 @@
   <data name="Architecture.Vector.Title" xml:space="preserve"><value>File ini sudah berupa gambar vektor</value></data>
   <data name="Architecture.Vector.Message" xml:space="preserve"><value>Garis, kurva, dan teks dikonversi langsung, jadi tidak perlu upscale.</value></data>
   <data name="Architecture.Vector.Dxf" xml:space="preserve"><value>File DXF sudah berupa CAD. File ini dikonversi ke DWG apa adanya.</value></data>
-  <data name="Architecture.Pdf.FirstPageOnly" xml:space="preserve"><value>PDF ini punya {0} halaman. Hanya halaman pertama yang dikonversi.</value></data>
   <data name="Architecture.NothingFound.Title" xml:space="preserve"><value>Tidak ada objek yang terdeteksi</value></data>
   <data name="Architecture.NothingFound.Message" xml:space="preserve"><value>Gambar ini tidak punya garis atau teks untuk ditelusuri. Pilih file lain.</value></data>
   <data name="Architecture.Upscale.Failed" xml:space="preserve"><value>Upscale tidak berhasil, jadi gambar dikonversi apa adanya.</value></data>
@@ -520,4 +519,26 @@
   <data name="Batch.RowSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
   <data name="Batch.RowSpokenDetail" xml:space="preserve"><value>{0}. {1}, {2}: {3}</value></data>
   <data name="Batch.PageName" xml:space="preserve"><value>{0}, halaman {1}</value></data>
+  <data name="Queue.Header" xml:space="preserve"><value>Antrean</value></data>
+  <data name="Queue.Previous" xml:space="preserve"><value>Item sebelumnya</value></data>
+  <data name="Queue.Next" xml:space="preserve"><value>Item berikutnya</value></data>
+  <data name="Queue.Remove" xml:space="preserve"><value>Hapus dari antrean</value></data>
+  <data name="Queue.AddFiles" xml:space="preserve"><value>Tambah file…</value></data>
+  <data name="Queue.OutputHeader" xml:space="preserve"><value>Halaman dari satu PDF</value></data>
+  <data name="Queue.OutputPerPage" xml:space="preserve"><value>Satu file per halaman</value></data>
+  <data name="Queue.OutputCombined" xml:space="preserve"><value>Satu gambar CAD, halaman berdampingan</value></data>
+  <data name="Queue.Status.Waiting" xml:space="preserve"><value>Menunggu</value></data>
+  <data name="Queue.Status.Reading" xml:space="preserve"><value>Sedang dibaca</value></data>
+  <data name="Queue.Status.Failed" xml:space="preserve"><value>Tidak bisa dibaca</value></data>
+  <data name="Queue.Status.Nothing" xml:space="preserve"><value>Tidak ada yang dikonversi</value></data>
+  <data name="Queue.Status.Viewed" xml:space="preserve"><value>Sudah ditinjau</value></data>
+  <data name="Queue.Status.NotViewed" xml:space="preserve"><value>Belum ditinjau</value></data>
+  <data name="Queue.ItemLabel" xml:space="preserve"><value>{0}. {1} · {2}</value></data>
+  <data name="Queue.Summary" xml:space="preserve"><value>{0} item · {1} sudah ditinjau</value></data>
+  <data name="Queue.Summary.Reading" xml:space="preserve"><value>{0} item · {1} sudah ditinjau · {2} masih dibaca</value></data>
+  <data name="Queue.OverLimit" xml:space="preserve"><value>Antrean memuat paling banyak {0} item, dan {1} item lagi dipilih. Pilih lebih sedikit halaman atau file untuk mengonversi.</value></data>
+  <data name="Queue.Blocked.Failed" xml:space="preserve"><value>Item {0} tidak bisa dibaca. Hapus dari antrean untuk mengonversi sisanya.</value></data>
+  <data name="Queue.Blocked.Nothing" xml:space="preserve"><value>Item {0} tidak punya apa pun untuk dikonversi. Centang objeknya, atau hapus dari antrean.</value></data>
+  <data name="Queue.Failed.Title" xml:space="preserve"><value>Item ini tidak bisa dibaca</value></data>
+  <data name="Architecture.Reading.CancelledSome" xml:space="preserve"><value>Pembacaan dihentikan. Yang sudah dibaca tetap di antrean.</value></data>
 </root>

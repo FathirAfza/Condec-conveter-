@@ -26,6 +26,7 @@ public sealed partial class RunStatusView : UserControl
         set
         {
             _run = value;
+            BatchList.Items = value.BatchResults;
             value.PropertyChanged += OnRunPropertyChanged;
         }
     }
@@ -50,6 +51,7 @@ public sealed partial class RunStatusView : UserControl
     private Control? FocusTarget() => Run.State switch
     {
         RunState.Processing => CancelButton,
+        RunState.Done when Run.IsBatch => Run.BatchHasSaved ? OpenFolderButton : RetryBatchButton,
         RunState.Done => OpenResultButton,
         RunState.Failed => RetryButton,
         _ => null,

@@ -41,10 +41,11 @@ public static class ArchitectureFiles
         }
     }
 
-    /// <summary>The first page of a PDF, at preview size.</summary>
-    public static async Task<PreviewImage> RenderPdfAsync(string path, CancellationToken ct)
+    /// <summary>A page of a PDF, at preview size.</summary>
+    /// <param name="pageNumber">The page to draw, 1 for the first.</param>
+    public static async Task<PreviewImage> RenderPdfAsync(string path, CancellationToken ct, int pageNumber = 1)
     {
-        var page = await PdfPageRenderer.RenderAsync(path, 1, 1, ct, fitLongSide: PreviewLongSide).ConfigureAwait(false);
+        var page = await PdfPageRenderer.RenderAsync(path, pageNumber, 1, ct, fitLongSide: PreviewLongSide).ConfigureAwait(false);
         return new PreviewImage((int)page.Width, (int)page.Height, page.Bgra);
     }
 

@@ -43,6 +43,103 @@
             Severity="{x:Bind ViewModel.MessageSeverity, Mode=OneWay}"
             Visibility="{x:Bind ViewModel.HasMessage, Mode=OneWay}" />
 
+        <!--  The queue (DESIGN §6.3.4): which item is shown, the pages of the PDFs, and how their results are saved  -->
+        <Border
+            x:Name="QueueBar"
+            Padding="16"
+            Style="{StaticResource CardBorderStyle}"
+            Visibility="{x:Bind ViewModel.ShowsQueue, Mode=OneWay}">
+            <StackPanel Spacing="12">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox
+                        x:Name="QueueList"
+                        HorizontalAlignment="Stretch"
+                        local:L.Header="Queue.Header"
+                        IsEnabled="{x:Bind ViewModel.CanNavigate, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.Items}"
+                        SelectedIndex="{x:Bind ViewModel.CurrentIndex, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ToCadItem">
+                                <TextBlock
+                                    Text="{x:Bind Label, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="NoWrap" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button
+                        Grid.Column="1"
+                        VerticalAlignment="Bottom"
+                        local:L.AutomationName="Queue.Previous"
+                        Command="{x:Bind ViewModel.PreviousCommand}"
+                        local:L.ToolTip="Queue.Previous">
+                        <FontIcon FontSize="14" Glyph="&#xE76B;" />
+                    </Button>
+                    <Button
+                        Grid.Column="2"
+                        VerticalAlignment="Bottom"
+                        local:L.AutomationName="Queue.Next"
+                        Command="{x:Bind ViewModel.NextCommand}"
+                        local:L.ToolTip="Queue.Next">
+                        <FontIcon FontSize="14" Glyph="&#xE76C;" />
+                    </Button>
+                    <Button
+                        Grid.Column="3"
+                        VerticalAlignment="Bottom"
+                        Command="{x:Bind ViewModel.RemoveCurrentCommand}"
+                        local:L.Content="Queue.Remove" />
+                </Grid>
+
+                <!--  Pages of the PDFs: each chosen page is one item of the queue  -->
+                <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsPageChoice, Mode=OneWay}">
+                    <RadioButtons
+                        local:L.Header="Pages.Header"
+                        IsEnabled="{x:Bind ViewModel.CanNavigate, Mode=OneWay}"
+                        MaxColumns="3"
+                        SelectedIndex="{x:Bind ViewModel.Pages.ModeIndex, Mode=TwoWay}">
+                        <RadioButton local:L.Content="Pages.All" />
+                        <RadioButton local:L.Content="Pages.First" />
+                        <RadioButton local:L.Content="Pages.Custom" />
+                    </RadioButtons>
+                    <TextBox
+                        Width="240"
+                        HorizontalAlignment="Left"
+                        local:L.AutomationName="Pages.BoxSpoken"
+                        IsEnabled="{x:Bind ViewModel.CanNavigate, Mode=OneWay}"
+                        local:L.PlaceholderText="Pages.Placeholder"
+                        Text="{x:Bind ViewModel.Pages.RangeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Visibility="{x:Bind ViewModel.Pages.IsCustom, Mode=OneWay}" />
+                    <TextBlock
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind ViewModel.Pages.ErrorText}"
+                        TextWrapping="Wrap"
+                        Visibility="{x:Bind ViewModel.Pages.ShowsError, Mode=OneWay}" />
+                </StackPanel>
+
+                <!--  Several pages of one PDF: a file per page, or one drawing with the pages side by side  -->
+                <RadioButtons
+                    local:L.Header="Queue.OutputHeader"
+                    IsEnabled="{x:Bind ViewModel.CanNavigate, Mode=OneWay}"
+                    SelectedIndex="{x:Bind ViewModel.OutputModeIndex, Mode=TwoWay}"
+                    Visibility="{x:Bind ViewModel.ShowsOutputMode, Mode=OneWay}">
+                    <RadioButton local:L.Content="Queue.OutputPerPage" />
+                    <RadioButton local:L.Content="Queue.OutputCombined" />
+                </RadioButtons>
+
+                <TextBlock
+                    Style="{StaticResource SecondaryCaptionTextStyle}"
+                    Text="{x:Bind ViewModel.QueueStatusText, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
         <!--  Empty: the drop area  -->
         <Grid
             AllowDrop="True"
@@ -84,7 +181,7 @@
                             Margin="0,8,0,0"
                             HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.PickSourceCommand}"
-                            local:L.Content="Input.Choose"
+                            local:L.Content="Input.ChooseMany"
                             Style="{StaticResource AccentButtonStyle}" />
                     </StackPanel>
                 </Grid>
@@ -138,6 +235,41 @@
                         Style="{StaticResource BodyTextBlockStyle}"
                         Text="{x:Bind ViewModel.ReadingProgressText, Mode=OneWay}" />
                 </Grid>
+            </StackPanel>
+        </Border>
+
+        <!--  The item shown could not be read: why, and the way on  -->
+        <Border
+            Padding="24"
+            Style="{StaticResource CardBorderStyle}"
+            Visibility="{x:Bind ViewModel.ShowsFailedItem, Mode=OneWay}">
+            <StackPanel Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon
+                        AutomationProperties.AccessibilityView="Raw"
+                        FontSize="20"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Glyph="&#xEA39;" />
+                    <TextBlock
+                        AutomationProperties.HeadingLevel="Level2"
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        local:L.Text="Queue.Failed.Title" />
+                </StackPanel>
+                <TextBlock
+                    Style="{StaticResource BodyStrongTextBlockStyle}"
+                    Text="{x:Bind ViewModel.SourceName, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="NoWrap"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.SourcePath, Mode=OneWay}" />
+                <TextBlock
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="{x:Bind ViewModel.FailedItemMessage, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+                <Button
+                    x:Name="RemoveFailedButton"
+                    Command="{x:Bind ViewModel.RemoveFailedCommand}"
+                    local:L.Content="Queue.Remove"
+                    Style="{StaticResource AccentButtonStyle}" />
             </StackPanel>
         </Border>
 
@@ -264,13 +396,6 @@
                 Severity="Error"
                 Title="{x:Bind ViewModel.NothingFoundTitle, Mode=OneWay}"
                 Visibility="{x:Bind ViewModel.IsNothingFound, Mode=OneWay}" />
-
-            <InfoBar
-                IsClosable="False"
-                IsOpen="True"
-                Message="{x:Bind ViewModel.PdfNote, Mode=OneWay}"
-                Severity="Informational"
-                Visibility="{x:Bind ViewModel.HasPdfNote, Mode=OneWay}" />
 
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
@@ -566,6 +691,7 @@
                         x:Name="PickAnotherButton"
                         Command="{x:Bind ViewModel.PickSourceCommand}"
                         local:L.Content="Architecture.PickAnother" />
+                    <Button Command="{x:Bind ViewModel.AddSourcesCommand}" local:L.Content="Queue.AddFiles" />
                     <Button
                         x:Name="ConvertButton"
                         Command="{x:Bind ViewModel.ConvertCommand}"

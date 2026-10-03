@@ -28,6 +28,7 @@ public sealed partial class ConverterCard : UserControl
         set
         {
             _viewModel = value;
+            BatchList.Items = value.BatchResults;
             value.PropertyChanged += OnViewModelPropertyChanged;
         }
     }

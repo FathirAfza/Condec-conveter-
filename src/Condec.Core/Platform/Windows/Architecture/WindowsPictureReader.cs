@@ -12,11 +12,12 @@ public static class WindowsPictureReader
     /// <summary>Resolution a scanned PDF page is read at: 200 dpi, what the PDF → CAD tracing uses.</summary>
     public const double PdfDpi = 200;
 
-    public static async Task<RasterPicture> ReadAsync(string path, CancellationToken ct)
+    /// <param name="pageNumber">For a PDF, the page to read (1 is the first); ignored for a picture.</param>
+    public static async Task<RasterPicture> ReadAsync(string path, CancellationToken ct, int pageNumber = 1)
     {
         if (string.Equals(Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))
         {
-            var page = await PdfPageRenderer.RenderAsync(path, 1, PdfDpi / 72, ct).ConfigureAwait(false);
+            var page = await PdfPageRenderer.RenderAsync(path, pageNumber, PdfDpi / 72, ct).ConfigureAwait(false);
             return new RasterPicture((int)page.Width, (int)page.Height, page.Bgra, PdfDpi, PdfDpi);
         }
 

@@ -6,7 +6,7 @@ Baca urut: `docs/SPEC.md` (spesifikasi dan aturan pemilik proyek) → `docs/PLAN
 
 ## 1. Status
 
-> **Redesain (Sep–Okt 2026):** tabel tahap di bawah adalah rencana awal dan tidak lagi mengikuti kenyataan. Untuk status redesain tahap 1 sampai 7, keputusan pemilik, dan hal yang belum diuji, baca `DESIGN.md` §13 dan §14 (changelog), yang menjadi sumber kebenaran. Setelah tahap 7: banyak file dan banyak halaman di Convert File selesai (DESIGN 0.2.9, §6.1.3); antrean "tinjau satu per satu" untuk Architecture (ke CAD, dari CAD, gabungan CAD) dan Upscale Image belum dikerjakan. Tahap 8 (finalisasi README, LICENSE, THIRD-PARTY-NOTICES) belum dikerjakan.
+> **Redesain (Sep–Okt 2026):** tabel tahap di bawah adalah rencana awal dan tidak lagi mengikuti kenyataan. Untuk status redesain tahap 1 sampai 7, keputusan pemilik, dan hal yang belum diuji, baca `DESIGN.md` §13 dan §14 (changelog), yang menjadi sumber kebenaran. Setelah tahap 7: banyak file dan banyak halaman di Convert File selesai (DESIGN 0.2.9, §6.1.3); antrean "tinjau satu per satu" untuk Architecture ke CAD, termasuk gabungan CAD, selesai (DESIGN 0.2.10, §6.3.4); banyak file untuk Architecture dari CAD dan antrean Upscale Image belum dikerjakan. Tahap 8 (finalisasi README, LICENSE, THIRD-PARTY-NOTICES) belum dikerjakan.
 
 | Tahap | Status |
 |---|---|

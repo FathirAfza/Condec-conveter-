@@ -59,6 +59,14 @@
                     Text="{x:Bind Run.ProgressText, Mode=OneWay}" />
             </Grid>
 
+            <!--  A batch: which file the four stages below belong to.  -->
+            <TextBlock
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="{x:Bind Run.BatchCurrentText, Mode=OneWay}"
+                TextTrimming="CharacterEllipsis"
+                TextWrapping="NoWrap"
+                Visibility="{x:Bind Run.IsBatch, Mode=OneWay}" />
+
             <ItemsControl IsTabStop="False" ItemsSource="{x:Bind Run.Steps}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ConversionStepViewModel">
@@ -111,8 +119,8 @@
             </ItemsControl>
         </StackPanel>
 
-        <!--  Done  -->
-        <StackPanel Spacing="20" Visibility="{x:Bind Run.IsDone, Mode=OneWay}">
+        <!--  Done: one file  -->
+        <StackPanel Spacing="20" Visibility="{x:Bind Run.IsSingleDone, Mode=OneWay}">
             <InfoBar
                 IsClosable="False"
                 IsOpen="True"
@@ -186,6 +194,79 @@
                     <Button Command="{x:Bind Run.ShowResultInFolderCommand}" local:L.Content="Done.ShowInFolder" />
                     <HyperlinkButton Command="{x:Bind Run.AnotherCommand}" local:L.Content="Done.ConvertAnother" />
                 </StackPanel>
+            </StackPanel>
+        </StackPanel>
+
+        <!--  Done: a batch (DESIGN §6.1.3), whether all, some or none of its results were saved  -->
+        <StackPanel Spacing="20" Visibility="{x:Bind Run.IsBatchDone, Mode=OneWay}">
+            <InfoBar
+                IsClosable="False"
+                IsOpen="True"
+                Message="{x:Bind Run.BatchMessage, Mode=OneWay}"
+                Severity="{x:Bind Run.BatchSeverity, Mode=OneWay}"
+                Title="{x:Bind Run.BatchTitle, Mode=OneWay}" />
+            <Grid ColumnSpacing="16" RowSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="96" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Style="{StaticResource SecondaryBodyTextStyle}" local:L.Text="Done.Location" />
+                <TextBlock
+                    Grid.Column="1"
+                    IsTextSelectionEnabled="True"
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="{x:Bind Run.BatchFolder, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="NoWrap"
+                    ToolTipService.ToolTip="{x:Bind Run.BatchFolder, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Row="1"
+                    Style="{StaticResource SecondaryBodyTextStyle}"
+                    local:L.Text="Done.Format" />
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="{x:Bind Run.ConversionFormat, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Row="2"
+                    Style="{StaticResource SecondaryBodyTextStyle}"
+                    local:L.Text="Batch.ResultLabel" />
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="{x:Bind Run.BatchSavedText, Mode=OneWay}" />
+            </Grid>
+            <views:BatchResultList x:Name="BatchList" />
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind Run.HasResultMessage, Mode=OneWay}"
+                Message="{x:Bind Run.ResultMessage, Mode=OneWay}"
+                Severity="Warning"
+                Visibility="{x:Bind Run.HasResultMessage, Mode=OneWay}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button
+                    x:Name="OpenFolderButton"
+                    Command="{x:Bind Run.OpenBatchFolderCommand}"
+                    local:L.Content="Batch.OpenFolder"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Visibility="{x:Bind Run.BatchHasSaved, Mode=OneWay}" />
+                <Button
+                    x:Name="RetryBatchButton"
+                    Command="{x:Bind Run.RetryBatchCommand}"
+                    Content="{x:Bind Run.BatchRetryLabel, Mode=OneWay}"
+                    Visibility="{x:Bind Run.BatchHasUnsaved, Mode=OneWay}" />
+                <Button
+                    Command="{x:Bind Run.BackCommand}"
+                    local:L.Content="Failed.ChangeChoice"
+                    Visibility="{x:Bind Run.BatchSavedNothing, Mode=OneWay}" />
+                <HyperlinkButton Command="{x:Bind Run.AnotherCommand}" local:L.Content="Done.ConvertAnother" />
             </StackPanel>
         </StackPanel>
 

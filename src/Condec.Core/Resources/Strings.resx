@@ -336,7 +336,7 @@
   <data name="Progress.DrawingSheet" xml:space="preserve"><value>Drawing the sheet</value></data>
   <data name="Architecture.TabToCad" xml:space="preserve"><value>Pictures, PDF, DXF → DWG</value></data>
   <data name="Architecture.TabFromCad" xml:space="preserve"><value>DWG, DXF → Pictures, PDF</value></data>
-  <data name="Architecture.ToCad.DropHere" xml:space="preserve"><value>Drag a picture, PDF or DXF here</value></data>
+  <data name="Architecture.ToCad.DropHere" xml:space="preserve"><value>Drag one or more pictures, PDFs or DXF files here</value></data>
   <data name="Architecture.ToCad.DropFormats" xml:space="preserve"><value>DXF, PNG, JPG, HEIC, HEIF, PDF → DWG</value></data>
   <data name="Architecture.ToCad.Unsupported" xml:space="preserve"><value>{0} files can't be turned into CAD here. Use a DXF, PNG, JPG, HEIC, HEIF or PDF file.</value></data>
   <data name="Architecture.ToCad.UnsupportedNoExtension" xml:space="preserve"><value>This file has no extension. Use a DXF, PNG, JPG, HEIC, HEIF or PDF file.</value></data>
@@ -371,7 +371,6 @@
   <data name="Architecture.Vector.Title" xml:space="preserve"><value>This file is already a drawing</value></data>
   <data name="Architecture.Vector.Message" xml:space="preserve"><value>Lines, curves and text are converted directly, so no upscale is needed.</value></data>
   <data name="Architecture.Vector.Dxf" xml:space="preserve"><value>A DXF file is already CAD. It is converted to DWG as it is.</value></data>
-  <data name="Architecture.Pdf.FirstPageOnly" xml:space="preserve"><value>This PDF has {0} pages. Only the first page is converted.</value></data>
   <data name="Architecture.NothingFound.Title" xml:space="preserve"><value>No objects found</value></data>
   <data name="Architecture.NothingFound.Message" xml:space="preserve"><value>This picture has no lines or text to trace. Choose another file.</value></data>
   <data name="Architecture.Upscale.Failed" xml:space="preserve"><value>The upscale did not work, so the picture is converted as it is.</value></data>
@@ -520,4 +519,26 @@
   <data name="Batch.RowSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
   <data name="Batch.RowSpokenDetail" xml:space="preserve"><value>{0}. {1}, {2}: {3}</value></data>
   <data name="Batch.PageName" xml:space="preserve"><value>{0}, page {1}</value></data>
+  <data name="Queue.Header" xml:space="preserve"><value>Queue</value></data>
+  <data name="Queue.Previous" xml:space="preserve"><value>Previous item</value></data>
+  <data name="Queue.Next" xml:space="preserve"><value>Next item</value></data>
+  <data name="Queue.Remove" xml:space="preserve"><value>Remove from queue</value></data>
+  <data name="Queue.AddFiles" xml:space="preserve"><value>Add files…</value></data>
+  <data name="Queue.OutputHeader" xml:space="preserve"><value>Pages of one PDF</value></data>
+  <data name="Queue.OutputPerPage" xml:space="preserve"><value>One file per page</value></data>
+  <data name="Queue.OutputCombined" xml:space="preserve"><value>One CAD drawing, pages side by side</value></data>
+  <data name="Queue.Status.Waiting" xml:space="preserve"><value>Waiting</value></data>
+  <data name="Queue.Status.Reading" xml:space="preserve"><value>Being read</value></data>
+  <data name="Queue.Status.Failed" xml:space="preserve"><value>Can't be read</value></data>
+  <data name="Queue.Status.Nothing" xml:space="preserve"><value>Nothing to convert</value></data>
+  <data name="Queue.Status.Viewed" xml:space="preserve"><value>Reviewed</value></data>
+  <data name="Queue.Status.NotViewed" xml:space="preserve"><value>Not reviewed yet</value></data>
+  <data name="Queue.ItemLabel" xml:space="preserve"><value>{0}. {1} · {2}</value></data>
+  <data name="Queue.Summary" xml:space="preserve"><value>{0} items · {1} reviewed</value></data>
+  <data name="Queue.Summary.Reading" xml:space="preserve"><value>{0} items · {1} reviewed · {2} still being read</value></data>
+  <data name="Queue.OverLimit" xml:space="preserve"><value>The queue holds at most {0} items, and {1} more were chosen. Choose fewer pages or files to convert.</value></data>
+  <data name="Queue.Blocked.Failed" xml:space="preserve"><value>Item {0} can't be read. Remove it from the queue to convert the rest.</value></data>
+  <data name="Queue.Blocked.Nothing" xml:space="preserve"><value>Item {0} has nothing to convert. Tick its objects, or remove it from the queue.</value></data>
+  <data name="Queue.Failed.Title" xml:space="preserve"><value>This item can't be read</value></data>
+  <data name="Architecture.Reading.CancelledSome" xml:space="preserve"><value>Reading was stopped. What was already read stays in the queue.</value></data>
 </root>
