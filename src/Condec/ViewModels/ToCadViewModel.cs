@@ -230,8 +230,8 @@ public sealed partial class ToCadViewModel : ObservableObject
     public ArchitecturePhase Phase => _current switch
     {
         null => ArchitecturePhase.Empty,
-        { Status: ToCadItemStatus.Waiting or ToCadItemStatus.Reading } => ArchitecturePhase.Reading,
-        { Status: ToCadItemStatus.Failed } => ArchitecturePhase.Failed,
+        { Status: QueueItemStatus.Waiting or QueueItemStatus.Reading } => ArchitecturePhase.Reading,
+        { Status: QueueItemStatus.Failed } => ArchitecturePhase.Failed,
         _ => ArchitecturePhase.Review,
     };
 
@@ -415,7 +415,7 @@ public sealed partial class ToCadViewModel : ObservableObject
                 return Loc.Get("Pages.NoneChosen");
             }
 
-            if (Items.FirstOrDefault(i => i.Status == ToCadItemStatus.Failed) is { } failed)
+            if (Items.FirstOrDefault(i => i.Status == QueueItemStatus.Failed) is { } failed)
             {
                 return Loc.Format("Queue.Blocked.Failed", failed.Number);
             }
@@ -749,9 +749,9 @@ public sealed partial class ToCadViewModel : ObservableObject
     }
 
     private ToCadItem? NextToRead() =>
-        _current is { Status: ToCadItemStatus.Waiting } current && Items.Contains(current)
+        _current is { Status: QueueItemStatus.Waiting } current && Items.Contains(current)
             ? current
-            : Items.FirstOrDefault(i => i.Status == ToCadItemStatus.Waiting);
+            : Items.FirstOrDefault(i => i.Status == QueueItemStatus.Waiting);
 
     /// <summary>"Hentikan": what was read stays in the queue, the rest leaves it.</summary>
     private void OnReadingStopped()
@@ -787,7 +787,7 @@ public sealed partial class ToCadViewModel : ObservableObject
 
     private async Task ReadItemAsync(ToCadItem item, CancellationToken ct)
     {
-        item.Status = ToCadItemStatus.Reading;
+        item.Status = QueueItemStatus.Reading;
         item.ReadPercent = 0;
         Report(item);
         try
@@ -805,17 +805,17 @@ public sealed partial class ToCadViewModel : ObservableObject
                     break;
             }
 
-            item.Status = item.FailMessage is null ? ToCadItemStatus.Ready : ToCadItemStatus.Failed;
+            item.Status = item.FailMessage is null ? QueueItemStatus.Ready : QueueItemStatus.Failed;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            item.Status = ToCadItemStatus.Waiting;
+            item.Status = QueueItemStatus.Waiting;
             throw;
         }
         catch (Exception ex)
         {
             item.FailMessage = ErrorMessages.Describe(ex, PipelineStage.Decode, FileExtension.ToCode(item.File.Extension));
-            item.Status = ToCadItemStatus.Failed;
+            item.Status = QueueItemStatus.Failed;
             _log.Error($"Reading a drawing failed: {ex.GetType().Name}: {ex.Message}");
         }
 
@@ -975,7 +975,7 @@ public sealed partial class ToCadViewModel : ObservableObject
             _rebuilding = false;
         }
 
-        if (item.Status == ToCadItemStatus.Ready)
+        if (item.Status == QueueItemStatus.Ready)
         {
             item.Viewed = true;
         }
@@ -1013,9 +1013,9 @@ public sealed partial class ToCadViewModel : ObservableObject
 
     private CadSourceKind CurrentKind => _current?.Kind ?? CadSourceKind.Raster;
 
-    public bool IsRaster => _current is { Status: ToCadItemStatus.Ready, Kind: CadSourceKind.Raster };
+    public bool IsRaster => _current is { Status: QueueItemStatus.Ready, Kind: CadSourceKind.Raster };
 
-    public bool IsVector => _current is { Status: ToCadItemStatus.Ready } && CurrentKind != CadSourceKind.Raster;
+    public bool IsVector => _current is { Status: QueueItemStatus.Ready } && CurrentKind != CadSourceKind.Raster;
 
     /// <summary>"3200 × 2400 · 7,7 MP · setelah upscale 2×", or the kind and size of a vector file.</summary>
     public string SizeCaption
@@ -1108,7 +1108,7 @@ public sealed partial class ToCadViewModel : ObservableObject
     public string VectorHint => Loc.Get(CurrentKind == CadSourceKind.Dxf ? "Architecture.Objects.VectorHint" : "Architecture.Objects.PdfHint");
 
     /// <summary>A PDF drawn with lines: the unit and the scale of the drawing are the user's to choose.</summary>
-    public bool ShowsPdfOptions => _current is { Status: ToCadItemStatus.Ready, Kind: CadSourceKind.VectorPdf };
+    public bool ShowsPdfOptions => _current is { Status: QueueItemStatus.Ready, Kind: CadSourceKind.VectorPdf };
 
     /// <summary>The rows of the item shown, ticked as its review left them.</summary>
     private void LoadRows(ToCadItem item)
@@ -1586,7 +1586,7 @@ public sealed partial class ToCadViewModel : ObservableObject
     public int ResultCount => PlanResults().Count;
 
     private static bool IsConvertible(ToCadItem item) =>
-        item.Status == ToCadItemStatus.Ready && item.Banner != ToCadBanner.NothingFound && !item.HasNothingToConvert;
+        item.Status == QueueItemStatus.Ready && item.Banner != ToCadBanner.NothingFound && !item.HasNothingToConvert;
 
     private bool CanConvert() =>
         Items.Count > 0

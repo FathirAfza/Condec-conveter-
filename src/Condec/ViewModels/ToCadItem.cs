@@ -8,7 +8,7 @@ using Condec.Core.Upscale;
 
 namespace Condec.ViewModels;
 
-public enum ToCadItemStatus
+public enum QueueItemStatus
 {
     /// <summary>Not read yet; the queue reads its items one after another.</summary>
     Waiting,
@@ -45,7 +45,7 @@ public sealed partial class ToCadItem : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText), nameof(Label), nameof(IsSettled))]
-    public partial ToCadItemStatus Status { get; set; }
+    public partial QueueItemStatus Status { get; set; }
 
     /// <summary>Shown at least once after it was read.</summary>
     [ObservableProperty]
@@ -53,7 +53,7 @@ public sealed partial class ToCadItem : ObservableObject
     public partial bool Viewed { get; set; }
 
     /// <summary>Read or failed: nothing more happens to it until the user acts.</summary>
-    public bool IsSettled => Status is ToCadItemStatus.Ready or ToCadItemStatus.Failed;
+    public bool IsSettled => Status is QueueItemStatus.Ready or QueueItemStatus.Failed;
 
     /// <summary>Why it could not be read.</summary>
     public string? FailMessage { get; set; }
@@ -94,15 +94,15 @@ public sealed partial class ToCadItem : ObservableObject
 
     /// <summary>A read picture in which nothing would become CAD: nothing was found, or nothing is ticked.</summary>
     public bool HasNothingToConvert =>
-        Status == ToCadItemStatus.Ready
+        Status == QueueItemStatus.Ready
         && Kind == CadSourceKind.Raster
         && (Analysis is not { ObjectCount: > 0 } || Included.Count == 0);
 
     public string StatusText => Loc.Get(Status switch
     {
-        ToCadItemStatus.Waiting => "Queue.Status.Waiting",
-        ToCadItemStatus.Reading => "Queue.Status.Reading",
-        ToCadItemStatus.Failed => "Queue.Status.Failed",
+        QueueItemStatus.Waiting => "Queue.Status.Waiting",
+        QueueItemStatus.Reading => "Queue.Status.Reading",
+        QueueItemStatus.Failed => "Queue.Status.Failed",
         _ when HasNothingToConvert => "Queue.Status.Nothing",
         _ when Viewed => "Queue.Status.Viewed",
         _ => "Queue.Status.NotViewed",

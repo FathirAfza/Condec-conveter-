@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.10 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.11 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -409,7 +409,7 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 - Keluaran: DWG atau DXF dengan layer WALLS, OPENINGS, TEXT. Nama default `<nama>.dwg`.
 
 #### 6.3.2 Arah "dari CAD"
-- Kosong: area seret "Seret file DWG atau DXF ke sini", Caption "DWG, DXF → PNG, JPG, PDF".
+- Kosong: area seret "Seret satu atau beberapa file DWG atau DXF ke sini", Caption "DWG, DXF → PNG, JPG, PDF", tombol aksen "Pilih file…" (boleh pilih banyak, §6.3.4).
 - Siap: `InfoBar` Informational "File DWG terbaca" / "3 layer, satuan milimeter. Layer yang dimatikan tidak ikut di hasil." Pratinjau tajam tanpa penanda. Layer yang dimatikan tersembunyi di pratinjau.
 - Panel "Opsi hasil" (BodyStrong): lima `RadioButtons` horizontal:
 
@@ -422,7 +422,7 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 
   Lalu garis pemisah, "Layer" (BodyStrong) dengan `ListView` Multiple berisi layer file yang benar-benar punya bentuk atau teks (nama CAD baku seperti WALLS, OPENINGS, TEXT ditampilkan sebagai "Dinding dan garis denah", "Pintu dan jendela", "Teks dan dimensi"; layer lain memakai namanya; keterangan "Ditampilkan"/"Disembunyikan"), dan Caption "Perkiraan hasil: …".
 - Perkiraan hasil `[ASUMSI]`: piksel = mm ÷ 25,4 × DPI per sisi (A3 420 × 297 mm, A4 297 × 210 mm; kertas lanskap bila gambar lebih lebar daripada tinggi, tegak bila sebaliknya, memakai layer yang ditampilkan). PNG ≈ 0,1 byte/piksel, JPG ≈ 0,14 byte/piksel, PDF ≈ 0,3 MB. Tampilan: "PDF vektor · ± 0,3 MB" atau "4961 × 3508 px · ± 1,7 MB".
-- Tombol aksen "Konversi dan simpan…".
+- Tombol aksen "Konversi dan simpan…" (untuk banyak gambar: "Konversi dan simpan N file…", §6.3.4).
 
 ### 6.3.3 Perilaku yang dibangun di tahap 7
 
@@ -461,10 +461,10 @@ Hal yang tidak ada atau berbeda di §6.3.1 dan §6.3.2 (tiap butir yang bertanda
 
 **Aksesibilitas dan lainnya**
 - `SelectorBar` dan semua tombol bisa dijangkau keyboard; pratinjau punya nama ("Pratinjau `<nama>`"); status tidak hanya lewat warna (judul `InfoBar`, ikon, dan teks "Ditampilkan"/"Disembunyikan"). Tiap baris objek dan layer membawa nama gabungan untuk pembaca layar.
-- Area seret "ke CAD" menerima satu atau beberapa file sejenis (§6.3.4); satu file yang tidak didukung mendapat pesan "File `<ekstensi>` tidak bisa dijadikan CAD di sini." Area seret "dari CAD" tetap satu file.
+- Area seret "ke CAD" menerima satu atau beberapa file sejenis (§6.3.4); satu file yang tidak didukung mendapat pesan "File `<ekstensi>` tidak bisa dijadikan CAD di sini." Area seret "dari CAD" juga menerima satu atau beberapa file DWG atau DXF (§6.3.4, sejak [0.2.11]); satu file yang tidak didukung mendapat pesan "File `<ekstensi>` tidak bisa digambar di sini. Pakai file DWG atau DXF."
 - Konversi dari halaman ini ditulis ke Riwayat (§13 #10) dan log aktivitas dengan jenis konversi saja (tanpa path).
 
-### 6.3.4 Banyak file dan banyak halaman (ke CAD)
+### 6.3.4 Banyak file dan banyak halaman
 
 Keputusan pemilik 2026-10-03 (§14 [0.2.9], [0.2.10]): PDF ke DWG/DXF bisa banyak halaman, beberapa file sejenis bisa dipilih sekaligus, dan arah "ke CAD" memakai **antrean yang ditinjau satu per satu**. Hasil ke-n milik item ke-n, dan tidak ada file yang ditimpa (aturan nama sama dengan §6.1.3).
 
@@ -484,6 +484,14 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9], [0.2.10]): PDF ke DWG/DXF bisa banya
 **Tinjauan per item.** Banner, pratinjau, daftar objek yang dicentang, upscale, dan kalibrasi milik masing-masing item dan tetap saat berpindah item. Item menjadi "Sudah ditinjau" setelah ditampilkan sekali. Format CAD (DWG/DXF) berlaku untuk semua item; antrean DXF selalu ke DWG.
 
 **Konversi.** Tombol aktif bila semua item terbaca, tidak ada yang gagal atau kosong, halaman valid, batas tidak terlampaui, dan skala PDF vektor valid. Label: "Konversi ke DWG…" untuk satu hasil, "Konversi dan simpan N file…" untuk lebih. Satu hasil memakai `FileSavePicker` (nama `<nama>.dwg`, atau `<nama>-<n>.dwg` untuk satu halaman dari PDF berhalaman banyak). Lebih dari satu hasil memakai `FolderPicker` dan nama otomatis §6.1.3 (`gambarkerja-1.dwg` dan seterusnya; gabungan: `gambarkerja.dwg`), lalu proses, Selesai, "Coba lagi file yang gagal", Riwayat, dan log batch yang sama dengan §6.1.3. Format batch: "PDF → DWG".
+
+**Arah "dari CAD"** (§14 [0.2.11]). Antrean yang sama, dengan perbedaan ini:
+- DWG dan DXF satu kelompok dan boleh campur; file lain tidak diambil dengan `InfoBar` Warning §6.1.3, duplikat diabaikan. Tiap file satu item (tidak ada pilihan halaman). File di atas 20 item **tidak diambil** sama sekali (§13 #51), dengan `InfoBar` Warning "Antrean memuat paling banyak 20 item, jadi N file tidak diambil."
+- Kartu antrean (bentuk sama dengan arah "ke CAD") tampil bila ada lebih dari satu item, dan disembunyikan selama konversi.
+- Layer yang ditampilkan dan pratinjaunya milik masing-masing item dan tetap saat berpindah item; layer yang dimatikan di file tetap tersembunyi di awal. Pratinjau yang digambar untuk kertas lain digambar ulang saat item ditampilkan. Format, ukuran kertas, DPI, dan latar berlaku untuk semua item (§13 #50).
+- Status item "Tidak ada yang dikonversi" berarti semua layernya disembunyikan; Caption status lalu berkata "Item 2 tidak menampilkan layer apa pun. Tampilkan minimal satu layer, atau hapus dari antrean."
+- File yang tidak bisa dibaca, atau yang tidak punya bentuk untuk digambar, menjadi item gagal dengan kartu "Item ini tidak bisa dibaca" (sebelumnya: kembali ke area seret dengan peringatan). "Hapus dari antrean" di kartu itu juga berlaku untuk satu-satunya item, dan kembali ke area seret.
+- Tombol Konversi aktif bila semua item terbaca dan masing-masing menampilkan minimal satu layer. Satu item: `FileSavePicker` dengan nama `<nama>.png` (atau `.jpg`, `.pdf`) seperti sebelumnya. Lebih dari satu: `FolderPicker`, nama `<nama>.<format>`, nama terpakai mendapat " (2)", termasuk dua hasil bernama sama dari `denah.dwg` dan `denah.dxf` di batch yang sama, lalu proses, Selesai, coba lagi, dan Riwayat §6.1.3. Format batch menyebut jenis sumber yang ada, mis. "DWG, DXF → PNG".
 
 ### 6.4 Settings
 
@@ -732,12 +740,23 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 47 | Item antrean dibaca otomatis di latar belakang, satu per satu, item yang ditampilkan didahulukan; "Hentikan" mengeluarkan yang belum terbaca | `[ASUMSI]` |
 | 48 | Setelah "Hentikan", pilihan halaman tidak lagi menggambarkan antrean sampai diubah (mengubahnya menyusun ulang dari semua halaman PDF) | `[ASUMSI]` |
 | 49 | Seret-lepas banyak file ke Architecture, jalur Tab di kartu antrean, dan antrean di Windows berbahasa Indonesia | `[TERBUKA]` belum dicoba langsung (alasan sama dengan #44) |
+| 50 | Antrean "dari CAD": format, kertas, DPI, dan latar satu untuk semua item; layer per item | `[ASUMSI]`. Hasil satu batch biasanya dicetak atau dikirim bersama, jadi satu ukuran kertas dan format |
+| 51 | Antrean "dari CAD": file di atas 20 item tidak diambil (bukan diambil lalu tombol nonaktif seperti "ke CAD") | `[ASUMSI]`. "Ke CAD" bisa dipendekkan lewat pilihan halaman; "dari CAD" tidak punya pilihan itu |
+| 52 | DWG/DXF yang rusak mendapat pesan umum `Error.Decode` ("…atau codec untuk format ini belum terpasang di Windows"), padahal DWG/DXF tidak memakai codec Windows | `[TERBUKA]`, sudah begitu sejak [0.2.8]; usul: pesan khusus CAD ("File ini rusak atau bukan DWG/DXF yang sah") bila pemilik setuju |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.11] 2026-10-03 (banyak file: Architecture dari CAD)
+- **Keputusan pemilik (2026-10-03, lanjutan [0.2.9]):** banyak file sejenis bisa dipilih sekaligus, hasil ke-n milik file ke-n, dan Architecture memakai antrean yang ditinjau satu per satu. Mengubah §6.3.2 dan §6.3.3 yang sebelumnya menerima satu file DWG/DXF.
+- **Ditambah:** antrean "dari CAD" (§6.3.4): pilih dan seret banyak DWG/DXF, "Tambah file…", kartu antrean, pembacaan di latar belakang satu per satu dengan "Hentikan", kartu item yang gagal dibaca, layer dan pratinjau per item, opsi hasil bersama, batas 20 file, dan penyimpanan batch ke folder dengan Selesai, coba lagi, dan Riwayat.
+- **Diubah:** file DWG/DXF yang tidak bisa dibaca atau kosong menjadi item gagal, bukan kembali ke area seret. Teks area seret "Seret satu atau beberapa file DWG atau DXF ke sini"; tombol "Pilih file…" memakai `Input.ChooseMany`. Label tombol Konversi "Konversi dan simpan N file…" untuk banyak gambar.
+- **Dihapus:** kunci resource yang tidak terpakai lagi `Input.Choose` dan `Input.DropMany` ("Seret satu file saja…", sudah tidak benar).
+- **Diajukan:** §13 #50 sampai #52.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1375 lulus, 0 gagal. Audit key resource: 0 tidak terpakai, kunci ID dan EN sama. Uji langsung di build portabel: DWG + DXF + PNG (PNG tidak diambil dengan alasan) → antrean 2 item; layer yang disembunyikan di satu item tetap saat pindah item dan tidak memengaruhi item lain; semua layer satu item disembunyikan → tombol nonaktif dengan alasan; ukuran kertas A4 → pratinjau item lain digambar ulang saat ditampilkan; 2 item → PNG ke folder (bcc.png, geek.png, format "DWG, DXF → PNG"); satu DXF → tanpa kartu antrean, `FileSavePicker` dengan nama geek.png, "DXF → PNG"; DXF rusak + DXF baik → item gagal dengan kartunya, "Hapus dari antrean" menyisakan satu gambar; satu DXF rusak saja → kartu gagal → "Hapus dari antrean" kembali ke area seret. "Hentikan" tidak tertangkap otomasi (5 file terbaca dalam 2 detik); kodenya sama dengan arah "ke CAD" yang sudah dicoba langsung di [0.2.10]. **Belum dicoba langsung:** "Hentikan" di arah ini, batas 20 file, seret-lepas banyak file (§13 #49), tema kontras tinggi, paket MSIX terpasang.
 
 ### [0.2.10] 2026-10-03 (banyak file dan banyak halaman: Architecture ke CAD)
 - **Keputusan pemilik (2026-10-03, lanjutan [0.2.9]):** Architecture ke CAD ditinjau satu per satu dalam antrean; hasil PDF banyak halaman dipilih pengguna (file per halaman atau satu gambar CAD gabungan); batas dibuat nyata. Mengubah §6.3.3 yang sebelumnya hanya mengonversi halaman pertama PDF dan menerima satu file.

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--  Architecture, "DWG, DXF → Gambar, PDF" (DESIGN §6.3.2): drop area, reading, review (preview, options, layers) and the conversion.  -->
+<!--  Architecture, "DWG, DXF → Gambar, PDF" (DESIGN §6.3.2, §6.3.4): drop area, the queue, reading, review (preview, options, layers) and the conversion.  -->
 <UserControl
     x:Class="Condec.Views.FromCadView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -26,6 +26,63 @@
             Message="{x:Bind ViewModel.Message, Mode=OneWay}"
             Severity="{x:Bind ViewModel.MessageSeverity, Mode=OneWay}"
             Visibility="{x:Bind ViewModel.HasMessage, Mode=OneWay}" />
+
+        <!--  The queue (DESIGN §6.3.4): which drawing is shown  -->
+        <Border
+            x:Name="QueueBar"
+            Padding="16"
+            Style="{StaticResource CardBorderStyle}"
+            Visibility="{x:Bind ViewModel.ShowsQueue, Mode=OneWay}">
+            <StackPanel Spacing="12">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox
+                        HorizontalAlignment="Stretch"
+                        local:L.Header="Queue.Header"
+                        ItemsSource="{x:Bind ViewModel.Items}"
+                        SelectedIndex="{x:Bind ViewModel.CurrentIndex, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FromCadItem">
+                                <TextBlock
+                                    Text="{x:Bind Label, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="NoWrap" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button
+                        Grid.Column="1"
+                        VerticalAlignment="Bottom"
+                        local:L.AutomationName="Queue.Previous"
+                        Command="{x:Bind ViewModel.PreviousCommand}"
+                        local:L.ToolTip="Queue.Previous">
+                        <FontIcon FontSize="14" Glyph="&#xE76B;" />
+                    </Button>
+                    <Button
+                        Grid.Column="2"
+                        VerticalAlignment="Bottom"
+                        local:L.AutomationName="Queue.Next"
+                        Command="{x:Bind ViewModel.NextCommand}"
+                        local:L.ToolTip="Queue.Next">
+                        <FontIcon FontSize="14" Glyph="&#xE76C;" />
+                    </Button>
+                    <Button
+                        Grid.Column="3"
+                        VerticalAlignment="Bottom"
+                        Command="{x:Bind ViewModel.RemoveCurrentCommand}"
+                        local:L.Content="Queue.Remove" />
+                </Grid>
+                <TextBlock
+                    Style="{StaticResource SecondaryCaptionTextStyle}"
+                    Text="{x:Bind ViewModel.QueueStatusText, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
 
         <!--  Empty: the drop area  -->
         <Grid
@@ -68,7 +125,7 @@
                             Margin="0,8,0,0"
                             HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.PickSourceCommand}"
-                            local:L.Content="Input.Choose"
+                            local:L.Content="Input.ChooseMany"
                             Style="{StaticResource AccentButtonStyle}" />
                     </StackPanel>
                 </Grid>
@@ -107,6 +164,40 @@
                     </Button>
                 </Grid>
                 <ProgressBar IsIndeterminate="True" local:L.AutomationName="Processing.ProgressSpoken" />
+            </StackPanel>
+        </Border>
+
+        <!--  The drawing shown could not be read: why, and the way on  -->
+        <Border
+            Padding="24"
+            Style="{StaticResource CardBorderStyle}"
+            Visibility="{x:Bind ViewModel.ShowsFailedItem, Mode=OneWay}">
+            <StackPanel Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon
+                        AutomationProperties.AccessibilityView="Raw"
+                        FontSize="20"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Glyph="&#xEA39;" />
+                    <TextBlock
+                        AutomationProperties.HeadingLevel="Level2"
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        local:L.Text="Queue.Failed.Title" />
+                </StackPanel>
+                <TextBlock
+                    Style="{StaticResource BodyStrongTextBlockStyle}"
+                    Text="{x:Bind ViewModel.SourceName, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="NoWrap" />
+                <TextBlock
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="{x:Bind ViewModel.FailedItemMessage, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+                <Button
+                    x:Name="RemoveFailedButton"
+                    Command="{x:Bind ViewModel.RemoveFailedCommand}"
+                    local:L.Content="Queue.Remove"
+                    Style="{StaticResource AccentButtonStyle}" />
             </StackPanel>
         </Border>
 
@@ -302,10 +393,11 @@
                         x:Name="PickAnotherButton"
                         Command="{x:Bind ViewModel.PickSourceCommand}"
                         local:L.Content="Architecture.PickAnother" />
+                    <Button Command="{x:Bind ViewModel.AddSourcesCommand}" local:L.Content="Queue.AddFiles" />
                     <Button
                         x:Name="ConvertButton"
                         Command="{x:Bind ViewModel.ConvertCommand}"
-                        local:L.Content="Architecture.ConvertAndSave"
+                        Content="{x:Bind ViewModel.ConvertLabel, Mode=OneWay}"
                         Style="{StaticResource AccentButtonStyle}" />
                 </StackPanel>
             </Grid>

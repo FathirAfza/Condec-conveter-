@@ -6,13 +6,15 @@ using Condec.ViewModels;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 
 namespace Condec.Views;
 
-/// <summary>"DWG, DXF → Gambar, PDF" (DESIGN §6.3.2).</summary>
+/// <summary>"DWG, DXF → Gambar, PDF" (DESIGN §6.3.2, §6.3.4).</summary>
 public sealed partial class FromCadView : UserControl
 {
     private readonly MultiSelectSync<LayerRow> _layers;
+    private (bool Empty, bool Reading, bool Review, bool Failed) _section;
 
     public FromCadView()
     {
@@ -34,7 +36,8 @@ public sealed partial class FromCadView : UserControl
             case nameof(FromCadViewModel.Preview):
                 ShowPreview();
                 break;
-            case nameof(FromCadViewModel.ShowsEmpty) or nameof(FromCadViewModel.ShowsReading) or nameof(FromCadViewModel.ShowsReview):
+            case nameof(FromCadViewModel.ShowsEmpty) or nameof(FromCadViewModel.ShowsReading) or nameof(FromCadViewModel.ShowsReview)
+                or nameof(FromCadViewModel.ShowsFailedItem):
                 MoveFocus();
                 break;
         }
@@ -70,7 +73,8 @@ public sealed partial class FromCadView : UserControl
         }
     }
 
-    // Keep keyboard focus on the next useful control when a view is swapped out under it.
+    // Keep keyboard focus on the next useful control when a view is swapped out under it. Moving through the queue keeps it
+    // where it is, so Next can be pressed again.
     private void MoveFocus()
     {
         if (!IsLoaded)
@@ -80,6 +84,18 @@ public sealed partial class FromCadView : UserControl
 
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
+            var section = (ViewModel.ShowsEmpty, ViewModel.ShowsReading, ViewModel.ShowsReview, ViewModel.ShowsFailedItem);
+            if (section == _section)
+            {
+                return;
+            }
+
+            _section = section;
+            if (FocusManager.GetFocusedElement(XamlRoot) is DependencyObject focused && ViewTree.IsInside(focused, QueueBar))
+            {
+                return;
+            }
+
             Control? target = null;
             if (ViewModel.ShowsEmpty)
             {
@@ -88,6 +104,10 @@ public sealed partial class FromCadView : UserControl
             else if (ViewModel.ShowsReading)
             {
                 target = CancelReadingButton;
+            }
+            else if (ViewModel.ShowsFailedItem)
+            {
+                target = RemoveFailedButton;
             }
             else if (ViewModel.ShowsReview)
             {

@@ -235,7 +235,7 @@ public sealed partial class ToCadView : UserControl
             }
 
             _section = section;
-            if (FocusManager.GetFocusedElement(XamlRoot) is DependencyObject focused && IsInside(focused, QueueBar))
+            if (FocusManager.GetFocusedElement(XamlRoot) is DependencyObject focused && ViewTree.IsInside(focused, QueueBar))
             {
                 return;
             }
@@ -260,18 +260,5 @@ public sealed partial class ToCadView : UserControl
 
             target?.Focus(FocusState.Programmatic);
         });
-    }
-
-    private static bool IsInside(DependencyObject element, DependencyObject container)
-    {
-        for (var current = element; current is not null; current = VisualTreeHelper.GetParent(current))
-        {
-            if (ReferenceEquals(current, container))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

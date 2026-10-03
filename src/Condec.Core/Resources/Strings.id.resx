@@ -114,7 +114,6 @@
   <data name="History.FileGone" xml:space="preserve"><value>{0} sudah tidak ada di lokasi semula. Folder tujuannya yang dibuka.</value></data>
   <data name="History.FileAndFolderGone" xml:space="preserve"><value>{0} dan foldernya sudah tidak ada.</value></data>
   <data name="Input.DropFolder" xml:space="preserve"><value>Seret file, bukan folder.</value></data>
-  <data name="Input.DropMany" xml:space="preserve"><value>Seret satu file saja. Condec mengonversi file satu per satu.</value></data>
   <data name="Input.DropUnreadable" xml:space="preserve"><value>File yang diseret tidak bisa dibaca dari tempatnya. Salin dulu ke folder di komputer ini, lalu coba lagi.</value></data>
   <data name="Input.Unsupported" xml:space="preserve"><value>File {0} belum bisa dikonversi. Format yang bisa dipilih: {1}.</value></data>
   <data name="Input.UnsupportedNoExtension" xml:space="preserve"><value>File tanpa ekstensi belum bisa dikonversi. Format yang bisa dipilih: {0}.</value></data>
@@ -138,7 +137,6 @@
   <data name="Shell.NoApp" xml:space="preserve"><value>File tersimpan, tetapi tidak ada aplikasi yang bisa membukanya.</value></data>
   <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer tidak bisa dibuka.</value></data>
   <data name="Drag.Caption" xml:space="preserve"><value>Pilih file ini</value></data>
-  <data name="Input.Choose" xml:space="preserve"><value>Pilih file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>File sumber</value></data>
   <data name="Source.ChangeSpoken" xml:space="preserve"><value>Ganti file sumber</value></data>
   <data name="Source.Change" xml:space="preserve"><value>Ganti</value></data>
@@ -422,7 +420,7 @@
   <data name="Architecture.Unit.Inches" xml:space="preserve"><value>inci</value></data>
   <data name="Architecture.Unit.Feet" xml:space="preserve"><value>kaki</value></data>
   <data name="Architecture.Unit.Unitless" xml:space="preserve"><value>tanpa satuan</value></data>
-  <data name="Architecture.FromCad.DropHere" xml:space="preserve"><value>Seret file DWG atau DXF ke sini</value></data>
+  <data name="Architecture.FromCad.DropHere" xml:space="preserve"><value>Seret satu atau beberapa file DWG atau DXF ke sini</value></data>
   <data name="Architecture.FromCad.DropFormats" xml:space="preserve"><value>DWG, DXF → PNG, JPG, PDF</value></data>
   <data name="Architecture.FromCad.Unsupported" xml:space="preserve"><value>File {0} tidak bisa digambar di sini. Pakai file DWG atau DXF.</value></data>
   <data name="Architecture.FromCad.UnsupportedNoExtension" xml:space="preserve"><value>File ini tidak punya ekstensi. Pakai file DWG atau DXF.</value></data>
@@ -541,4 +539,6 @@
   <data name="Queue.Blocked.Nothing" xml:space="preserve"><value>Item {0} tidak punya apa pun untuk dikonversi. Centang objeknya, atau hapus dari antrean.</value></data>
   <data name="Queue.Failed.Title" xml:space="preserve"><value>Item ini tidak bisa dibaca</value></data>
   <data name="Architecture.Reading.CancelledSome" xml:space="preserve"><value>Pembacaan dihentikan. Yang sudah dibaca tetap di antrean.</value></data>
+  <data name="Queue.Blocked.NoLayer" xml:space="preserve"><value>Item {0} tidak menampilkan layer apa pun. Tampilkan minimal satu layer, atau hapus dari antrean.</value></data>
+  <data name="Queue.OverLimitDropped" xml:space="preserve"><value>Antrean memuat paling banyak {0} item, jadi {1} file tidak diambil.</value></data>
 </root>

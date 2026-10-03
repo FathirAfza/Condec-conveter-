@@ -7,6 +7,7 @@ using Condec.Core.Architecture;
 using Condec.Core.Localization;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
@@ -26,6 +27,24 @@ internal static class PreviewBitmap
 
         bitmap.Invalidate();
         return bitmap;
+    }
+}
+
+/// <summary>Walks the visual tree.</summary>
+internal static class ViewTree
+{
+    /// <summary>Whether <paramref name="element"/> is <paramref name="container"/> or lies inside it.</summary>
+    public static bool IsInside(DependencyObject element, DependencyObject container)
+    {
+        for (var current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (ReferenceEquals(current, container))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
