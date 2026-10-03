@@ -20,9 +20,15 @@ public interface IUpscaleModel : IDisposable
     float[] RunTile(float[] input, int tileSize);
 }
 
-/// <summary>What the user chose for an upscale: the exact size of the result and the engine that renders it.</summary>
+/// <summary>What the user chose for an upscale: the exact size of the result, the engine that renders it, and the network.</summary>
 /// <param name="OutputWidth">Pixels. The result is rendered 4 times larger by the network and resized to this.</param>
 /// <param name="OutputHeight">Pixels.</param>
 /// <param name="Engine">The engine from Settings; when it can't start, the CPU takes over and a note says so.</param>
 /// <param name="TileSize">One of <see cref="TiledUpscaler.TileSizes"/>: the largest that fits the memory limit (<see cref="UpscaleMemory"/>).</param>
-public sealed record UpscaleOptions(int OutputWidth, int OutputHeight, RenderEngine Engine, int TileSize = TiledUpscaler.DefaultTileSize) : ConversionOptions;
+/// <param name="Style">Which bundled network renders (<see cref="UpscaleStyle"/>).</param>
+public sealed record UpscaleOptions(
+    int OutputWidth,
+    int OutputHeight,
+    RenderEngine Engine,
+    int TileSize = TiledUpscaler.DefaultTileSize,
+    UpscaleStyle Style = UpscaleStyle.Sharp) : ConversionOptions;

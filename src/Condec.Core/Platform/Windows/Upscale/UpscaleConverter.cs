@@ -146,13 +146,13 @@ public sealed class UpscaleConverter : IReencodingConverter
         }
         else
         {
-            var status = UpscaleModelLocator.GetStatus();
+            var status = UpscaleModelLocator.GetStatus(options.Style);
             if (status != UpscaleModelStatus.Ready)
             {
                 throw new UpscaleModelUnavailableException(status);
             }
 
-            model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, gpu, options.TileSize);
+            model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath(options.Style), gpu, options.TileSize);
         }
 
         if (gpu && model is OnnxUpscaleModel { Engine: RenderEngine.Cpu })

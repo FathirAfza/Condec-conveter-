@@ -119,21 +119,43 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public bool HasModelProblem => ModelProblem is not null;
 
-    /// <summary>Checks once that the bundled model is there and intact; the first check reads the whole file.</summary>
+    private readonly Dictionary<UpscaleStyle, UpscaleModelStatus> _modelStatus = [];
+
+    /// <summary>Checks once that each bundled network is there and intact; the first check reads the whole file.</summary>
     public async Task InitializeAsync()
     {
-        var status = await Task.Run(UpscaleModelLocator.GetStatus);
-        ModelProblem = status switch
+        foreach (var style in Enum.GetValues<UpscaleStyle>())
         {
+            var status = await Task.Run(() => UpscaleModelLocator.GetStatus(style));
+            _modelStatus[style] = status;
+            if (status != UpscaleModelStatus.Ready)
+            {
+                _log.Error($"The {style} upscale model is {status}");
+            }
+        }
+
+        ModelProblem = ProblemOf(Style);
+    }
+
+    /// <summary>
+    /// What is wrong with the network of <paramref name="style"/>, if anything; nothing before it has been checked. When the
+    /// other style's network is fine, the message names both, so it doesn't claim nothing can be upscaled.
+    /// </summary>
+    private string? ProblemOf(UpscaleStyle style)
+    {
+        var other = style == UpscaleStyle.Faithful ? UpscaleStyle.Sharp : UpscaleStyle.Faithful;
+        var otherIsReady = _modelStatus.TryGetValue(other, out var otherStatus) && otherStatus == UpscaleModelStatus.Ready;
+        return _modelStatus.GetValueOrDefault(style, UpscaleModelStatus.Ready) switch
+        {
+            UpscaleModelStatus.Missing when otherIsReady => Loc.Format("Error.UpscaleStyleMissing", StyleName(style), StyleName(other)),
+            UpscaleModelStatus.Damaged when otherIsReady => Loc.Format("Error.UpscaleStyleDamaged", StyleName(style), StyleName(other)),
             UpscaleModelStatus.Missing => Loc.Get("Error.UpscaleModelMissing"),
             UpscaleModelStatus.Damaged => Loc.Get("Error.UpscaleModelDamaged"),
             _ => null,
         };
-        if (status != UpscaleModelStatus.Ready)
-        {
-            _log.Error($"The upscale model is {status}");
-        }
     }
+
+    private static string StyleName(UpscaleStyle style) => Loc.Get(style == UpscaleStyle.Faithful ? "Upscale.Style.Faithful" : "Upscale.Style.Sharp");
 
     // ---- State ----
 
@@ -831,6 +853,19 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     partial void OnFormatIndexChanged(int value) => RaiseEstimates();
 
+    // ---- Style ----
+
+    /// <summary>0 for Sharp, 1 for Faithful (the RadioButtons' selected index). One style for every picture, like the format.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StyleCaption))]
+    public partial int StyleIndex { get; set; }
+
+    private UpscaleStyle Style => StyleIndex == 1 ? UpscaleStyle.Faithful : UpscaleStyle.Sharp;
+
+    public string StyleCaption => Loc.Get(Style == UpscaleStyle.Faithful ? "Upscale.Style.FaithfulCaption" : "Upscale.Style.SharpCaption");
+
+    partial void OnStyleIndexChanged(int value) => ModelProblem = ProblemOf(Style);
+
     // ---- Engine and estimate ----
 
     /// <summary>"GPU · AMD Radeon(TM) Graphics": the engine chosen in Settings.</summary>
@@ -987,7 +1022,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         }
 
         _lastScale = Scale;
-        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize)));
+        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style)));
     }
 
     [RelayCommand]
@@ -1113,7 +1148,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
                 item.File.Path,
                 extension,
                 names[i],
-                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize)),
+                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style)),
             item.Scale,
             item.Name,
             item.Width,
@@ -1156,14 +1191,14 @@ public sealed partial class UpscaleViewModel : ObservableObject
         using var cancellation = new CancellationTokenSource();
         _cancellation = cancellation;
         var started = System.Diagnostics.Stopwatch.StartNew();
-        _log.Info($"Upscale batch started: {rows.Count} pictures on {_lastEngine}");
+        _log.Info($"Upscale batch started: {rows.Count} pictures on {_lastEngine}, {string.Join(", ", rows.Select(r => ((UpscaleOptions)_batch[r].Job.Options!).Style).Distinct())}");
         IReadOnlyList<BatchItemResult> outcomes = [];
         try
         {
             // Measured once per tile size before the first picture, as a single upscale does (DESIGN §8).
-            foreach (var tileSize in rows.Select(r => ((UpscaleOptions)_batch[r].Job.Options!).TileSize).Distinct())
+            foreach (var options in rows.Select(r => (UpscaleOptions)_batch[r].Job.Options!).DistinctBy(o => o.TileSize))
             {
-                await MeasureEngineIfNeededAsync(_lastEngine, tileSize, cancellation.Token);
+                await MeasureEngineIfNeededAsync(_lastEngine, options.TileSize, options.Style, cancellation.Token);
             }
 
             // Created here, on the UI thread, so progress reports come back to it.
@@ -1336,10 +1371,11 @@ public sealed partial class UpscaleViewModel : ObservableObject
         // Created here, on the UI thread, so progress reports come back to it.
         var progress = new Progress<PipelineProgress>(OnProgress);
         var started = System.Diagnostics.Stopwatch.StartNew();
-        _log.Info($"Upscale started: {ScaleText.Format(_lastScale)} on {_lastEngine}");
+        var options = (UpscaleOptions)job.Options!;
+        _log.Info($"Upscale started: {ScaleText.Format(_lastScale)} on {_lastEngine}, {options.Style}");
         try
         {
-            await MeasureEngineIfNeededAsync(_lastEngine, ((UpscaleOptions)job.Options!).TileSize, cancellation.Token);
+            await MeasureEngineIfNeededAsync(_lastEngine, options.TileSize, options.Style, cancellation.Token);
 
             // Hashing and verification run on a worker thread; the window stays responsive.
             var result = await Task.Run(() => _pipeline.RunAsync(job, progress, cancellation.Token), CancellationToken.None);
@@ -1377,18 +1413,19 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     /// <summary>
     /// The first upscale on an engine measures its speed (one tile to warm up, three timed; DESIGN §8), which the estimates then
-    /// use. An engine that can't run the model is left unmeasured: the converter falls back to the CPU and says so.
+    /// use. An engine that can't run the model is left unmeasured: the converter falls back to the CPU and says so. The
+    /// network of <paramref name="style"/> is the one timed; both styles are the same network, so one speed serves both.
     /// </summary>
-    private async Task MeasureEngineIfNeededAsync(RenderEngine engine, int tileSize, CancellationToken ct)
+    private async Task MeasureEngineIfNeededAsync(RenderEngine engine, int tileSize, UpscaleStyle style, CancellationToken ct)
     {
-        if (_settings.GetThroughput(engine, tileSize) is not null || UpscaleModelLocator.GetStatus() != UpscaleModelStatus.Ready)
+        if (_settings.GetThroughput(engine, tileSize) is not null || UpscaleModelLocator.GetStatus(style) != UpscaleModelStatus.Ready)
         {
             return;
         }
 
         Steps[0].Detail = Loc.Get("Upscale.Step.Measuring");
         IsIndeterminate = true;
-        using var workload = new UpscaleBenchmarkWorkload();
+        using var workload = new UpscaleBenchmarkWorkload(style);
         try
         {
             var speed = await _benchmark.MeasureAsync(engine, workload, tileSize, ct);

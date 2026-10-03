@@ -559,4 +559,11 @@
   <data name="Upscale.Batch.SavedCount" xml:space="preserve"><value>{0} of {1} pictures</value></data>
   <data name="Upscale.Batch.RetryFailed" xml:space="preserve"><value>Try the failed pictures again</value></data>
   <data name="Upscale.Batch.RetryRest" xml:space="preserve"><value>Upscale the rest</value></data>
+  <data name="Upscale.Style" xml:space="preserve"><value>Result style</value></data>
+  <data name="Upscale.Style.Sharp" xml:space="preserve"><value>Sharp</value></data>
+  <data name="Upscale.Style.Faithful" xml:space="preserve"><value>Faithful</value></data>
+  <data name="Upscale.Style.SharpCaption" xml:space="preserve"><value>Adds convincing detail. Best for reasonably clear photos; on small or heavily compressed pictures the texture can be invented.</value></data>
+  <data name="Upscale.Style.FaithfulCaption" xml:space="preserve"><value>Keeps to the shapes in the picture, without invented texture. Suits small, blurry or heavily compressed pictures; the result is softer.</value></data>
+  <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>The {0} model isn't in this copy of Condec. Choose {1} to upscale, or reinstall Condec (run tools\fetch-model.ps1 if you built it yourself).</value></data>
+  <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>The {0} model file is damaged or isn't the one released with Condec, so it isn't used. Choose {1} to upscale, or reinstall Condec.</value></data>
 </root>

@@ -8,8 +8,10 @@ namespace Condec.Core.Upscale;
 /// <summary>
 /// The tile the engine benchmark times (DESIGN §8): the real network on a full-size tile of a made-up picture, on the
 /// engine that will render. The first call loads the model, which <see cref="EngineBenchmark"/> leaves out of the timing.
+/// Both styles are the same network, so the speed measured with one holds for the other.
 /// </summary>
-public sealed class UpscaleBenchmarkWorkload : IBenchmarkWorkload, IDisposable
+/// <param name="style">The network to time: the one the upscale is about to use, so it is known to be there.</param>
+public sealed class UpscaleBenchmarkWorkload(UpscaleStyle style) : IBenchmarkWorkload, IDisposable
 {
     private float[]? _tile;
     private OnnxUpscaleModel? _model;
@@ -22,7 +24,7 @@ public sealed class UpscaleBenchmarkWorkload : IBenchmarkWorkload, IDisposable
         if (_model is null || _engine != engine || _tileSize != tileSize)
         {
             _model?.Dispose();
-            _model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, engine == RenderEngine.Gpu, tileSize);
+            _model = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath(style), engine == RenderEngine.Gpu, tileSize);
             _engine = engine;
             _tileSize = tileSize;
             _tile = MakeTile(tileSize);

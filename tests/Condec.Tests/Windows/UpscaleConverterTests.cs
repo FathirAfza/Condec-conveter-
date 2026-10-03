@@ -257,12 +257,25 @@ public sealed class UpscaleConverterTests : IDisposable
 
     // ---- The real network (skipped until tools\fetch-model.ps1 has put it next to the tests) ----
 
-    [Fact]
-    public void TheBundledModel_IsTheFileThatWasReleased()
-    {
-        Assert.SkipWhen(!File.Exists(UpscaleModelLocator.ModelPath), "The upscale model has not been fetched (tools\\fetch-model.ps1).");
+    private static void SkipWithout(UpscaleStyle style) =>
+        Assert.SkipWhen(!File.Exists(UpscaleModelLocator.ModelPath(style)), $"The {style} upscale model has not been fetched (tools\\fetch-model.ps1).");
 
-        Assert.Equal(UpscaleModelStatus.Ready, UpscaleModelLocator.GetStatus());
+    [Theory]
+    [InlineData(UpscaleStyle.Sharp)]
+    [InlineData(UpscaleStyle.Faithful)]
+    public void TheBundledModel_IsTheFileThatWasReleased(UpscaleStyle style)
+    {
+        SkipWithout(style);
+
+        Assert.Equal(UpscaleModelStatus.Ready, UpscaleModelLocator.GetStatus(style));
+    }
+
+    [Fact]
+    public void EachStyle_HasItsOwnFile_AndItsOwnHash()
+    {
+        Assert.NotEqual(UpscaleModelLocator.ModelPath(UpscaleStyle.Sharp), UpscaleModelLocator.ModelPath(UpscaleStyle.Faithful));
+        Assert.NotEqual(UpscaleModelLocator.ExpectedSha256(UpscaleStyle.Sharp), UpscaleModelLocator.ExpectedSha256(UpscaleStyle.Faithful));
+        Assert.EndsWith(Path.Combine("Models", "realesrnet-x4plus", "model.onnx"), UpscaleModelLocator.ModelPath(UpscaleStyle.Faithful));
     }
 
     [Fact]
@@ -271,14 +284,24 @@ public sealed class UpscaleConverterTests : IDisposable
         var fake = _dir.File("model.onnx");
         File.WriteAllText(fake, "not a network");
 
-        Assert.Equal(UpscaleModelStatus.Damaged, UpscaleModelLocator.GetStatus(fake));
-        Assert.Equal(UpscaleModelStatus.Missing, UpscaleModelLocator.GetStatus(_dir.File("absent.onnx")));
+        Assert.Equal(UpscaleModelStatus.Damaged, UpscaleModelLocator.GetStatus(fake, UpscaleModelLocator.SharpSha256));
+        Assert.Equal(UpscaleModelStatus.Missing, UpscaleModelLocator.GetStatus(_dir.File("absent.onnx"), UpscaleModelLocator.SharpSha256));
     }
 
     [Fact]
-    public async Task TheRealNetwork_EnlargesAPictureOnTheCpu_AndKeepsItsShapes()
+    public void TheOtherStylesFile_IsNotAcceptedInItsPlace()
     {
-        Assert.SkipWhen(!File.Exists(UpscaleModelLocator.ModelPath), "The upscale model has not been fetched (tools\\fetch-model.ps1).");
+        SkipWithout(UpscaleStyle.Sharp);
+
+        Assert.Equal(UpscaleModelStatus.Damaged, UpscaleModelLocator.GetStatus(UpscaleModelLocator.ModelPath(UpscaleStyle.Sharp), UpscaleModelLocator.FaithfulSha256));
+    }
+
+    [Theory]
+    [InlineData(UpscaleStyle.Sharp)]
+    [InlineData(UpscaleStyle.Faithful)]
+    public async Task TheRealNetwork_EnlargesAPictureOnTheCpu_AndKeepsItsShapes(UpscaleStyle style)
+    {
+        SkipWithout(style);
         var source = _dir.File("gambar.png");
         await WriteSourceAsync(source);
         var pipeline = new ConversionPipeline(
@@ -286,7 +309,7 @@ public sealed class UpscaleConverterTests : IDisposable
             new TempFileJournal(_dir.File("journal")));
 
         var result = await pipeline.RunAsync(
-            new ConversionJob(source, ".png", _dir.File("hasil.png"), new UpscaleOptions(64, 64, RenderEngine.Cpu)), null, Ct);
+            new ConversionJob(source, ".png", _dir.File("hasil.png"), new UpscaleOptions(64, 64, RenderEngine.Cpu, Style: style)), null, Ct);
 
         var image = await ReadAsync(result.OutputPath);
         Assert.Equal((64u, 64u), (image.Width, image.Height));
@@ -296,11 +319,33 @@ public sealed class UpscaleConverterTests : IDisposable
     }
 
     [Fact]
+    public void TheTwoStyles_AreDifferentNetworks()
+    {
+        SkipWithout(UpscaleStyle.Sharp);
+        SkipWithout(UpscaleStyle.Faithful);
+        using var sharp = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath(UpscaleStyle.Sharp), gpu: false, tileSize: 48);
+        using var faithful = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath(UpscaleStyle.Faithful), gpu: false, tileSize: 48);
+
+        var tile = new float[3 * 48 * 48];
+        var random = new Random(7);
+        for (var i = 0; i < tile.Length; i++)
+        {
+            tile[i] = (float)random.NextDouble();
+        }
+
+        // The result array is reused per model, so the first is copied before the second runs.
+        var fromSharp = (float[])sharp.RunTile(tile, 48).Clone();
+        var fromFaithful = faithful.RunTile(tile, 48);
+        Assert.Equal(fromSharp.Length, fromFaithful.Length);
+        Assert.True(fromSharp.Zip(fromFaithful).Average(p => Math.Abs(p.First - p.Second)) > 0.01, "The two styles gave the same result.");
+    }
+
+    [Fact]
     public async Task TheRealNetwork_OnTheGpu_AgreesWithTheCpu()
     {
-        Assert.SkipWhen(!File.Exists(UpscaleModelLocator.ModelPath), "The upscale model has not been fetched (tools\\fetch-model.ps1).");
-        using var cpu = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, gpu: false);
-        using var gpu = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath, gpu: true);
+        SkipWithout(UpscaleStyle.Sharp);
+        using var cpu = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath(UpscaleStyle.Sharp), gpu: false);
+        using var gpu = OnnxUpscaleModel.Open(UpscaleModelLocator.ModelPath(UpscaleStyle.Sharp), gpu: true);
         Assert.SkipWhen(gpu.Engine != RenderEngine.Gpu, "No GPU can run DirectML here: " + gpu.GpuFailure);
 
         const int size = TiledUpscaler.DefaultTileSize;

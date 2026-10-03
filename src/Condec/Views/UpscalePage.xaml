@@ -263,7 +263,7 @@
                             </Grid>
                         </Border>
 
-                        <!--  Right card: engine, scale, percentage, resolution, format  -->
+                        <!--  Right card: engine, scale, percentage, resolution, format, style  -->
                         <Border
                             Grid.Column="1"
                             Padding="24"
@@ -401,6 +401,22 @@
                                     </RadioButtons>
                                 </StackPanel>
                                 </ContentControl>
+
+                                <!--  Outside the choices above: when one network is missing, the other can still be picked.  -->
+                                <StackPanel Spacing="4">
+                                    <RadioButtons
+                                        IsEnabled="{x:Bind ViewModel.HasSource, Mode=OneWay}"
+                                        MaxColumns="2"
+                                        SelectedIndex="{x:Bind ViewModel.StyleIndex, Mode=TwoWay}"
+                                        local:L.Header="Upscale.Style">
+                                        <RadioButton local:L.Content="Upscale.Style.Sharp" />
+                                        <RadioButton local:L.Content="Upscale.Style.Faithful" />
+                                    </RadioButtons>
+                                    <TextBlock
+                                        Style="{StaticResource SecondaryCaptionTextStyle}"
+                                        Text="{x:Bind ViewModel.StyleCaption, Mode=OneWay}"
+                                        TextWrapping="WrapWholeWords" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </Grid>

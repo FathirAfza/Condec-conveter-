@@ -11,7 +11,7 @@ Built with WinUI 3 (Windows App SDK) and .NET 10, packaged as MSIX. License: GPL
 - **Pages.** A PDF or a multi-page TIFF going to a picture format becomes one picture per page: all pages, the first page, or pages you type such as `1-3, 5`.
 - **Local history.** File name, format, time, output location and verification status are kept in `%LOCALAPPDATA%\Condec\history.json`. No copy of any file's contents is kept. History can be cleared or switched off.
 - **PDF → DXF/DWG.** Lines, arcs, circles, curves and text of a vector PDF become editable CAD objects, with a choice of unit and scale. Choose all pages, the first page, or pages such as `1-3, 5`; they become one DWG per page, or one DWG with the pages side by side. A scanned PDF is treated like a picture.
-- **Upscale pictures.** Real-ESRGAN x4plus enlarges a picture 1.5× to 16× (as far as the device allows) on the GPU through DirectML, or on the CPU, with ONNX Runtime. The model ships inside the app and runs on the device. The first upscale on an engine measures its speed, so the time estimate is real, not invented. Several pictures form a queue: each gets its own scale, then all of them are upscaled into a folder you pick (up to 20 at a time).
+- **Upscale pictures.** Real-ESRGAN enlarges a picture 1.5× to 16× (as far as the device allows) on the GPU through DirectML, or on the CPU, with ONNX Runtime, in one of two styles: Sharp (x4plus, adds convincing detail) or Faithful (Real-ESRNet x4plus, keeps to the shapes of small or heavily compressed pictures without invented texture). Both models ship inside the app and run on the device. The first upscale on an engine measures its speed, so the time estimate is real, not invented. Several pictures form a queue: each gets its own scale, then all of them are upscaled into a folder you pick (up to 20 at a time).
 - **Architecture page.** A picture or scanned drawing is read on the device: wall lines, doors and windows, text (Windows OCR), logos and tables are found and listed, and you untick what should not become CAD. Blurry areas are marked, and Condec can upscale the picture first. The result is a DWG (or DXF) with the layers WALLS, OPENINGS, TEXT, LOGO and TABLE. The other direction turns a DWG or DXF into PDF, PNG or JPG with a preview, paper size, DPI and layer choice. Several pictures, PDF pages or DXF files of one kind form a queue: each item is read in the background and reviewed on its own (objects, upscale, calibration), then all of them are converted and saved into a folder you pick. Several DWG and DXF files form the same kind of queue in the other direction, each with its own layers and one set of result options. The queue holds up to 20 items. Both directions live on the Architecture page, not on Convert File.
 - **Your language.** The app follows the Windows language list: English and Indonesian today, English for any other language.
 - **Fluent look.** Follows the Windows 11 light, dark and high-contrast themes.
@@ -98,14 +98,16 @@ Prerequisites on Windows 10 1809 or later:
 - .NET 10 SDK.
 - Windows App Runtime 2.5 (`Microsoft.WindowsAppRuntime.2`) to run the app. To deploy from an IDE, Visual Studio with the WinUI / Windows App SDK workload and Developer Mode on.
 - PowerShell for the scripts in `tools\`.
+- Python with numpy and onnx (`pip install numpy onnx`) for `tools\fetch-model.ps1`, which makes the Faithful upscale model.
 
 ```powershell
 # Once: download the official LibreOffice MSI (SHA-256 pinned), extract it without installing,
 # and trim it into third_party\libreoffice (ignored by git).
 tools\fetch-libreoffice.ps1
 
-# Once: download the upscale model (Real-ESRGAN x4plus as ONNX, SHA-256 pinned) into
-# third_party\models (ignored by git). Without it the app builds, but Upscale reports the model missing.
+# Once: download the Sharp upscale model (Real-ESRGAN x4plus as ONNX) and make the Faithful one from the
+# official Real-ESRNet x4plus weights, both SHA-256 pinned, into third_party\models (ignored by git).
+# Without them the app builds, but Upscale reports the model missing. -Python picks another Python.
 tools\fetch-model.ps1
 
 dotnet build Condec.sln

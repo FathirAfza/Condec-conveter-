@@ -48,9 +48,10 @@
     <Content Include="..\..\third_party\libreoffice\**" Link="LibreOffice\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <!-- The upscale model from tools\fetch-model.ps1 (Real-ESRGAN x4plus as ONNX, BSD-3-Clause), packaged unmodified at Models\. -->
+  <!-- The upscale models from tools\fetch-model.ps1 (Real-ESRGAN x4plus and Real-ESRNet x4plus as ONNX, BSD-3-Clause), at
+       Models\<name>\model.onnx. Only the model files: nothing else that lands in third_party\models is packaged. -->
   <ItemGroup Condition="Exists('..\..\third_party\models\realesrgan-x4plus\model.onnx')">
-    <Content Include="..\..\third_party\models\**" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\..\third_party\models\**\model.onnx" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- The license and third-party notice files of ONNX Runtime and DirectML go with their DLLs (THIRD-PARTY-NOTICES.md §1). -->

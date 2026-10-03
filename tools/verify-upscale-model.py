@@ -11,6 +11,12 @@ https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plu
 It needs numpy, onnx, onnxruntime and torch (pip install numpy onnx onnxruntime torch). It is a one-off audit for whoever
 changes the bundled model, not part of the build or the app. Result when it was written (2026-10-02): all 702 tensors of
 the checkpoint are bit-identical in the ONNX, and torch and ONNX Runtime agree above 100 dB PSNR on three test inputs.
+
+The Faithful model (tools/make-faithful-model.py) is checked the same way:
+
+  python tools/verify-upscale-model.py third_party/models/realesrnet-x4plus/model.onnx third_party/checkpoints/RealESRNet_x4plus.pth
+
+Result (2026-10-03): 702 of 702 tensors bit-identical, torch and ONNX Runtime agree at 127.7 to 130.0 dB PSNR.
 """
 import sys
 

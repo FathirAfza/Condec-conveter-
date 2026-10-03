@@ -559,4 +559,11 @@
   <data name="Upscale.Batch.SavedCount" xml:space="preserve"><value>{0} dari {1} gambar</value></data>
   <data name="Upscale.Batch.RetryFailed" xml:space="preserve"><value>Coba lagi gambar yang gagal</value></data>
   <data name="Upscale.Batch.RetryRest" xml:space="preserve"><value>Upscale sisanya</value></data>
+  <data name="Upscale.Style" xml:space="preserve"><value>Gaya hasil</value></data>
+  <data name="Upscale.Style.Sharp" xml:space="preserve"><value>Tajam</value></data>
+  <data name="Upscale.Style.Faithful" xml:space="preserve"><value>Setia</value></data>
+  <data name="Upscale.Style.SharpCaption" xml:space="preserve"><value>Menambah detail yang meyakinkan. Paling bagus untuk foto yang cukup jelas; pada gambar kecil atau berkompresi berat, teksturnya bisa dikarang.</value></data>
+  <data name="Upscale.Style.FaithfulCaption" xml:space="preserve"><value>Mengikuti bentuk aslinya, tanpa tekstur karangan. Cocok untuk gambar kecil, buram, atau berkompresi berat; hasilnya lebih lembut.</value></data>
+  <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>Model {0} tidak ada di salinan Condec ini. Pilih {1} untuk meng-upscale, atau pasang ulang Condec (jalankan tools\fetch-model.ps1 bila kamu membangunnya sendiri).</value></data>
+  <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>File model {0} rusak atau bukan yang dirilis bersama Condec, jadi tidak dipakai. Pilih {1} untuk meng-upscale, atau pasang ulang Condec.</value></data>
 </root>

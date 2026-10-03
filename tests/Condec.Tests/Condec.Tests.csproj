@@ -30,9 +30,9 @@
     <Compile Remove="Windows\**" />
   </ItemGroup>
 
-  <!-- The upscale model from tools\fetch-model.ps1, when it has been fetched; the tests that need the real network skip without it. -->
+  <!-- The upscale models from tools\fetch-model.ps1, when they have been fetched; the tests that need the real network skip without them. -->
   <ItemGroup Condition="Exists('..\..\third_party\models\realesrgan-x4plus\model.onnx')">
-    <Content Include="..\..\third_party\models\**" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\third_party\models\**\model.onnx" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
