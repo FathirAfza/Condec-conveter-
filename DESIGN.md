@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.8 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.9 · diubah terakhir 2026-10-03 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -191,7 +191,7 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 ```
 
 **Keadaan Input**
-- Kiri: kalau belum ada file, area seret (garis putus-putus, ikon 32, "Seret file ke sini", tombol "Pilih file…"). Kalau sudah ada file: ikon jenis file 40, label "File sumber" (Caption), nama (BodyStrong, terpotong ellipsis), jenis dan ukuran (Caption, mis. "Dokumen Word · 2,4 MB"), `HyperlinkButton` "Ganti".
+- Kiri: kalau belum ada file, area seret (garis putus-putus, ikon 32, "Seret file ke sini", tombol "Pilih file…"). Dialog dan area seret menerima **satu file atau lebih** dari jenis yang sama; dua file atau lebih mengubah panel kiri dan menambah daftar file (§6.1.3). Kalau sudah ada satu file: ikon jenis file 40, label "File sumber" (Caption), nama (BodyStrong, terpotong ellipsis), jenis dan ukuran (Caption, mis. "Dokumen Word · 2,4 MB"), `HyperlinkButton` "Ganti".
 - Tengah: ikon panah ke kanan 24.
 - Kanan (padding 24): label "Ubah ke format", `ComboBox` format, teks bantu (Caption), `HyperlinkButton` "Butuh DXF atau DWG? Buka Architecture" (memilih item Architecture di menu).
   - Cakupan: Convert File hanya menawarkan konversi yang bukan dari dan bukan ke DXF/DWG. File DXF/DWG yang dipilih atau diseret ke sini mendapat `InfoBar` Informational yang mengarahkan ke Architecture ("File .dxf diproses di Architecture. Buka dari menu."). Sebaliknya di Architecture (§6.3).
@@ -204,7 +204,7 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
   - Target MP4, WMV: "Ukuran video" dengan "Sama dengan sumber" (bawaan), "1080p (Full HD)", "720p (HD)", "480p", dan teks bantu Caption "Video tidak pernah diperbesar, dan bentuk gambarnya tetap sama."
   - Pilihan bertahan sampai aplikasi ditutup (tidak disimpan ke Settings) dan berlaku juga untuk "Coba lagi". Detailnya di §6.1.2.
 - Format sumber tidak ditawarkan sebagai tujuan, **kecuali** MP3, M4A, WMA, MP4, dan WMV: itu boleh dikonversi ke format yang sama supaya kualitas atau ukurannya bisa diubah (memperkecil MP4, menurunkan bitrate MP3). Nama yang disarankan di dialog simpan lalu diberi akhiran " (hasil)" (Inggris " (converted)"), supaya yang pertama ditawarkan bukan menimpa sumber. Menyimpan di atas sumber tetap ditolak (`Error.SameFile`).
-- Klik tombol → `FileSavePicker`, lalu keadaan Proses.
+- Klik tombol → `FileSavePicker`, lalu keadaan Proses. Bila hasilnya lebih dari satu file (beberapa file, atau beberapa halaman), tombolnya "Konversi dan simpan N file…" dan yang dibuka `FolderPicker` (§6.1.3).
 
 **Keadaan Proses**
 - Judul `SubtitleTextBlockStyle`: "Mengonversi `<nama file>`". Caption: "Ke `<FORMAT>` · disimpan sebagai `<path>`". Tombol "Batal" di kanan.
@@ -228,7 +228,7 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 | Tingkat | Teks (kunci resource) | Kapan |
 |---|---|---|
 | Warning | "File sumber tampak terpotong atau rusak, jadi sebagian gambar bisa hilang atau abu-abu. Periksa hasilnya sebelum dipakai." (`Note.SourceIncomplete`) | PNG, JPEG, GIF, atau WebP yang strukturnya berakhir sebelum penanda akhirnya (§6.1.1) |
-| Informational | "File ini berisi N gambar (frame atau halaman). Hanya yang pertama yang dikonversi." (`Note.FirstFrameOnly`) | Sumber punya lebih dari satu frame (GIF animasi, TIFF banyak halaman) |
+| Informational | "File ini berisi N gambar (frame atau halaman). Hanya yang pertama yang dikonversi." (`Note.FirstFrameOnly`) | Sumber punya lebih dari satu frame dan tidak ada halaman yang dipilih (GIF animasi; TIFF banyak halaman memakai pilihan halaman, §6.1.3) |
 | Warning | "File sumber tampak terpotong atau rusak, jadi hasilnya bisa berhenti lebih awal atau ada bagian yang hilang. Periksa hasilnya sebelum dipakai." (`Note.MediaIncomplete`) | Audio atau video yang terpotong (§6.1.2) |
 
   - Catatan dikosongkan saat konversi baru dimulai (termasuk "Coba lagi") dan saat "Konversi file lain". Setiap catatan juga ditulis ke log aktivitas tanpa path: hanya jenis konversi ("`.jpg -> .png`") dan tingkatnya.
@@ -260,7 +260,7 @@ Dipakai Convert File untuk JPG, PNG, BMP, GIF, TIFF, serta WebP dan HEIC. Hanya 
 - **Format.** Sumber: JPG/JPEG, PNG, BMP, GIF, TIF/TIFF; WebP dan HEIC/HEIF hanya bila dekoder Windows-nya terpasang. Tujuan: JPG, PNG, BMP, GIF, TIFF; HEIC hanya bila Windows bisa menulisnya (§13 #15; dicek dengan satu kali tulis lalu baca). Format sumber tidak ditawarkan sebagai tujuan.
 - **Piksel.** Dibaca sebagai Bgra8 (alfa lurus), dengan rotasi EXIF diterapkan dan warna dikonversi ke sRGB. Format tanpa alfa (JPG, BMP, GIF) menerima gambar yang transparansinya dilebur ke **putih** (tidak hitam). PNG dan TIFF mempertahankan transparansi.
 - **Tidak dibawa:** metadata (EXIF, GPS, profil ICC, teks) dan kualitas khusus. Hanya piksel dan DPI yang ditulis; encoder Windows memakai nilai bawaannya, tanpa pengaturan kualitas (§13 #19).
-- **Banyak frame.** Hanya frame pertama yang dikonversi; catatan Informational memberi tahu jumlahnya (§6.1 Selesai).
+- **Banyak frame.** TIFF banyak halaman: halaman yang dipilih (§6.1.3), satu hasil per halaman, dibaca lewat `BitmapDecoder.GetFrameAsync`. GIF animasi: hanya frame pertama, dengan catatan Informational yang memberi tahu jumlahnya (§6.1 Selesai); frame GIF bukan halaman (§13 #41).
 - **Sumber terpotong.** Windows mendekode PNG, JPEG, dan GIF yang terpotong **tanpa galat** dan mengisi bagian yang hilang (sering abu-abu), sehingga verifikasi keluaran saja tidak menangkapnya. `ImageStructure` (Core, portabel) menelusuri struktur file: PNG sampai chunk `IEND` (termasuk 4 byte CRC-nya; nilai CRC tidak diperiksa), JPEG sampai `EOI` (`FFD9`), GIF sampai trailer `3B`, WebP sampai panjang RIFF yang dideklarasikan. Kalau berakhir lebih awal, konversi tetap jalan dan hasilnya membawa Warning. File yang terpotong di dalam header juga dihitung terpotong. BMP dan TIFF tidak diperiksa: Windows sendiri menolaknya (galat dekode). Format lain, dan struktur yang tidak bisa diikuti, tidak dinilai (tanpa catatan).
 - **Ukuran.** Gambar dibaca utuh di memori, 4 byte per piksel, dalam satu array .NET. Gambar dengan lebih dari 536.870.911 piksel (`int.MaxValue / 4`, sekitar 537 MP) ditolak sebelum didekode, dibaca dari header. Kehabisan memori (`E_OUTOFMEMORY`, yang datang sebagai `COMException`, bukan `OutOfMemoryException`) saat dekode atau encode juga menjadi galat yang sama. Pesan: `Error.ImageTooLarge` (§6.1 Gagal). Keduanya memakai `ImageTooLargeException`; angka MP dibulatkan ke bilangan bulat terdekat. Halaman PDF yang dirender menjadi gambar (PDF → PNG/JPG/HEIC pada 200 dpi, dan jalur Architecture) memakai batas dan pesan yang sama, dihitung dari ukuran halaman sebelum merender: halaman 14.400 pt (200 inci, ukuran terbesar PDF) berarti 1.600 MP dan ditolak seketika, bukan setelah setengah menit dengan galat memori.
 - **Catatan konverter** adalah jalur umum, bukan khusus gambar: `ConversionRequest.Notes` diisi konverter mana pun, dan `ConversionResult.Notes` membawanya ke layar Selesai. Konverter lain boleh memakainya di tahap berikutnya.
@@ -277,6 +277,40 @@ Dipakai Convert File untuk audio dan video. Hanya memakai `MediaTranscoder` deng
 - **Sumber terpotong.** Windows menolak MP4 dan M4A yang terpotong (galat jelas, `Error.Media`), tetapi mengonversi WAV, FLAC, WMA, WMV, dan MP3 yang terpotong tanpa galat dan hasilnya berhenti lebih awal. `MediaStructure` (Core, portabel) memeriksa: WAV dan AVI lewat ukuran RIFF, WMA dan WMV lewat ukuran file di header ASF (kecuali bendera siaran langsung), FLAC lewat total sampel di STREAMINFO dibandingkan dengan panjang hasil (selisih lebih dari 0,25 detik atau 1,5%). Hasilnya Warning `Note.MediaIncomplete`. **MP3 yang terpotong tidak bisa dikenali**: formatnya tidak menyatakan panjang.
 - **Verifikasi hasil.** Selain chunk dan hash (§6.1), hasil dibuka lagi lewat Windows: trek audio dan videonya harus jenis yang benar (mis. MP3, AAC, H.264), file audio tidak boleh punya trek video, dan panjangnya harus lebih dari nol. Ini membaca format dan panjang, bukan mendekode setiap sampel.
 - **Pengerjaan.** `MediaTranscoder` butuh menulis dengan seek (MP4 dan FLAC menulis ulang headernya), jadi hasil dibuat di `%TEMP%\Condec\media-<id>` lalu disalin ke pipeline pada akhir tahap Encode; folder itu dihapus di akhir, juga saat gagal atau dibatalkan. Progres: Decode "Membuka file" lalu Encode 0 sampai 90% mengikuti transcoder, 90 sampai 100% menyalin hasil. Pembatalan berlaku di setiap titik. Encoder perangkat keras dipakai bila ada.
+
+#### 6.1.3 Banyak file dan banyak halaman
+
+Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonversi bersamaan, dan PDF atau TIFF berhalaman banyak bisa menjadi satu file per halaman. **Hasil ke-n selalu milik file ke-n** (urutan daftar), dan tidak ada file yang ditimpa.
+
+**Jenis yang boleh bersamaan** (`SourceKinds`, Core): gambar (JPG, PNG, BMP, GIF, TIFF, HEIC/HEIF, WebP, boleh campur), PDF, dokumen (DOCX, DOC, ODT, RTF, TXT, HTML, MD), spreadsheet (XLSX, XLS, ODS), presentasi (PPTX, PPT, ODP), audio, video. DXF/DWG tetap ke Architecture. Jenis pertama yang dipilih menentukan kelompok; file jenis lain, format yang tidak didukung, file yang tidak bisa dibaca, PDF berkata sandi, dan file DXF/DWG tidak diambil, dengan `InfoBar` Warning "Beberapa file tidak diambil: a.pdf (jenisnya berbeda), b.dwg (buka di Architecture). File yang dikonversi bersamaan harus sejenis, misalnya semua gambar atau semua PDF." Kalau tidak satu pun bisa diambil: "Tidak ada file yang bisa dikonversi di sini: …". Folder yang diseret tidak diambil (Informational). File yang sudah ada di daftar tidak ditambah dua kali.
+
+**Format tujuan untuk banyak file:** format yang bisa dicapai **setiap** file, atau yang memang sudah menjadi format file itu, dan sedikitnya satu file benar-benar dikonversi ke sana (urut kemunculan). Contoh PNG + JPG: JPG ditawarkan; PNG ke JPG, sedangkan JPG ditandai "Sudah JPG, dibiarkan" dan tidak menghasilkan file. `.jpeg` = `.jpg`, `.tiff` = `.tif`, `.htm` = `.html`. MP3/M4A/WMA/MP4/WMV ke format yang sama tetap konversi sungguhan (§6.1). Bantu: "N format tersedia untuk .png, .jpg".
+
+**Keadaan Input dengan dua file atau lebih**
+- Panel kiri: ikon jenis 40, label "File sumber", judul "3 gambar" / "4 file PDF" / "2 video" (BodyStrong), Caption "Total 566 KB" atau, bila setiap file punya jumlah halaman, "16 halaman, total 3,8 MB"; `HyperlinkButton` "Ganti" (nama terbaca "Ganti file sumber").
+- Di bawah dua panel (margin atas 20): judul "Daftar file, sesuai urutan konversi" (BodyStrong) dan `HyperlinkButton` "Tambah file…" (dialog dibuka di folder file pertama). `ListView` (`SelectionMode=None`, tinggi maksimal 264, bergulir): nomor "1.", ikon 20, nama dan Caption jenis · ukuran, hasilnya di kanan ("→ foto.jpg", "→ 3 file", "Sudah JPG, dibiarkan", "Tidak ada halaman terpilih"), tombol ikon hapus (`AutomationProperties.Name="Hapus a.png dari daftar"`). Menghapus file menomori ulang daftar; menghapus sampai tersisa satu kembali ke panel satu file.
+- Opsi media (§6.1) berlaku untuk semua file.
+
+**Pilihan halaman** (PDF dan TIFF berhalaman lebih dari satu, ke tujuan gambar: PNG, JPG, HEIC, BMP, GIF, TIFF). Muncul di bawah daftar (margin atas 20, jarak 8):
+- `RadioButtons` berheader "Halaman": "Semua halaman" (bawaan), "Halaman pertama saja", "Pilih halaman". "Pilih halaman" memunculkan `TextBox` lebar 240 (placeholder "Contoh: 1-3, 5"; nama terbaca "Halaman yang dikonversi, contoh 1-3, 5"). Format: nomor, rentang `a-b`, rentang terbuka `a-`, dipisah koma; spasi boleh. Teks yang salah (kosong, 0, terbalik, huruf) menampilkan Caption warna kritis "Tulis halaman seperti 1-3, 5. Halaman pertama adalah 1." dan tombol konversi nonaktif. Halaman di atas jumlah halaman file dilewati per file.
+- Caption "N file akan disimpan", hanya bila N > 0. Bila pilihan valid tetapi tidak ada halaman yang ada di file mana pun: `InfoBar` Warning "Halaman yang dipilih tidak ada di file yang dipilih. Pilih halaman lain." dan tombol nonaktif.
+- Pilihan halaman bertahan selama file yang dipilih masih berhalaman banyak; kembali ke "Semua halaman" saat "Konversi file lain" atau saat tidak ada lagi file berhalaman banyak.
+- Tujuan lain (PDF → DOCX, dan sebagainya) selalu mengonversi seluruh file, tanpa pilihan halaman. Halaman PDF dirender 200 dpi seperti sebelumnya (§6.1.1).
+
+**Menyimpan.** Satu hasil (satu file, atau satu halaman yang dipilih) tetap lewat `FileSavePicker`. Lebih dari satu hasil: `FolderPicker` dibuka di folder file pertama, lalu nama dibuat otomatis (`OutputNames`, Core):
+- `<nama sumber>.<ext>`; satu halaman `<nama sumber>-<n>.<ext>`, nomor diberi nol di depan sepanjang jumlah halaman file itu ("-01" … "-12") supaya urut di Explorer. Konversi ke format yang sama mendapat akhiran " (hasil)" seperti dialog simpan.
+- Nama yang sudah dipakai (file di folder, file sumber, atau hasil sebelumnya di batch yang sama) mendapat " (2)", " (3)", dan seterusnya. Nama dicek lagi tepat sebelum setiap file ditulis, kalau ada file baru muncul selama batch berjalan. Tidak pernah menimpa.
+
+**Keadaan Proses (banyak hasil):** judul "Mengonversi N file", Caption "Ke PNG · disimpan di `<folder>`", tombol "Batal". `ProgressBar` dan persen untuk seluruh batch (dibulatkan ke bawah, jadi 100% hanya setelah file terakhir disimpan). Teks BodyStrong "File 2 dari 5: scan.tif, halaman 2", lalu empat tahap yang sama (§6.1) untuk file yang sedang dikerjakan. File dikerjakan **satu per satu** sesuai urutan; file yang gagal tidak menghentikan file berikutnya.
+
+**Keadaan Selesai (banyak hasil):**
+- `InfoBar` (`IsClosable=False`): semua tersimpan = Success "Konversi selesai" / "Semua N file disimpan dan lolos verifikasi chunk serta cek integritas."; sebagian gagal = Warning "Sebagian file gagal" / "X dari N file disimpan. Sisanya tidak disimpan; alasannya ada di daftar."; dihentikan setelah sebagian tersimpan = Warning "Konversi dihentikan" / "X dari N file sudah disimpan sebelum dihentikan. Sisanya tidak dikonversi."; tidak ada yang tersimpan karena gagal = Error "Konversi gagal" / "Tidak ada file yang berhasil dikonversi. Alasannya ada di daftar."
+- Tiga baris detail: Lokasi (folder), Format ("PNG, TIF → BMP"), Disimpan ("X dari N file").
+- `ListView` hasil (nama terbaca "Hasil tiap file"): nomor, nama hasil, Caption "Dari scan.tif, halaman 2", alasan gagal atau catatan konverter (Caption), status dengan **ikon dan kata** ("Terverifikasi" warna sukses, "Gagal" warna kritis, "Tidak dikonversi" sekunder), tombol folder hanya untuk yang tersimpan.
+- Tombol: "Buka folder" (aksen, bila ada yang tersimpan), "Coba lagi file yang gagal" (bila ada yang gagal; menjadi "Konversi sisanya" bila yang belum tersimpan hanya karena dihentikan) yang mengerjakan ulang baris yang belum tersimpan ke folder yang sama, "Ubah pilihan" (bila tidak ada yang tersimpan), `HyperlinkButton` "Konversi file lain".
+- Dibatalkan sebelum ada yang tersimpan: kembali ke Input dengan pilihan yang sama dan `InfoBar` "Konversi dibatalkan. Tidak ada file yang disimpan."
+- Riwayat: satu entri per file yang tersimpan; nama halaman "scan.tif, halaman 2".
+- Log aktivitas: awal dan akhir batch (jenis konversi, jumlah tersimpan, gagal, tidak dikonversi, lama) dan setiap kegagalan, tanpa path.
 
 ### 6.2 Upscale Image
 
@@ -666,12 +700,28 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 36 | Urutan objek dan layer file DWG/DXF tampil seperti di file; nama baku (WALLS dst.) diterjemahkan | `[ASUMSI]` |
 | 37 | Gambar yang sebagian besar berwarna (render, foto) menjadi satu objek "Logo dan kop" | `[ASUMSI]`; hasil CAD dari foto memang tidak berarti |
 | 38 | Dialog kalibrasi: jalur keyboard (panah + Enter) | `[TERBUKA]` belum dicoba langsung di UI; ada unit test untuk hitungannya |
+| 39 | Kelompok jenis untuk banyak file (§6.1.3): TXT, HTML, dan MD masuk "dokumen"; PDF kelompok sendiri | Kelompok diputuskan pemilik 2026-10-03; letak TXT/HTML/MD `[ASUMSI]` |
+| 40 | Pilihan halaman hanya untuk tujuan gambar, bawaan "Semua halaman"; PDF ke DOCX dan sejenisnya selalu seluruh file | `[ASUMSI]` |
+| 41 | Frame GIF animasi tidak dianggap halaman (tetap frame pertama dengan catatan); hanya PDF dan TIFF yang berhalaman | `[ASUMSI]` |
+| 42 | Nama hasil batch: "-n" dengan nol di depan sepanjang jumlah halaman; nama terpakai mendapat " (2)" sampai " (9999)" | Aturan " (2)" dan tanpa menimpa diputuskan pemilik 2026-10-03; nol di depan dan batas 9999 `[ASUMSI]` |
+| 43 | Tidak ada batas jumlah file atau halaman dalam satu batch; dikerjakan satu per satu, bukan paralel | `[ASUMSI]`. Satu per satu supaya memori sama dengan satu konversi; batas bisa ditambah bila pemilik mau |
+| 44 | Seret-lepas beberapa file sekaligus dan jalur Tab di daftar file | `[TERBUKA]` belum dicoba langsung (otomasi tidak bisa menyeret file atau mengirim Tab ke aplikasi di mesin uji); kodenya sama dengan "Pilih file…", dan kontrolnya stock dengan nama terbaca |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.9] 2026-10-03 (banyak file dan banyak halaman: Convert File)
+- **Keputusan pemilik (2026-10-03, percakapan):** PDF ke DWG/DXF belum bisa banyak halaman; semua yang bisa harus mendukung banyak halaman, dan banyak file sejenis bisa dipilih sekaligus dengan hasil ke-n milik file ke-n. Jawaban pemilik: (1) hasil PDF banyak halaman dipilih pengguna (satu file per halaman, atau satu gambar CAD gabungan); (2) satu kelompok jenis per batch; (3) Architecture ke CAD dan Upscale Image: ditinjau satu per satu dalam antrean; (4) batch disimpan ke folder yang dipilih dengan nama otomatis, nama terpakai mendapat " (2)", tidak pernah menimpa. Ini mengubah §6.1 yang sebelumnya hanya menerima satu file.
+- **Ditambah:** Convert File menerima banyak file sejenis (§6.1.3): dialog pilih banyak, seret banyak file, "Tambah file…", daftar file bernomor dengan hasil per file dan tombol hapus, tujuan yang bisa dicapai semua file, file yang sudah berformat tujuan dibiarkan.
+- **Ditambah:** pilihan halaman untuk PDF dan TIFF ke gambar ("Semua halaman", "Halaman pertama saja", "Pilih halaman" dengan rentang seperti 1-3, 5), satu hasil per halaman. Konverter gambar membaca halaman TIFF yang dipilih (§6.1.1).
+- **Ditambah:** penyimpanan batch ke folder dengan nama otomatis (`OutputNames`), proses satu per satu (`ConversionBatch`) yang lanjut melewati file gagal, layar Selesai dengan hasil tiap file, "Buka folder", "Coba lagi file yang gagal" / "Konversi sisanya", dan pembatalan di tengah batch. Satu entri Riwayat per hasil.
+- **Ditambah (Core, untuk tahap Architecture berikutnya):** `CombinedCadOptions` dan `CombinedCadBuilder`: beberapa halaman PDF vektor atau hasil analisis gambar dijadikan satu gambar CAD, berjajar ke kanan dengan jarak 10% lebar, satuan dari bagian pertama. Belum dipakai UI; antrean Architecture dan Upscale menyusul di tahap berikutnya, §6.2 dan §6.3 belum berubah.
+- **Diganti:** `ComboBox` "Halaman" lama untuk PDF → gambar (satu halaman, `Cad.PageHeader`, belum tercatat di dokumen ini) diganti pilihan halaman di atas. Kunci `Input.DropHere` diganti `Input.DropHereMany` dengan teks yang sama.
+- **Diajukan:** §13 #39 sampai #44.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1373 lulus, 0 gagal. Audit key resource: 0 tidak terpakai, kunci ID dan EN sama. Uji langsung di build portabel: 3 gambar (PNG, JPG, TIFF 3 halaman) → JPG dengan nama "foto (2).jpg" karena foto.jpg sudah ada (tidak ditimpa) dan liburan.jpg dibiarkan; PDF 4 halaman → PNG dengan "Semua halaman" (4 file), teks salah, rentang di luar halaman, dan "2-3" (gambarkerja-2.png dan -3.png); satu sumber dihapus sebelum konversi → "Sebagian file gagal" dengan alasannya → dikembalikan → "Coba lagi file yang gagal" menyimpan hapus.bmp; 4 PDF → DOCX dibatalkan sebelum file pertama selesai (kembali ke Input, tanpa file sisa) dan setelah file pertama ("Konversi dihentikan", 1 dari 4) lalu sisanya dikonversi; 2 video → MP4 dengan satu video terpotong ("Sebagian file gagal", `Error.Media`); 6 video, satu dihapus dari daftar, → WMV; "Tambah file…" dengan PDF dan duplikat (PDF ditolak dengan alasan, duplikat diabaikan); satu file tetap memakai dialog simpan. **Belum dicoba langsung:** seret-lepas banyak file, jalur Tab (§13 #44), Windows berbahasa Indonesia, tema kontras tinggi, paket MSIX terpasang.
 
 ### [0.2.8] 2026-10-03 (tahap 7: halaman Architecture)
 - **Ditambah:** halaman Architecture berfungsi penuh (§6.3, §6.3.3): `SelectorBar` dua arah. "Ke CAD": area seret, pembacaan gambar di perangkat (garis dinding, pintu dan jendela, teks lewat OCR Windows, logo, tabel), area tidak jelas, saran dan jalankan upscale langsung di halaman, daftar objek yang bisa dicentang, kalibrasi skala (dialog dengan jalur keyboard), keluaran DWG atau DXF dengan layer WALLS, OPENINGS, TEXT, LOGO, TABLE. "Dari CAD": pratinjau yang digambar sendiri, opsi hasil (PDF, PNG, JPG; A4 atau A3; 150, 300, 600 DPI; latar putih atau transparan), layer, perkiraan ukuran.

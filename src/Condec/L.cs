@@ -94,6 +94,9 @@ public static class L
             case NumberBox numberBox:
                 numberBox.PlaceholderText = text;
                 break;
+            case TextBox textBox:
+                textBox.PlaceholderText = text;
+                break;
             default:
                 throw Unsupported(target, "PlaceholderText");
         }

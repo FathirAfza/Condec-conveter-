@@ -138,7 +138,6 @@
   <data name="Shell.NoApp" xml:space="preserve"><value>The file was saved, but no app can open it.</value></data>
   <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer can't be opened.</value></data>
   <data name="Drag.Caption" xml:space="preserve"><value>Choose this file</value></data>
-  <data name="Input.DropHere" xml:space="preserve"><value>Drag a file here</value></data>
   <data name="Input.Choose" xml:space="preserve"><value>Choose file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>Source file</value></data>
   <data name="Source.ChangeSpoken" xml:space="preserve"><value>Change source file</value></data>
@@ -149,7 +148,6 @@
   <data name="Cad.CustomScaleSpoken" xml:space="preserve"><value>Custom scale, 1 to</value></data>
   <data name="Cad.CustomScaleHeader" xml:space="preserve"><value>Custom scale, 1 : n</value></data>
   <data name="Cad.CustomScalePlaceholder" xml:space="preserve"><value>1 : n</value></data>
-  <data name="Cad.PageHeader" xml:space="preserve"><value>Page</value></data>
   <data name="Cad.KeepText" xml:space="preserve"><value>Keep text as text</value></data>
   <data name="Cad.JoinLines" xml:space="preserve"><value>Join connected lines</value></data>
   <data name="Cad.JoinLinesNote" xml:space="preserve"><value>Into a single polyline</value></data>
@@ -456,4 +454,70 @@
   <data name="Architecture.Calibrate.KeyboardHint" xml:space="preserve"><value>With the keyboard: move the cursor with the arrow keys (hold Shift for bigger steps) and press Enter to mark a point.</value></data>
   <data name="Architecture.NotEligible.TooBig" xml:space="preserve"><value>This picture is too large to enlarge on this device</value></data>
   <data name="Architecture.Objects.PdfHint" xml:space="preserve"><value>Lines and text are read directly from the page. Choose the unit and scale of the drawing below.</value></data>
+  <data name="Input.DropHereMany" xml:space="preserve"><value>Drag files here</value></data>
+  <data name="Input.ChooseMany" xml:space="preserve"><value>Choose files…</value></data>
+  <data name="Input.SkippedSome" xml:space="preserve"><value>Some files were left out: {0}.</value></data>
+  <data name="Input.NoneUsable" xml:space="preserve"><value>None of these files can be converted here: {0}.</value></data>
+  <data name="Input.SameKindRule" xml:space="preserve"><value>Files converted together must be the same kind, for example all pictures or all PDFs.</value></data>
+  <data name="Input.FoldersSkipped" xml:space="preserve"><value>Folders were left out. Drag the files inside them instead.</value></data>
+  <data name="Skip.Item" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Skip.OtherKind" xml:space="preserve"><value>a different kind</value></data>
+  <data name="Skip.Architecture" xml:space="preserve"><value>open it in Architecture</value></data>
+  <data name="Skip.Unsupported" xml:space="preserve"><value>format not supported</value></data>
+  <data name="Skip.Unreadable" xml:space="preserve"><value>can't be read</value></data>
+  <data name="Skip.Locked" xml:space="preserve"><value>locked with a password</value></data>
+  <data name="Sources.Label" xml:space="preserve"><value>Source files</value></data>
+  <data name="Sources.ChangeSpoken" xml:space="preserve"><value>Change source files</value></data>
+  <data name="Sources.ManyImages" xml:space="preserve"><value>{0} pictures</value></data>
+  <data name="Sources.ManyPdfs" xml:space="preserve"><value>{0} PDF files</value></data>
+  <data name="Sources.ManyDocuments" xml:space="preserve"><value>{0} documents</value></data>
+  <data name="Sources.ManySpreadsheets" xml:space="preserve"><value>{0} spreadsheets</value></data>
+  <data name="Sources.ManyPresentations" xml:space="preserve"><value>{0} presentations</value></data>
+  <data name="Sources.ManyAudio" xml:space="preserve"><value>{0} audio files</value></data>
+  <data name="Sources.ManyVideos" xml:space="preserve"><value>{0} videos</value></data>
+  <data name="Sources.ManyFiles" xml:space="preserve"><value>{0} files</value></data>
+  <data name="Sources.Total" xml:space="preserve"><value>{0} in all</value></data>
+  <data name="Sources.TotalPages" xml:space="preserve"><value>{0} pages, {1} in all</value></data>
+  <data name="Sources.ListTitle" xml:space="preserve"><value>Files, in the order they are converted</value></data>
+  <data name="Sources.Add" xml:space="preserve"><value>Add files…</value></data>
+  <data name="Sources.ItemSpoken" xml:space="preserve"><value>{0}. {1}, {2}, {3}</value></data>
+  <data name="Sources.ItemSpokenNoOutput" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
+  <data name="Sources.RemoveSpoken" xml:space="preserve"><value>Remove {0} from the list</value></data>
+  <data name="Sources.OutputOne" xml:space="preserve"><value>→ {0}</value></data>
+  <data name="Sources.OutputMany" xml:space="preserve"><value>→ {0} files</value></data>
+  <data name="Sources.NoPages" xml:space="preserve"><value>None of the chosen pages</value></data>
+  <data name="Sources.AlreadyTarget" xml:space="preserve"><value>Already {0}, left as it is</value></data>
+  <data name="Pages.Header" xml:space="preserve"><value>Pages</value></data>
+  <data name="Pages.All" xml:space="preserve"><value>All pages</value></data>
+  <data name="Pages.First" xml:space="preserve"><value>First page only</value></data>
+  <data name="Pages.Custom" xml:space="preserve"><value>Choose pages</value></data>
+  <data name="Pages.Placeholder" xml:space="preserve"><value>For example 1-3, 5</value></data>
+  <data name="Pages.BoxSpoken" xml:space="preserve"><value>Pages to convert, for example 1-3, 5</value></data>
+  <data name="Pages.Invalid" xml:space="preserve"><value>Write the pages like 1-3, 5. The first page is 1.</value></data>
+  <data name="Pages.Results" xml:space="preserve"><value>{0} files will be saved</value></data>
+  <data name="Pages.ResultOne" xml:space="preserve"><value>1 file will be saved</value></data>
+  <data name="Pages.NoneChosen" xml:space="preserve"><value>None of the chosen pages are in the chosen files. Choose other pages.</value></data>
+  <data name="Convert.LabelMany" xml:space="preserve"><value>Convert and save {0} files…</value></data>
+  <data name="Batch.ProcessingTitle" xml:space="preserve"><value>Converting {0} files</value></data>
+  <data name="Batch.ProcessingCaption" xml:space="preserve"><value>To {0} · saved in {1}</value></data>
+  <data name="Batch.Current" xml:space="preserve"><value>File {0} of {1}: {2}</value></data>
+  <data name="Batch.AllDone" xml:space="preserve"><value>All {0} files were saved and passed chunk verification and the integrity check.</value></data>
+  <data name="Batch.SomeFailedTitle" xml:space="preserve"><value>Some files failed</value></data>
+  <data name="Batch.SomeFailed" xml:space="preserve"><value>{0} of {1} files were saved. The others were not saved; the list says why.</value></data>
+  <data name="Batch.StoppedTitle" xml:space="preserve"><value>Conversion stopped</value></data>
+  <data name="Batch.Stopped" xml:space="preserve"><value>{0} of {1} files were saved before you stopped. The rest were not converted.</value></data>
+  <data name="Batch.None" xml:space="preserve"><value>None of the files could be converted. The list says why.</value></data>
+  <data name="Batch.ResultLabel" xml:space="preserve"><value>Saved</value></data>
+  <data name="Batch.SavedCount" xml:space="preserve"><value>{0} of {1} files</value></data>
+  <data name="Batch.ListSpoken" xml:space="preserve"><value>Result of each file</value></data>
+  <data name="Batch.OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Batch.RetryFailed" xml:space="preserve"><value>Try the failed files again</value></data>
+  <data name="Batch.RetryRest" xml:space="preserve"><value>Convert the rest</value></data>
+  <data name="Batch.FromSource" xml:space="preserve"><value>From {0}</value></data>
+  <data name="Batch.RowFailed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Batch.RowCancelled" xml:space="preserve"><value>Not converted</value></data>
+  <data name="Batch.RowWaiting" xml:space="preserve"><value>Waiting</value></data>
+  <data name="Batch.RowSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
+  <data name="Batch.RowSpokenDetail" xml:space="preserve"><value>{0}. {1}, {2}: {3}</value></data>
+  <data name="Batch.PageName" xml:space="preserve"><value>{0}, page {1}</value></data>
 </root>

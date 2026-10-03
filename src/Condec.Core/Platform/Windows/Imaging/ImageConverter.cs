@@ -12,8 +12,8 @@ namespace Condec.Core.Imaging;
 
 /// <summary>
 /// JPG, PNG, BMP, GIF and TIFF to each other, plus HEIC and WebP as sources when their Windows
-/// decoders are installed. Multi-frame sources (animated GIF, multi-page TIFF) use the first frame, and the result
-/// says so. A source that is cut off (see <see cref="ImageStructure"/>) is converted as far as Windows can read it,
+/// decoders are installed. A multi-page TIFF converts the page that <see cref="PageOptions"/> names (one result per page,
+/// DESIGN §6.1.1); without it, and for an animated GIF, the first frame is used and the result says so. A source that is cut off (see <see cref="ImageStructure"/>) is converted as far as Windows can read it,
 /// and the result says that too.
 /// </summary>
 public sealed class ImageConverter : IConverter
@@ -43,8 +43,9 @@ public sealed class ImageConverter : IConverter
             request.Notes.Add(NoteSeverity.Warning, Loc.Get("Note.SourceIncomplete"));
         }
 
-        var image = await DecodeAsync(request.SourcePath, ct).ConfigureAwait(false);
-        if (image.FrameCount > 1)
+        var page = (request.Options as PageOptions)?.PageNumber;
+        var image = await DecodeAsync(request.SourcePath, ct, page is { } number ? number - 1 : 0).ConfigureAwait(false);
+        if (page is null && image.FrameCount > 1)
         {
             request.Notes.Add(NoteSeverity.Informational, Loc.Format("Note.FirstFrameOnly", image.FrameCount));
         }
@@ -102,14 +103,21 @@ public sealed class ImageConverter : IConverter
         }
     }
 
-    internal static async Task<DecodedImage> DecodeAsync(string path, CancellationToken ct)
+    /// <param name="frameIndex">The frame (TIFF page) to read, from 0.</param>
+    internal static async Task<DecodedImage> DecodeAsync(string path, CancellationToken ct, int frameIndex = 0)
     {
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous);
         using var stream = file.AsRandomAccessStream();
         var decoder = await BitmapDecoder.CreateAsync(stream).AsTask(ct).ConfigureAwait(false);
+        if (frameIndex < 0 || frameIndex >= decoder.FrameCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(frameIndex), $"Page {frameIndex + 1} is outside 1..{decoder.FrameCount}.");
+        }
+
+        IBitmapFrame frame = frameIndex == 0 ? decoder : await decoder.GetFrameAsync((uint)frameIndex).AsTask(ct).ConfigureAwait(false);
 
         // The pixels are held as a byte array of 4 bytes each; refuse before asking Windows for more than that can be.
-        var pixels = (long)decoder.OrientedPixelWidth * decoder.OrientedPixelHeight;
+        var pixels = (long)frame.OrientedPixelWidth * frame.OrientedPixelHeight;
         if (pixels > ImageTooLargeException.MaximumPixels)
         {
             throw new ImageTooLargeException(pixels);
@@ -119,7 +127,7 @@ public sealed class ImageConverter : IConverter
         {
             // Straight alpha keeps the color of semi-transparent pixels intact for FlattenOntoWhite.
             // EXIF rotation is applied, so photos keep the orientation they are shown with.
-            var pixelData = await decoder.GetPixelDataAsync(
+            var pixelData = await frame.GetPixelDataAsync(
                 BitmapPixelFormat.Bgra8,
                 BitmapAlphaMode.Straight,
                 new BitmapTransform(),
@@ -128,10 +136,10 @@ public sealed class ImageConverter : IConverter
 
             return new DecodedImage(
                 pixelData.DetachPixelData(),
-                decoder.OrientedPixelWidth,
-                decoder.OrientedPixelHeight,
-                decoder.DpiX,
-                decoder.DpiY,
+                frame.OrientedPixelWidth,
+                frame.OrientedPixelHeight,
+                frame.DpiX,
+                frame.DpiY,
                 decoder.FrameCount);
         }
         catch (Exception ex) when (IsOutOfMemory(ex))

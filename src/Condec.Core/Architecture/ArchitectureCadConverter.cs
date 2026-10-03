@@ -9,6 +9,7 @@ using Condec.Core.Cad;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;
 using Condec.Core.Localization;
+using Condec.Core.Pdf;
 using CSMath;
 
 namespace Condec.Core.Architecture;
@@ -18,6 +19,13 @@ namespace Condec.Core.Architecture;
 /// <param name="Include">The kinds of object that become CAD; the rest are left out.</param>
 /// <param name="MillimetersPerPixel">Size of one analysis pixel on the real drawing: from the picture's resolution, or from a calibration.</param>
 public sealed record ArchitectureCadOptions(DrawingAnalysis Analysis, IReadOnlySet<DrawingObjectKind> Include, double MillimetersPerPixel) : ConversionOptions;
+
+/// <summary>
+/// Several pages of one PDF in one drawing, side by side from left to right (DESIGN §6.3, owner decision 2026-10-03). Each
+/// part is a vector page (<see cref="CadOptions"/>, its geometry read from the PDF) or an analyzed scanned page
+/// (<see cref="ArchitectureCadOptions"/>). The drawing uses the first part's unit; every part keeps its real size.
+/// </summary>
+public sealed record CombinedCadOptions(IReadOnlyList<ConversionOptions> Pages) : ConversionOptions;
 
 /// <summary>Builds the CAD drawing of an analyzed picture (DESIGN §6.3.1): one layer per kind of object, in millimeters.</summary>
 public static class ArchitectureCadBuilder
@@ -53,16 +61,30 @@ public static class ArchitectureCadBuilder
     /// <summary>The drawing, and how many entities it holds.</summary>
     public static (CadDocument Cad, int EntityCount) Build(ArchitectureCadOptions options)
     {
+        var cad = new CadDocument(PdfToCadConverter.OutputVersion);
+        cad.Header.InsUnits = UnitsType.Millimeters;
+        var count = AddTo(cad, options, options.MillimetersPerPixel, 0);
+        if (count == 0)
+        {
+            throw new NothingToTraceException("There is nothing selected to convert.");
+        }
+
+        PdfToCadConverter.SetExtents(cad);
+        return (cad, count);
+    }
+
+    /// <summary>Adds the chosen objects to <paramref name="cad"/>, moved right by <paramref name="offsetX"/>; returns how many entities.</summary>
+    /// <param name="unitsPerPixel">Drawing units per analysis pixel (millimeters per pixel in a drawing in millimeters).</param>
+    internal static int AddTo(CadDocument cad, ArchitectureCadOptions options, double unitsPerPixel, double offsetX)
+    {
         var analysis = options.Analysis;
-        var scale = options.MillimetersPerPixel;
+        var scale = unitsPerPixel;
         if (!double.IsFinite(scale) || scale <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(options), "The pixel size must be a positive number.");
         }
 
-        var cad = new CadDocument(PdfToCadConverter.OutputVersion);
-        cad.Header.InsUnits = UnitsType.Millimeters;
-
+        var shift = new XYZ(offsetX, 0, 0);
         var count = 0;
         foreach (var group in analysis.Groups.Where(g => options.Include.Contains(g.Kind)))
         {
@@ -74,6 +96,11 @@ public static class ArchitectureCadBuilder
                     foreach (var entity in ToEntities(primitive, scale))
                     {
                         entity.Layer = layer;
+                        if (offsetX != 0)
+                        {
+                            entity.ApplyTranslation(shift);
+                        }
+
                         cad.Entities.Add(entity);
                         count++;
                     }
@@ -90,7 +117,7 @@ public static class ArchitectureCadBuilder
                     cad.Entities.Add(new TextEntity(line.Text)
                     {
                         // Bounds are y down; the drawing's y runs up from the bottom of the picture.
-                        InsertPoint = new XYZ(line.Bounds.Left * scale, (analysis.Height - line.Bounds.Bottom) * scale, 0),
+                        InsertPoint = new XYZ((line.Bounds.Left * scale) + offsetX, (analysis.Height - line.Bounds.Bottom) * scale, 0),
                         Height = height,
                         Layer = layer,
                     });
@@ -99,13 +126,7 @@ public static class ArchitectureCadBuilder
             }
         }
 
-        if (count == 0)
-        {
-            throw new NothingToTraceException("There is nothing selected to convert.");
-        }
-
-        PdfToCadConverter.SetExtents(cad);
-        return (cad, count);
+        return count;
     }
 
     private static Layer EnsureLayer(CadDocument cad, string name, DrawingObjectKind kind)
@@ -165,6 +186,99 @@ public static class ArchitectureCadBuilder
     }
 }
 
+/// <summary>Builds one drawing from several pages of a PDF (<see cref="CombinedCadOptions"/>).</summary>
+public static class CombinedCadBuilder
+{
+    /// <summary>Space between two pages, as a share of the page on the left. `[ASUMSI]`</summary>
+    public const double GapShare = 0.1;
+
+    /// <summary>The drawing, and how many entities it holds. Throws when no page has anything to draw.</summary>
+    public static (CadDocument Cad, int EntityCount) Build(string pdfPath, CombinedCadOptions options, CancellationToken ct)
+    {
+        if (options.Pages.Count == 0)
+        {
+            throw new ArgumentException("A combined drawing needs at least one page.", nameof(options));
+        }
+
+        var unit = options.Pages[0] is CadOptions first ? first.Unit : CadUnit.Millimeters;
+        var cad = new CadDocument(PdfToCadConverter.OutputVersion);
+        cad.Header.InsUnits = PdfToCadConverter.ToUnitsType(unit);
+
+        UglyToad.PdfPig.PdfDocument? pdf = null;
+        try
+        {
+            var cursor = 0.0;
+            var count = 0;
+            foreach (var part in options.Pages)
+            {
+                ct.ThrowIfCancellationRequested();
+                double width;
+                double right;
+                switch (part)
+                {
+                    case CadOptions vector:
+                    {
+                        pdf ??= PdfInspector.Open(pdfPath);
+                        if (vector.PageNumber < 1 || vector.PageNumber > pdf.NumberOfPages)
+                        {
+                            throw new ArgumentOutOfRangeException(nameof(options), $"Page {vector.PageNumber} is outside 1..{pdf.NumberOfPages}.");
+                        }
+
+                        // Same real size, written in the drawing's unit.
+                        var inUnit = vector with { Unit = unit };
+                        var page = pdf.GetPage(vector.PageNumber);
+                        var entities = PdfToCadConverter.ReadVectors(page, inUnit, ct);
+                        var shift = new XYZ(cursor, 0, 0);
+                        var box = BoundingBox.Null;
+                        foreach (var entity in entities)
+                        {
+                            if (cursor != 0)
+                            {
+                                entity.ApplyTranslation(shift);
+                            }
+
+                            cad.Entities.Add(entity);
+                            box = box.Merge(entity.GetBoundingBox());
+                        }
+
+                        count += entities.Count;
+                        width = page.Width * inUnit.UnitsPerPoint;
+                        right = box.Extent == BoundingBoxExtent.Finite ? box.Max.X : cursor;
+                        break;
+                    }
+
+                    case ArchitectureCadOptions picture:
+                    {
+                        var perPixel = picture.MillimetersPerPixel * CadUnits.PerMillimeter(unit);
+                        count += ArchitectureCadBuilder.AddTo(cad, picture, perPixel, cursor);
+                        width = picture.Analysis.Width * perPixel;
+                        right = cursor;
+                        break;
+                    }
+
+                    default:
+                        throw new ArgumentException($"A combined drawing can't hold a {part.GetType().Name}.", nameof(options));
+                }
+
+                // A page drawn past its own edge (rotated content) still doesn't run into the next one.
+                cursor = Math.Max(cursor + width, right) + (width * GapShare);
+            }
+
+            if (count == 0)
+            {
+                throw new NothingToConvertException("None of the pages has anything to convert.");
+            }
+
+            PdfToCadConverter.SetExtents(cad);
+            return (cad, count);
+        }
+        finally
+        {
+            pdf?.Dispose();
+        }
+    }
+}
+
 /// <summary>
 /// An analyzed picture (PNG, JPG, HEIC, HEIF, or a scanned PDF page) to DXF or DWG: lines, polylines, arcs and text on the
 /// layers WALLS, OPENINGS and TEXT (DESIGN §6.3.1). The analysis happens before, on the Architecture page, because the user
@@ -183,12 +297,15 @@ public sealed class ArchitectureToCadConverter : IConverter
 
     public async Task ConvertAsync(ConversionRequest request, IProgress<ConversionProgress> progress, CancellationToken ct)
     {
-        var options = request.Options as ArchitectureCadOptions
-            ?? throw new ArgumentException("Converting a picture to CAD needs the analysis and the chosen objects.", nameof(request));
         var target = FileExtension.Normalize(request.TargetExtension);
 
         progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Get("Progress.BuildingCadLayers")));
-        var (cad, entityCount) = await Task.Run(() => ArchitectureCadBuilder.Build(options), ct).ConfigureAwait(false);
+        var (cad, entityCount) = request.Options switch
+        {
+            ArchitectureCadOptions picture => await Task.Run(() => ArchitectureCadBuilder.Build(picture), ct).ConfigureAwait(false),
+            CombinedCadOptions pages => await Task.Run(() => CombinedCadBuilder.Build(request.SourcePath, pages, ct), ct).ConfigureAwait(false),
+            _ => throw new ArgumentException("Converting a picture to CAD needs the analysis and the chosen objects.", nameof(request)),
+        };
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
         ct.ThrowIfCancellationRequested();
 

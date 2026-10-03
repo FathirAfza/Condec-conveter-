@@ -121,6 +121,32 @@ public sealed class ImageConverterTests : IDisposable
     }
 
     [Fact]
+    public async Task AChosenTiffPage_IsConvertedWithoutTheFirstFrameNote()
+    {
+        var sourcePath = _dir.File("halaman.tif");
+        await WriteFramesAsync(sourcePath, BitmapEncoder.TiffEncoderId, 3);
+
+        var result = await CreatePipeline().RunAsync(new ConversionJob(sourcePath, ".png", _dir.File("hasil-2.png"), new PageOptions(2)), null, Ct);
+
+        Assert.Empty(result.Notes ?? []);
+
+        // Page 2 is blue; page 1 is red.
+        var image = await ReadImageAsync(_dir.File("hasil-2.png"));
+        AssertColor(image.Pixel(1, 1), blue: 255, green: 0, red: 0, alpha: 255);
+    }
+
+    [Fact]
+    public async Task ATiffPageThatIsNotThere_IsRefused()
+    {
+        var sourcePath = _dir.File("halaman.tif");
+        await WriteFramesAsync(sourcePath, BitmapEncoder.TiffEncoderId, 2);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            CreatePipeline().RunAsync(new ConversionJob(sourcePath, ".png", _dir.File("hasil-5.png"), new PageOptions(5)), null, Ct));
+        Assert.False(File.Exists(_dir.File("hasil-5.png")));
+    }
+
+    [Fact]
     public async Task PictureWithMorePixelsThanFitInMemory_IsRefusedBeforeDecoding()
     {
         // 30,000 x 30,000 is 900 MP: 3.6 GB as BGRA, more than one array can hold. The header says so; no pixels are read.

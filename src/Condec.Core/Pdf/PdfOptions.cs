@@ -7,7 +7,7 @@ namespace Condec.Core.Pdf;
 
 /// <summary>Which page of a PDF source to convert, for targets that hold one page (images, CAD).</summary>
 /// <param name="PageNumber">1-based.</param>
-public record PdfPageOptions(int PageNumber) : ConversionOptions;
+public record PdfPageOptions(int PageNumber) : PageOptions(PageNumber);
 
 public enum CadUnit
 {
@@ -37,5 +37,18 @@ public sealed record CadOptions(
         CadUnit.Meters => 0.0254,
         CadUnit.Inches => 1.0,
         _ => throw new ArgumentOutOfRangeException(nameof(Unit)),
+    };
+}
+
+public static class CadUnits
+{
+    /// <summary>How many of <paramref name="unit"/> one millimeter is.</summary>
+    public static double PerMillimeter(CadUnit unit) => unit switch
+    {
+        CadUnit.Millimeters => 1.0,
+        CadUnit.Centimeters => 0.1,
+        CadUnit.Meters => 0.001,
+        CadUnit.Inches => 1 / 25.4,
+        _ => throw new ArgumentOutOfRangeException(nameof(unit)),
     };
 }

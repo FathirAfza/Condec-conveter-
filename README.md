@@ -7,6 +7,8 @@ Built with WinUI 3 (Windows App SDK) and .NET 10, packaged as MSIX. License: GPL
 ## Features
 
 - **Verified results.** Every conversion goes through four stages: decode, encode, chunk verification (SHA-256 of each 1 MiB, read back from disk) and an integrity check (SHA-256 of the whole file, then the file is reopened with the matching decoder). A file is saved only when every stage passes, so there is never a half-written file.
+- **Many files at once.** Choose or drop several files of one kind (pictures, PDFs, documents, spreadsheets, presentations, audio or video) and convert them together. Result 1 comes from file 1, result 2 from file 2, and so on. They are saved into a folder you pick with automatic names; a name that is already taken gets " (2)", so nothing is overwritten. A file that fails does not stop the others, and the failed ones can be tried again.
+- **Pages.** A PDF or a multi-page TIFF going to a picture format becomes one picture per page: all pages, the first page, or pages you type such as `1-3, 5`.
 - **Local history.** File name, format, time, output location and verification status are kept in `%LOCALAPPDATA%\Condec\history.json`. No copy of any file's contents is kept. History can be cleared or switched off.
 - **PDF → DXF/DWG.** Lines, arcs, circles, curves and text of a vector PDF become editable CAD objects, with a choice of unit and scale. Only the first page is converted. A scanned PDF is treated like a picture.
 - **Upscale pictures.** Real-ESRGAN x4plus enlarges a picture 1.5× to 16× (as far as the device allows) on the GPU through DirectML, or on the CPU, with ONNX Runtime. The model ships inside the app and runs on the device. The first upscale on an engine measures its speed, so the time estimate is real, not invented.
@@ -25,7 +27,7 @@ The format list in the app is built from what the machine can actually do. A for
 | PNG, JPG, HEIC², HEIF² and scanned PDF (Architecture page) | DWG, DXF (AutoCAD 2000) | Windows Imaging Component, Windows OCR, own line tracing, ACadSharp |
 | MP3, M4A, WAV, WMA, FLAC | MP3, M4A, WAV, WMA, FLAC | `Windows.Media.Transcoding` |
 | MP4, M4V, MOV, WMV, AVI | MP4, WMV, and the audio formats above | `Windows.Media.Transcoding` |
-| PDF (one page) | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | `Windows.Data.Pdf` |
+| PDF (one file per chosen page) | JPG, PNG, BMP, GIF, TIFF, HEIC¹ | `Windows.Data.Pdf` |
 | PDF (first page, Architecture page) | DXF, DWG (AutoCAD 2000) | PdfPig + ACadSharp |
 | PDF | DOCX, DOC, ODT, PPTX, PPT, ODP | LibreOffice (PDF import into Writer or Impress) |
 | DOCX, DOC, ODT, RTF, TXT | PDF, DOCX, DOC, ODT, RTF | LibreOffice |

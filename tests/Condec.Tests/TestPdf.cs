@@ -64,6 +64,43 @@ internal static class TestPdf
         return path;
     }
 
+    /// <summary>A PDF with one page per content stream, all <paramref name="width"/> × <paramref name="height"/> points.</summary>
+    public static string WritePages(string path, IReadOnlyList<string> contents, double width = 200, double height = 100)
+    {
+        // 1 catalog, 2 page tree, 3 font, then a page and its content stream for each page.
+        var kids = string.Join(" ", contents.Select((_, i) => Invariant($"{4 + (i * 2)} 0 R")));
+        var objects = new List<string>
+        {
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            Invariant($"<< /Type /Pages /Kids [{kids}] /Count {contents.Count} >>"),
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        };
+        for (var i = 0; i < contents.Count; i++)
+        {
+            objects.Add(Invariant($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width} {height}] /Contents {5 + (i * 2)} 0 R /Resources << /Font << /F1 3 0 R >> >> >>"));
+            objects.Add(Stream("", contents[i]));
+        }
+
+        var output = new StringBuilder("%PDF-1.4\n");
+        var offsets = new List<int>();
+        for (var i = 0; i < objects.Count; i++)
+        {
+            offsets.Add(output.Length);
+            output.Append(Invariant($"{i + 1} 0 obj\n{objects[i]}\nendobj\n"));
+        }
+
+        var xref = output.Length;
+        output.Append(Invariant($"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n"));
+        foreach (var offset in offsets)
+        {
+            output.Append(Invariant($"{offset:0000000000} 00000 n \n"));
+        }
+
+        output.Append(Invariant($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"));
+        File.WriteAllBytes(path, Encoding.Latin1.GetBytes(output.ToString()));
+        return path;
+    }
+
     /// <summary>A circle of four Béziers, the way PDF producers draw one; closed with <c>h</c> unless told otherwise.</summary>
     public static string Circle(double cx, double cy, double r, bool close = true)
     {

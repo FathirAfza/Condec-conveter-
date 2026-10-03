@@ -71,13 +71,7 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
 
         progress.Report(new ConversionProgress(ConversionStage.Decode, 0, Loc.Get("Progress.ReadingPdfPage")));
         var cad = new CadDocument(OutputVersion);
-        cad.Header.InsUnits = options.Unit switch
-        {
-            CadUnit.Millimeters => UnitsType.Millimeters,
-            CadUnit.Centimeters => UnitsType.Centimeters,
-            CadUnit.Meters => UnitsType.Meters,
-            _ => UnitsType.Inches,
-        };
+        cad.Header.InsUnits = ToUnitsType(options.Unit);
 
         int entityCount;
         using (var pdf = PdfInspector.Open(request.SourcePath))
@@ -114,6 +108,15 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         await request.Output.WriteAsync(bytes, ct).ConfigureAwait(false);
         progress.Report(new ConversionProgress(ConversionStage.Encode, 1));
     }
+
+    /// <summary>The DXF/DWG $INSUNITS value of a unit.</summary>
+    internal static UnitsType ToUnitsType(CadUnit unit) => unit switch
+    {
+        CadUnit.Millimeters => UnitsType.Millimeters,
+        CadUnit.Centimeters => UnitsType.Centimeters,
+        CadUnit.Meters => UnitsType.Meters,
+        _ => UnitsType.Inches,
+    };
 
     /// <summary>Drawing extents in the header, so "zoom extents" lands on the drawing right away.</summary>
     internal static void SetExtents(CadDocument cad)

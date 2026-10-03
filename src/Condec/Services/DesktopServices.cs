@@ -13,6 +13,12 @@ public interface IDesktopServices
     /// <summary>Null when the user cancels.</summary>
     Task<string?> PickSourceFileAsync(IReadOnlyList<string> extensions);
 
+    /// <summary>One or more files; empty when the user cancels. Opens in <paramref name="suggestedFolder"/> when it exists.</summary>
+    Task<IReadOnlyList<string>> PickSourceFilesAsync(IReadOnlyList<string> extensions, string? suggestedFolder = null);
+
+    /// <summary>The folder a batch saves into; null when the user cancels.</summary>
+    Task<string?> PickFolderAsync(string? suggestedFolder);
+
     /// <summary>Null when the user cancels. The dialog asks before overwriting an existing file.</summary>
     Task<string?> PickDestinationAsync(string suggestedName, string? folder, string typeLabel, string extension);
 
@@ -44,6 +50,42 @@ public sealed class DesktopServices(WindowId windowId) : IDesktopServices
         }
 
         var result = await picker.PickSingleFileAsync();
+        return string.IsNullOrEmpty(result?.Path) ? null : result.Path;
+    }
+
+    public async Task<IReadOnlyList<string>> PickSourceFilesAsync(IReadOnlyList<string> extensions, string? suggestedFolder = null)
+    {
+        var picker = new FileOpenPicker(windowId)
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            ViewMode = PickerViewMode.List,
+        };
+        if (suggestedFolder is not null && Directory.Exists(suggestedFolder))
+        {
+            picker.SuggestedFolder = suggestedFolder;
+        }
+
+        foreach (var extension in extensions)
+        {
+            picker.FileTypeFilter.Add(extension);
+        }
+
+        var results = await picker.PickMultipleFilesAsync();
+        return results is null ? [] : [.. results.Select(r => r.Path).Where(p => !string.IsNullOrEmpty(p))];
+    }
+
+    public async Task<string?> PickFolderAsync(string? suggestedFolder)
+    {
+        var picker = new FolderPicker(windowId)
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        };
+        if (suggestedFolder is not null && Directory.Exists(suggestedFolder))
+        {
+            picker.SuggestedFolder = suggestedFolder;
+        }
+
+        var result = await picker.PickSingleFolderAsync();
         return string.IsNullOrEmpty(result?.Path) ? null : result.Path;
     }
 

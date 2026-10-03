@@ -20,3 +20,7 @@ public sealed record ConversionRequest(
 
 /// <summary>Format-specific settings, such as the unit and scale for PDF to CAD.</summary>
 public abstract record ConversionOptions;
+
+/// <summary>Which page of a source with pages (a PDF, a multi-page TIFF) a one-page result is made from.</summary>
+/// <param name="PageNumber">1-based.</param>
+public record PageOptions(int PageNumber) : ConversionOptions;

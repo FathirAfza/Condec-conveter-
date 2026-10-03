@@ -138,7 +138,6 @@
   <data name="Shell.NoApp" xml:space="preserve"><value>File tersimpan, tetapi tidak ada aplikasi yang bisa membukanya.</value></data>
   <data name="Shell.ExplorerFailed" xml:space="preserve"><value>File Explorer tidak bisa dibuka.</value></data>
   <data name="Drag.Caption" xml:space="preserve"><value>Pilih file ini</value></data>
-  <data name="Input.DropHere" xml:space="preserve"><value>Seret file ke sini</value></data>
   <data name="Input.Choose" xml:space="preserve"><value>Pilih file…</value></data>
   <data name="Source.Label" xml:space="preserve"><value>File sumber</value></data>
   <data name="Source.ChangeSpoken" xml:space="preserve"><value>Ganti file sumber</value></data>
@@ -149,7 +148,6 @@
   <data name="Cad.CustomScaleSpoken" xml:space="preserve"><value>Skala kustom, 1 banding</value></data>
   <data name="Cad.CustomScaleHeader" xml:space="preserve"><value>Skala kustom, 1 : n</value></data>
   <data name="Cad.CustomScalePlaceholder" xml:space="preserve"><value>1 : n</value></data>
-  <data name="Cad.PageHeader" xml:space="preserve"><value>Halaman</value></data>
   <data name="Cad.KeepText" xml:space="preserve"><value>Pertahankan teks sebagai teks</value></data>
   <data name="Cad.JoinLines" xml:space="preserve"><value>Gabungkan garis bersambung</value></data>
   <data name="Cad.JoinLinesNote" xml:space="preserve"><value>Menjadi satu polyline</value></data>
@@ -456,4 +454,70 @@
   <data name="Architecture.Calibrate.KeyboardHint" xml:space="preserve"><value>Dengan keyboard: geser kursor dengan tombol panah (tahan Shift untuk langkah lebih besar) lalu tekan Enter untuk menandai titik.</value></data>
   <data name="Architecture.NotEligible.TooBig" xml:space="preserve"><value>Gambar ini terlalu besar untuk diperbesar di perangkat ini</value></data>
   <data name="Architecture.Objects.PdfHint" xml:space="preserve"><value>Garis dan teks dibaca langsung dari halaman. Pilih satuan dan skala gambar di bawah.</value></data>
+  <data name="Input.DropHereMany" xml:space="preserve"><value>Seret file ke sini</value></data>
+  <data name="Input.ChooseMany" xml:space="preserve"><value>Pilih file…</value></data>
+  <data name="Input.SkippedSome" xml:space="preserve"><value>Beberapa file tidak diambil: {0}.</value></data>
+  <data name="Input.NoneUsable" xml:space="preserve"><value>Tidak ada file yang bisa dikonversi di sini: {0}.</value></data>
+  <data name="Input.SameKindRule" xml:space="preserve"><value>File yang dikonversi bersamaan harus sejenis, misalnya semua gambar atau semua PDF.</value></data>
+  <data name="Input.FoldersSkipped" xml:space="preserve"><value>Folder tidak diambil. Seret file yang ada di dalamnya.</value></data>
+  <data name="Skip.Item" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Skip.OtherKind" xml:space="preserve"><value>jenisnya berbeda</value></data>
+  <data name="Skip.Architecture" xml:space="preserve"><value>buka di Architecture</value></data>
+  <data name="Skip.Unsupported" xml:space="preserve"><value>format tidak didukung</value></data>
+  <data name="Skip.Unreadable" xml:space="preserve"><value>tidak bisa dibaca</value></data>
+  <data name="Skip.Locked" xml:space="preserve"><value>dikunci kata sandi</value></data>
+  <data name="Sources.Label" xml:space="preserve"><value>File sumber</value></data>
+  <data name="Sources.ChangeSpoken" xml:space="preserve"><value>Ganti file sumber</value></data>
+  <data name="Sources.ManyImages" xml:space="preserve"><value>{0} gambar</value></data>
+  <data name="Sources.ManyPdfs" xml:space="preserve"><value>{0} file PDF</value></data>
+  <data name="Sources.ManyDocuments" xml:space="preserve"><value>{0} dokumen</value></data>
+  <data name="Sources.ManySpreadsheets" xml:space="preserve"><value>{0} spreadsheet</value></data>
+  <data name="Sources.ManyPresentations" xml:space="preserve"><value>{0} presentasi</value></data>
+  <data name="Sources.ManyAudio" xml:space="preserve"><value>{0} file audio</value></data>
+  <data name="Sources.ManyVideos" xml:space="preserve"><value>{0} video</value></data>
+  <data name="Sources.ManyFiles" xml:space="preserve"><value>{0} file</value></data>
+  <data name="Sources.Total" xml:space="preserve"><value>Total {0}</value></data>
+  <data name="Sources.TotalPages" xml:space="preserve"><value>{0} halaman, total {1}</value></data>
+  <data name="Sources.ListTitle" xml:space="preserve"><value>Daftar file, sesuai urutan konversi</value></data>
+  <data name="Sources.Add" xml:space="preserve"><value>Tambah file…</value></data>
+  <data name="Sources.ItemSpoken" xml:space="preserve"><value>{0}. {1}, {2}, {3}</value></data>
+  <data name="Sources.ItemSpokenNoOutput" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
+  <data name="Sources.RemoveSpoken" xml:space="preserve"><value>Hapus {0} dari daftar</value></data>
+  <data name="Sources.OutputOne" xml:space="preserve"><value>→ {0}</value></data>
+  <data name="Sources.OutputMany" xml:space="preserve"><value>→ {0} file</value></data>
+  <data name="Sources.NoPages" xml:space="preserve"><value>Tidak ada halaman terpilih</value></data>
+  <data name="Sources.AlreadyTarget" xml:space="preserve"><value>Sudah {0}, dibiarkan</value></data>
+  <data name="Pages.Header" xml:space="preserve"><value>Halaman</value></data>
+  <data name="Pages.All" xml:space="preserve"><value>Semua halaman</value></data>
+  <data name="Pages.First" xml:space="preserve"><value>Halaman pertama saja</value></data>
+  <data name="Pages.Custom" xml:space="preserve"><value>Pilih halaman</value></data>
+  <data name="Pages.Placeholder" xml:space="preserve"><value>Contoh: 1-3, 5</value></data>
+  <data name="Pages.BoxSpoken" xml:space="preserve"><value>Halaman yang dikonversi, contoh 1-3, 5</value></data>
+  <data name="Pages.Invalid" xml:space="preserve"><value>Tulis halaman seperti 1-3, 5. Halaman pertama adalah 1.</value></data>
+  <data name="Pages.Results" xml:space="preserve"><value>{0} file akan disimpan</value></data>
+  <data name="Pages.ResultOne" xml:space="preserve"><value>1 file akan disimpan</value></data>
+  <data name="Pages.NoneChosen" xml:space="preserve"><value>Halaman yang dipilih tidak ada di file yang dipilih. Pilih halaman lain.</value></data>
+  <data name="Convert.LabelMany" xml:space="preserve"><value>Konversi dan simpan {0} file…</value></data>
+  <data name="Batch.ProcessingTitle" xml:space="preserve"><value>Mengonversi {0} file</value></data>
+  <data name="Batch.ProcessingCaption" xml:space="preserve"><value>Ke {0} · disimpan di {1}</value></data>
+  <data name="Batch.Current" xml:space="preserve"><value>File {0} dari {1}: {2}</value></data>
+  <data name="Batch.AllDone" xml:space="preserve"><value>Semua {0} file disimpan dan lolos verifikasi chunk serta cek integritas.</value></data>
+  <data name="Batch.SomeFailedTitle" xml:space="preserve"><value>Sebagian file gagal</value></data>
+  <data name="Batch.SomeFailed" xml:space="preserve"><value>{0} dari {1} file disimpan. Sisanya tidak disimpan; alasannya ada di daftar.</value></data>
+  <data name="Batch.StoppedTitle" xml:space="preserve"><value>Konversi dihentikan</value></data>
+  <data name="Batch.Stopped" xml:space="preserve"><value>{0} dari {1} file sudah disimpan sebelum dihentikan. Sisanya tidak dikonversi.</value></data>
+  <data name="Batch.None" xml:space="preserve"><value>Tidak ada file yang berhasil dikonversi. Alasannya ada di daftar.</value></data>
+  <data name="Batch.ResultLabel" xml:space="preserve"><value>Disimpan</value></data>
+  <data name="Batch.SavedCount" xml:space="preserve"><value>{0} dari {1} file</value></data>
+  <data name="Batch.ListSpoken" xml:space="preserve"><value>Hasil tiap file</value></data>
+  <data name="Batch.OpenFolder" xml:space="preserve"><value>Buka folder</value></data>
+  <data name="Batch.RetryFailed" xml:space="preserve"><value>Coba lagi file yang gagal</value></data>
+  <data name="Batch.RetryRest" xml:space="preserve"><value>Konversi sisanya</value></data>
+  <data name="Batch.FromSource" xml:space="preserve"><value>Dari {0}</value></data>
+  <data name="Batch.RowFailed" xml:space="preserve"><value>Gagal</value></data>
+  <data name="Batch.RowCancelled" xml:space="preserve"><value>Tidak dikonversi</value></data>
+  <data name="Batch.RowWaiting" xml:space="preserve"><value>Menunggu</value></data>
+  <data name="Batch.RowSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
+  <data name="Batch.RowSpokenDetail" xml:space="preserve"><value>{0}. {1}, {2}: {3}</value></data>
+  <data name="Batch.PageName" xml:space="preserve"><value>{0}, halaman {1}</value></data>
 </root>

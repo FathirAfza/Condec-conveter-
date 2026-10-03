@@ -54,6 +54,7 @@ public sealed partial class ConverterCard : UserControl
     private Control? FocusTarget() => ViewModel.State switch
     {
         ConverterState.Processing => CancelButton,
+        ConverterState.Done when ViewModel.IsBatch => ViewModel.BatchHasSaved ? OpenFolderButton : RetryFailedButton,
         ConverterState.Done => OpenResultButton,
         ConverterState.Failed => RetryButton,
         _ when !ViewModel.HasSource => PickFileButton,
@@ -91,7 +92,7 @@ public sealed partial class ConverterCard : UserControl
         try
         {
             var items = await e.DataView.GetStorageItemsAsync();
-            ViewModel.SelectDropped(
+            await ViewModel.SelectDroppedAsync(
                 [.. items.OfType<IStorageFile>().Select(file => file.Path ?? string.Empty)],
                 items.OfType<IStorageFolder>().Count());
         }
