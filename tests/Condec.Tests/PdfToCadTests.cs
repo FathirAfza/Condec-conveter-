@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Condec contributors
 
+using System.Text;
 using ACadSharp.Entities;
+using Condec.Core.Architecture;
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
 using Condec.Core.Localization;
@@ -335,6 +337,163 @@ public sealed class PdfToCadTests : IDisposable
         await new PdfToCadConverter(null).ConvertAsync(request, new Progress<ConversionProgress>(), TestContext.Current.CancellationToken);
 
         Assert.Empty(request.Notes.Items);
+    }
+
+    // --- pictures become areas of their own colors (owner decision 2026-10-04) ---
+
+    /// <summary>Gives back its pictures one per call, whatever the bytes; null once they run out.</summary>
+    internal sealed class FakeDecoder(params RasterPicture?[] pictures) : IPictureDecoder
+    {
+        private int _next;
+
+        public int Calls { get; private set; }
+
+        public Task<RasterPicture?> DecodeAsync(byte[] encoded, int maximumPixels, CancellationToken ct)
+        {
+            Calls++;
+            var picture = _next < pictures.Length ? pictures[_next++] : null;
+            return Task.FromResult(picture is null ? null : picture with { Bgra = (byte[])picture.Bgra.Clone() });
+        }
+    }
+
+    /// <summary>An opaque picture, its left half red and its right half white, unless other colors are given.</summary>
+    internal static RasterPicture Halves(int width = 20, int height = 10, (byte B, byte G, byte R, byte A)? left = null, (byte B, byte G, byte R, byte A)? right = null)
+    {
+        var (l, r) = (left ?? (30, 30, 220, 255), right ?? (255, 255, 255, 255));
+        var bgra = new byte[width * height * 4];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var at = ((y * width) + x) * 4;
+                var (b, g, red, a) = x < width / 2 ? l : r;
+                (bgra[at], bgra[at + 1], bgra[at + 2], bgra[at + 3]) = (b, g, red, a);
+            }
+        }
+
+        return new RasterPicture(width, height, bgra, 96, 96);
+    }
+
+    internal static (double MinX, double MinY, double MaxX, double MaxY) BoundsOf(Hatch hatch)
+    {
+        var points = hatch.Paths.SelectMany(p => p.GetPoints(4)).ToList();
+        return (points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
+    }
+
+    private async Task<(List<Entity> Entities, ConversionNotes Notes)> Convert(string path, IPictureDecoder? decoder)
+    {
+        using var output = new MemoryStream();
+        var request = new ConversionRequest(path, ".pdf", ".dxf", output, PointUnits);
+        await new PdfToCadConverter(null, decoder).ConvertAsync(request, new Progress<ConversionProgress>(), TestContext.Current.CancellationToken);
+        return (CadFiles.ReadDxf(output.ToArray()).Entities.ToList(), request.Notes);
+    }
+
+    [Fact]
+    public async Task APicture_BecomesAColorAreaWhereThePageShowsIt()
+    {
+        // 40 × 20 points at (100, 50): the red half spans x 100 to 120.
+        var path = TestPdf.Write(NewPdf(), "q 40 0 0 20 100 50 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+
+        var (entities, notes) = await Convert(path, new FakeDecoder(Halves()));
+
+        var hatch = Assert.Single(entities.OfType<Hatch>());
+        Assert.True(hatch.IsSolid);
+        Assert.Equal(CadColors.FromRgbFine(220, 30, 30).Index, hatch.Color.Index);
+        var (minX, minY, maxX, maxY) = BoundsOf(hatch);
+        Assert.Equal(100, minX, 6);
+        Assert.Equal(120, maxX, 6);
+        Assert.Equal(50, minY, 6);
+        Assert.Equal(70, maxY, 6);
+        Assert.Empty(notes.Items);
+
+        // Under the line work, as on the page.
+        Assert.True(entities.FindIndex(e => e is Hatch) < entities.FindIndex(e => e is Line));
+    }
+
+    [Fact]
+    public async Task ATurnedPicture_IsTurnedTheSameWay()
+    {
+        // Turned a quarter to the left: the picture's bottom edge runs up from (100, 10), its left edge runs to the left.
+        var path = TestPdf.Write(NewPdf(), "q 0 40 -20 0 100 10 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+
+        var (entities, _) = await Convert(path, new FakeDecoder(Halves()));
+
+        var (minX, minY, maxX, maxY) = BoundsOf(Assert.Single(entities.OfType<Hatch>()));
+        Assert.Equal(80, minX, 6);
+        Assert.Equal(100, maxX, 6);
+        Assert.Equal(10, minY, 6);
+        Assert.Equal(30, maxY, 6);
+    }
+
+    [Fact]
+    public async Task APictureThatCantBeRead_IsLeftOutWithTheNote()
+    {
+        var path = TestPdf.Write(NewPdf(), "q 40 0 0 20 100 50 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+
+        var (entities, notes) = await Convert(path, new FakeDecoder());
+
+        Assert.Empty(entities.OfType<Hatch>());
+        Assert.Equal(Loc.Format("Note.PicturesLeftOut", 1), Assert.Single(notes.Items).Message);
+    }
+
+    [Fact]
+    public async Task APictureUnderTheWholePage_IsLeftOut()
+    {
+        // A page like this alone counts as a scan; on a page with drawing over it, the picture is its background.
+        var path = TestPdf.Write(NewPdf(), "q 200 0 0 100 0 0 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+        var decoder = new FakeDecoder(Halves());
+        using var pdf = PdfInspector.Open(path);
+
+        var painted = await PdfPictures.ReadAsync(pdf.GetPage(1), PointUnits, decoder, TestContext.Current.CancellationToken);
+
+        Assert.Empty(painted.Entities);
+        Assert.Equal(1, painted.LeftOut);
+        Assert.Equal(0, decoder.Calls);
+    }
+
+    [Fact]
+    public async Task WhatTheSoftMaskHides_StaysOpen()
+    {
+        // The picture is red all over; its mask hides the left half.
+        var path = TestPdf.Write(NewPdf(), "q 40 0 0 20 100 50 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true, softMask: (1, 1, [255]));
+        var red = Halves(left: (30, 30, 220, 255), right: (30, 30, 220, 255));
+        var mask = Halves(left: (0, 0, 0, 255), right: (255, 255, 255, 255));
+
+        var (entities, _) = await Convert(path, new FakeDecoder(red, mask));
+
+        var (minX, _, maxX, _) = BoundsOf(Assert.Single(entities.OfType<Hatch>()));
+        Assert.Equal(120, minX, 6);
+        Assert.Equal(140, maxX, 6);
+    }
+
+    [Theory]
+    [InlineData("/Filter /DCTDecode", false, true)]
+    [InlineData("/Filter [/FlateDecode /DCTDecode]", true, true)]
+    [InlineData("/Filter [/FlateDecode /DCTDecode] /DecodeParms [<< /Predictor 12 >> null]", true, false)]
+    [InlineData("/Filter /DCTDecode /ColorSpace /DeviceCMYK", false, false)]
+    [InlineData("/Filter /JPXDecode", false, false)]
+    public void TheJpegInsideAPicture_IsHandedToTheDecoder(string filter, bool packed, bool read)
+    {
+        var jpeg = Encoding.Latin1.GetBytes("stands for the bytes of a JPEG file");
+        var data = packed ? Packed(jpeg) : jpeg;
+        var colorSpace = filter.Contains("/ColorSpace", StringComparison.Ordinal) ? "" : " /ColorSpace /DeviceRGB";
+        var path = TestPdf.Write(NewPdf(), "q 40 0 0 20 100 50 cm /Im Do Q\n", picture: ($"/Width 2 /Height 2 /BitsPerComponent 8{colorSpace} {filter}", data));
+        using var pdf = PdfInspector.Open(path);
+
+        var encoded = PdfPictures.Encoded(Assert.Single(pdf.GetPage(1).GetImages()));
+
+        Assert.Equal(read ? jpeg : null, encoded);
+    }
+
+    private static byte[] Packed(byte[] data)
+    {
+        using var output = new MemoryStream();
+        using (var zlib = new System.IO.Compression.ZLibStream(output, System.IO.Compression.CompressionLevel.Optimal, leaveOpen: true))
+        {
+            zlib.Write(data);
+        }
+
+        return output.ToArray();
     }
 
     [Fact]

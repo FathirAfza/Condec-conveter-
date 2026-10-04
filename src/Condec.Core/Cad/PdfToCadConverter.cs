@@ -27,10 +27,12 @@ public sealed class NothingToTraceException(string message) : NothingToConvertEx
 
 /// <summary>
 /// One PDF page to a DXF or DWG drawing. Vector pages keep their geometry: lines become LINE or LWPOLYLINE,
-/// Béziers that trace a circle become ARC or CIRCLE and the rest SPLINE, words become TEXT. Scanned pages are
-/// rendered and their ink outlines traced into closed LWPOLYLINEs.
+/// Béziers that trace a circle become ARC or CIRCLE and the rest SPLINE, words become TEXT, and pictures become solid
+/// HATCH areas in their own colors when <paramref name="pictures"/> can read them. Scanned pages are rendered and their
+/// ink outlines traced into closed LWPOLYLINEs.
 /// </summary>
-public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConverter
+/// <param name="pictures">Reads the pictures of a vector page; without one they are left out with a note.</param>
+public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer, IPictureDecoder? pictures = null) : IConverter
 {
     /// <summary>
     /// AutoCAD 2000 (AC1015): the oldest version ACadSharp writes as both DXF and DWG, so the widest range
@@ -102,8 +104,10 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
             }
             else
             {
-                entities = ReadVectors(pdf, page, options, ct);
-                AddPicturesNote(request.Notes, CountPictures(page));
+                // Pictures first, so the lines and text drawn over them on the page stay on top.
+                var painted = await PdfPictures.ReadAsync(page, options, pictures, ct).ConfigureAwait(false);
+                entities = [.. painted.Entities, .. ReadVectors(pdf, page, options, ct)];
+                AddPicturesNote(request.Notes, painted.LeftOut);
             }
 
             foreach (var entity in entities)
@@ -154,17 +158,14 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         }
     }
 
-    /// <summary>
-    /// Pictures (logos, photos, stamps) placed on a vector page. A DXF or DWG from this converter holds lines,
-    /// curves and text only, so these are left out; the count is for the note that says so.
-    /// </summary>
+    /// <summary>Pictures (logos, photos, stamps) placed on a vector page, at least partly on the page.</summary>
     internal static int CountPictures(Page page)
     {
         var pageBox = new Rect(0, 0, page.Width, page.Height);
         return page.GetImages().Count(image => pageBox.Intersects(ToRect(image.BoundingBox)));
     }
 
-    /// <summary>Tells the user that the pictures of the converted pages didn't come along, when there were any.</summary>
+    /// <summary>Tells the user that pictures of the converted pages didn't come along, when there were any.</summary>
     internal static void AddPicturesNote(ConversionNotes notes, int pictures)
     {
         if (pictures > 0)

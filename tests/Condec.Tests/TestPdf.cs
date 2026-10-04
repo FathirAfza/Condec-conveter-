@@ -19,6 +19,8 @@ internal static class TestPdf
     /// <param name="form">Optional form XObject content, available as /Fx with the given matrix.</param>
     /// <param name="innerForm">Optional form XObject content with the identity matrix, available inside /Fx (not on the page) as /Fy.</param>
     /// <param name="image">Adds a 1 × 1 pixel grey image XObject, available on the page as /Im.</param>
+    /// <param name="picture">Instead of the grey pixel: the /Im dictionary entries after /Subtype, and its stream bytes.</param>
+    /// <param name="softMask">A DeviceGray soft mask for /Im: its size and 8-bit samples.</param>
     public static string Write(
         string path,
         string content,
@@ -30,7 +32,9 @@ internal static class TestPdf
         string? form = null,
         string formMatrix = "1 0 0 1 0 0",
         string? innerForm = null,
-        bool image = false)
+        bool image = false,
+        (string Dictionary, byte[] Data)? picture = null,
+        (int Width, int Height, byte[] Data)? softMask = null)
     {
         var media = mediaBox ?? Invariant($"0 0 {width} {height}");
         var crop = cropBox is null ? "" : $" /CropBox [{cropBox}]";
@@ -58,9 +62,18 @@ internal static class TestPdf
             xobjects.Add(Invariant($"/Fx {objects.Count} 0 R"));
         }
 
-        if (image)
+        if (image || picture is not null)
         {
-            objects.Add(Stream("/Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8", "\u0080"));
+            var mask = "";
+            if (softMask is { } m)
+            {
+                objects.Add(Stream(Invariant($"/Type /XObject /Subtype /Image /Width {m.Width} /Height {m.Height} /ColorSpace /DeviceGray /BitsPerComponent 8"), Encoding.Latin1.GetString(m.Data)));
+                mask = Invariant($" /SMask {objects.Count} 0 R");
+            }
+
+            objects.Add(picture is { } own
+                ? Stream($"/Type /XObject /Subtype /Image {own.Dictionary}{mask}", Encoding.Latin1.GetString(own.Data))
+                : Stream($"/Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8{mask}", "\u0080"));
             xobjects.Add(Invariant($"/Im {objects.Count} 0 R"));
         }
 

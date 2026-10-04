@@ -23,3 +23,4 @@ BundleArtifacts/
 ## Bundled LibreOffice (tools/fetch-libreoffice.ps1)
 third_party/
 dist/
+ErrorReports/

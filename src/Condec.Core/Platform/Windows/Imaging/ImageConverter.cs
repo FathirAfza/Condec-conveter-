@@ -153,24 +153,7 @@ public sealed class ImageConverter : IConverter
         ex is OutOfMemoryException || (ex is COMException { HResult: unchecked((int)0x8007000E) });
 
     /// <summary>Composites straight-alpha BGRA pixels onto white and makes them opaque.</summary>
-    internal static void FlattenOntoWhite(byte[] bgra)
-    {
-        for (var i = 0; i < bgra.Length; i += 4)
-        {
-            int alpha = bgra[i + 3];
-            if (alpha == 255)
-            {
-                continue;
-            }
-
-            for (var channel = i; channel < i + 3; channel++)
-            {
-                bgra[channel] = (byte)(((bgra[channel] * alpha) + (255 * (255 - alpha)) + 127) / 255);
-            }
-
-            bgra[i + 3] = 255;
-        }
-    }
+    internal static void FlattenOntoWhite(byte[] bgra) => Bgra.FlattenOntoWhite(bgra);
 
     /// <summary>A decoded picture as straight-alpha BGRA, in the orientation it is shown with.</summary>
     internal sealed record DecodedImage(byte[] Pixels, uint Width, uint Height, double DpiX, double DpiY, uint FrameCount = 1);

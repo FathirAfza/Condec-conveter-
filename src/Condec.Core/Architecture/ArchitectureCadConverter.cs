@@ -182,7 +182,7 @@ public static class ArchitectureCadBuilder
                     Radius = circle.Radius * scale,
                 };
                 break;
-            case FillPrimitive fill when ToHatch(fill, scale) is { } hatch:
+            case FillPrimitive fill when ToHatch(fill, p => new XY(p.X * scale, p.Y * scale)) is { } hatch:
                 yield return hatch;
                 break;
         }
@@ -193,7 +193,8 @@ public static class ArchitectureCadBuilder
     /// filled odd-even, the HATCH "Normal" style, so a hole stays open; an outline inside an even number of others is an
     /// outer edge.
     /// </summary>
-    private static Hatch? ToHatch(FillPrimitive fill, double scale)
+    /// <param name="map">From the area's coordinates to the drawing's.</param>
+    internal static Hatch? ToHatch(FillPrimitive fill, Func<(double X, double Y), XY> map)
     {
         var loops = fill.Loops.Where(loop => loop.Count >= 3).ToList();
         if (loops.Count == 0)
@@ -210,7 +211,11 @@ public static class ArchitectureCadBuilder
         foreach (var loop in loops)
         {
             var depth = loops.Count(other => !ReferenceEquals(other, loop) && Encloses(other, loop[0]));
-            var edge = new Hatch.BoundaryPath.Polyline(loop.Select(p => new XYZ(p.X * scale, p.Y * scale, 0)), true);
+            var edge = new Hatch.BoundaryPath.Polyline(loop.Select(p =>
+            {
+                var at = map(p);
+                return new XYZ(at.X, at.Y, 0);
+            }), true);
             hatch.Paths.Add(new Hatch.BoundaryPath([edge])
             {
                 Flags = depth % 2 == 0 ? BoundaryPathFlags.Polyline | BoundaryPathFlags.External : BoundaryPathFlags.Polyline,
@@ -244,10 +249,16 @@ public static class CombinedCadBuilder
     public const double GapShare = 0.1;
 
     /// <summary>
-    /// The drawing, and how many entities it holds. Throws when no page has anything to draw. Pictures on the vector
-    /// pages are left out, and <paramref name="notes"/>, when given, says so.
+    /// The drawing, and how many entities it holds. Throws when no page has anything to draw. Pictures on the vector pages
+    /// become solid HATCH areas when <paramref name="pictures"/> can read them; the rest are left out, and
+    /// <paramref name="notes"/>, when given, says so.
     /// </summary>
-    public static (CadDocument Cad, int EntityCount) Build(string pdfPath, CombinedCadOptions options, ConversionNotes? notes, CancellationToken ct)
+    public static async Task<(CadDocument Cad, int EntityCount)> BuildAsync(
+        string pdfPath,
+        CombinedCadOptions options,
+        ConversionNotes? notes,
+        IPictureDecoder? pictures,
+        CancellationToken ct)
     {
         if (options.Pages.Count == 0)
         {
@@ -263,7 +274,7 @@ public static class CombinedCadBuilder
         {
             var cursor = 0.0;
             var count = 0;
-            var pictures = 0;
+            var leftOut = 0;
             foreach (var part in options.Pages)
             {
                 ct.ThrowIfCancellationRequested();
@@ -282,8 +293,10 @@ public static class CombinedCadBuilder
                         // Same real size, written in the drawing's unit.
                         var inUnit = vector with { Unit = unit };
                         var page = pdf.GetPage(vector.PageNumber);
-                        var entities = PdfToCadConverter.ReadVectors(pdf, page, inUnit, ct);
-                        pictures += PdfToCadConverter.CountPictures(page);
+                        // Pictures first, so the lines and text drawn over them on the page stay on top.
+                        var painted = await PdfPictures.ReadAsync(page, inUnit, pictures, ct).ConfigureAwait(false);
+                        List<Entity> entities = [.. painted.Entities, .. PdfToCadConverter.ReadVectors(pdf, page, inUnit, ct)];
+                        leftOut += painted.LeftOut;
                         var shift = new XYZ(cursor, 0, 0);
                         var box = BoundingBox.Null;
                         foreach (var entity in entities)
@@ -327,7 +340,7 @@ public static class CombinedCadBuilder
 
             if (notes is not null)
             {
-                PdfToCadConverter.AddPicturesNote(notes, pictures);
+                PdfToCadConverter.AddPicturesNote(notes, leftOut);
             }
 
             PdfToCadConverter.SetExtents(cad);
@@ -349,7 +362,8 @@ public static class CombinedCadBuilder
 /// A DWG goes through a DXF first: the drawing is written as DXF, read back, and that DXF is converted to DWG, the same
 /// steps as converting the DXF file yourself.
 /// </remarks>
-public sealed class ArchitectureToCadConverter : IConverter
+/// <param name="pictures">Reads the pictures on the vector pages of a combined drawing; without one they are left out with a note.</param>
+public sealed class ArchitectureToCadConverter(IPictureDecoder? pictures = null) : IConverter
 {
     private static readonly HashSet<string> Sources = [".png", ".jpg", ".jpeg", ".heic", ".heif", ".pdf"];
 
@@ -364,7 +378,7 @@ public sealed class ArchitectureToCadConverter : IConverter
         var (cad, entityCount) = request.Options switch
         {
             ArchitectureCadOptions picture => await Task.Run(() => ArchitectureCadBuilder.Build(picture), ct).ConfigureAwait(false),
-            CombinedCadOptions pages => await Task.Run(() => CombinedCadBuilder.Build(request.SourcePath, pages, request.Notes, ct), ct).ConfigureAwait(false),
+            CombinedCadOptions pages => await Task.Run(() => CombinedCadBuilder.BuildAsync(request.SourcePath, pages, request.Notes, pictures, ct), ct).ConfigureAwait(false),
             _ => throw new ArgumentException("Converting a picture to CAD needs the analysis and the chosen objects.", nameof(request)),
         };
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));

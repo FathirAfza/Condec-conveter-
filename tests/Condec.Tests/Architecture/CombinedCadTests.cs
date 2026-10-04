@@ -43,11 +43,11 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
-    public void PagesSitSideBySideWithAGap()
+    public async Task PagesSitSideBySideWithAGap()
     {
         var path = Pdf("10 10 m 60 10 l S\n", "10 10 m 60 10 l S\n", "10 10 m 60 10 l S\n");
 
-        var (cad, count) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Points with { PageNumber = 2 }, Points with { PageNumber = 3 }]), null, Ct);
+        var (cad, count) = await CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Points with { PageNumber = 2 }, Points with { PageNumber = 3 }]), null, null, Ct);
 
         Assert.Equal(3, count);
         var starts = cad.Entities.OfType<Line>().Select(l => l.StartPoint.X).Order().ToList();
@@ -58,11 +58,11 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
-    public void OnlyTheChosenPagesInTheChosenOrder()
+    public async Task OnlyTheChosenPagesInTheChosenOrder()
     {
         var path = Pdf("10 10 m 60 10 l S\n", "10 20 m 60 20 l S\n", "10 30 m 60 30 l S\n");
 
-        var (cad, _) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 3 }, Points with { PageNumber = 1 }]), null, Ct);
+        var (cad, _) = await CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points with { PageNumber = 3 }, Points with { PageNumber = 1 }]), null, null, Ct);
 
         var lines = cad.Entities.OfType<Line>().OrderBy(l => l.StartPoint.X).ToList();
         Assert.Equal(2, lines.Count);
@@ -71,12 +71,12 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
-    public void AScannedPageKeepsItsRealSizeInTheDrawingsUnit()
+    public async Task AScannedPageKeepsItsRealSizeInTheDrawingsUnit()
     {
         var path = Pdf("10 10 m 60 10 l S\n");
         var centimeters = new CadOptions(1, CadUnit.Centimeters);
 
-        var (cad, _) = CombinedCadBuilder.Build(path, new CombinedCadOptions([centimeters, Picture(millimetersPerPixel: 0.5)]), null, Ct);
+        var (cad, _) = await CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([centimeters, Picture(millimetersPerPixel: 0.5)]), null, null, Ct);
 
         Assert.Equal(UnitsType.Centimeters, cad.Header.InsUnits);
 
@@ -89,10 +89,10 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
-    public void TheDrawingSurvivesBeingWrittenAndReadBack()
+    public async Task TheDrawingSurvivesBeingWrittenAndReadBack()
     {
         var path = Pdf("10 10 m 60 10 l S\nBT /F1 12 Tf 10 50 Td (Denah) Tj ET\n", "10 10 m 60 10 l S\n");
-        var (cad, count) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Picture(1), Points with { PageNumber = 2 }]), null, Ct);
+        var (cad, count) = await CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Picture(1), Points with { PageNumber = 2 }]), null, null, Ct);
 
         var read = CadFiles.ReadDxf(CadFiles.Write(cad, ".dxf"));
 
@@ -102,12 +102,12 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
-    public void PicturesOnTheVectorPages_AreNoted()
+    public async Task PicturesOnTheVectorPages_AreNoted()
     {
         var path = TestPdf.Write(_dir.File("logo.pdf"), "q 20 0 0 20 150 60 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
         var notes = new ConversionNotes();
 
-        CombinedCadBuilder.Build(path, new CombinedCadOptions([Points, Picture(1), Points]), notes, Ct);
+        await CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points, Picture(1), Points]), notes, null, Ct);
 
         var note = Assert.Single(notes.Items);
         Assert.Equal(NoteSeverity.Informational, note.Severity);
@@ -115,18 +115,33 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
-    public void NothingOnAnyPageIsRefused()
+    public async Task PicturesOnTheVectorPages_BecomeColorAreasOnTheirOwnPage()
     {
-        var path = Pdf("", "");
+        var path = TestPdf.Write(_dir.File("logo.pdf"), "q 40 0 0 20 100 50 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+        var notes = new ConversionNotes();
+        var decoder = new PdfToCadTests.FakeDecoder(PdfToCadTests.Halves(), PdfToCadTests.Halves());
 
-        Assert.Throws<NothingToConvertException>(() => CombinedCadBuilder.Build(path, new CombinedCadOptions([Points, Points with { PageNumber = 2 }]), null, Ct));
+        var (cad, _) = await CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points, Points]), notes, decoder, Ct);
+
+        // The second page starts 200 pt + 10% to the right, and its picture with it.
+        var lefts = cad.Entities.OfType<Hatch>().Select(h => PdfToCadTests.BoundsOf(h).MinX).Order().ToList();
+        Assert.Equal([100, 320], lefts.Select(x => Math.Round(x, 6)));
+        Assert.Empty(notes.Items);
     }
 
     [Fact]
-    public void APageThatIsNotThereIsRefused()
+    public async Task NothingOnAnyPageIsRefused()
+    {
+        var path = Pdf("", "");
+
+        await Assert.ThrowsAsync<NothingToConvertException>(() => CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points, Points with { PageNumber = 2 }]), null, null, Ct));
+    }
+
+    [Fact]
+    public async Task APageThatIsNotThereIsRefused()
     {
         var path = Pdf("10 10 m 60 10 l S\n");
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 2 }]), null, Ct));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => CombinedCadBuilder.BuildAsync(path, new CombinedCadOptions([Points with { PageNumber = 2 }]), null, null, Ct));
     }
 }

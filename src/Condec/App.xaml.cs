@@ -54,7 +54,7 @@ public partial class App : Application
                 new ImageConverter(),
                 new MediaConverter(),
                 new PdfToImageConverter(),
-                new PdfToCadConverter(new PdfPageRenderer()),
+                new PdfToCadConverter(new PdfPageRenderer(), new WindowsPictureDecoder()),
                 new CadFileConverter(),
                 new LibreOfficeConverter(CondecPaths.LibreOfficeProfileDirectory),
             ],
@@ -69,7 +69,7 @@ public partial class App : Application
         // Architecture's own: a picture analyzed on this device becomes DWG or DXF, and a drawing is drawn as PDF, PNG or JPG.
         // The vector DXF and PDF conversions of "to CAD" use the main pipeline.
         var architectureRegistry = new ConverterRegistry(
-            [new ArchitectureToCadConverter(), new CadRenderConverter()],
+            [new ArchitectureToCadConverter(new WindowsPictureDecoder()), new CadRenderConverter()],
             [new CadOutputValidator(), new PdfOutputValidator(), new ImageOutputValidator()]);
         var architecturePipeline = new ConversionPipeline(architectureRegistry, journal);
         var history = new HistoryStore(CondecPaths.HistoryFile);
