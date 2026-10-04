@@ -880,8 +880,10 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public bool HasEngineNote => EngineNote is not null;
 
-    /// <summary>"Performance mode: Extra high (80%)": the pace from Settings, which makes a render take longer (DESIGN §7.6).</summary>
-    public string PaceText => Loc.Format("Upscale.PerformanceMode", PerformanceText.Describe(_settings.PerformanceMode, _settings.MemorySaver));
+    /// <summary>"Performance mode: Extra high (80%)" or "Adaptive (up to 80%)": the pace from Settings, which makes a render take longer (DESIGN §7.6).</summary>
+    public string PaceText => Loc.Format(
+        "Upscale.PerformanceMode",
+        PerformanceText.Describe(_settings.PerformanceMode, _settings.MemorySaver, _settings.IdleDutyFor(EffectiveEngine)));
 
     private void RaiseEngine()
     {
@@ -936,7 +938,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     private double? EstimatedSeconds => HasSource && !IsLimitUnavailable
         ? UpscaleEstimator.EstimatedSeconds(
-            UpscaleSupport.RenderedPixels(SourceWidth, SourceHeight, TileSize), _settings.GetThroughput(EffectiveEngine, TileSize), _settings.Pace.Duty)
+            UpscaleSupport.RenderedPixels(SourceWidth, SourceHeight, TileSize), _settings.GetThroughput(EffectiveEngine, TileSize), _settings.ExpectedDutyFor(EffectiveEngine))
         : null;
 
     /// <summary>A render expected to take this long or more gets a note under the estimate (DESIGN §7.6).</summary>
@@ -1033,7 +1035,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         }
 
         _lastScale = Scale;
-        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style, _settings.Pace.Duty, _settings.Adaptive)));
+        await RunAsync(new ConversionJob(Source.Path, extension, destination, new UpscaleOptions(OutputWidth, OutputHeight, _settings.RenderMode, TileSize, Style, _settings.Pace.Duty, _settings.Adaptive, _settings.IdleDutyFor(EffectiveEngine))));
     }
 
     [RelayCommand]
@@ -1159,7 +1161,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
                 item.File.Path,
                 extension,
                 names[i],
-                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style, _settings.Pace.Duty, _settings.Adaptive)),
+                new UpscaleOptions(item.OutputWidth, item.OutputHeight, _settings.RenderMode, MemoryPlanFor(item.Width, item.Height, item.OutputWidth, item.OutputHeight).TileSize, Style, _settings.Pace.Duty, _settings.Adaptive, _settings.IdleDutyFor(EffectiveEngine))),
             item.Scale,
             item.Name,
             item.Width,

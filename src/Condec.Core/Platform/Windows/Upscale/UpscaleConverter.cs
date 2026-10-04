@@ -65,6 +65,11 @@ public sealed class UpscaleConverter : IReencodingConverter
             throw new ArgumentException($"{options.Duty} is not a share of time working.", nameof(request));
         }
 
+        if (options.IdleDuty is { } idle && !(idle > 0 && idle <= 1))
+        {
+            throw new ArgumentException($"{idle} is not a share of time working.", nameof(request));
+        }
+
         var target = OutputExtensions.Contains(FileExtension.Normalize(request.TargetExtension))
             ? ImageFormats.FindTarget(FileExtension.Normalize(request.TargetExtension))
             : null;
@@ -100,6 +105,11 @@ public sealed class UpscaleConverter : IReencodingConverter
         using var model = OpenModel(options, request.Notes, ct);
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));
 
+        // Going above the mode while the device is idle rests on reading the GPU, so only a render that really runs on the GPU does.
+        var idleDuty = options.Adaptive && UpscaleSupport.EffectiveEngine(options.Engine, _device) == RenderEngine.Gpu && model is not OnnxUpscaleModel { Engine: RenderEngine.Cpu }
+            ? options.IdleDuty
+            : null;
+
         var width = (int)image.Width;
         var height = (int)image.Height;
         var keepsAlpha = target.KeepsTransparency && HasTransparency(image.Pixels);
@@ -118,7 +128,7 @@ public sealed class UpscaleConverter : IReencodingConverter
         byte[] pixels;
         try
         {
-            pixels = await Task.Run(() => Render(model, image.Pixels, width, height, options, alpha, monitor, tiles, ct), ct).ConfigureAwait(false);
+            pixels = await Task.Run(() => Render(model, image.Pixels, width, height, options, idleDuty, alpha, monitor, tiles, ct), ct).ConfigureAwait(false);
         }
         catch (OutOfMemoryException ex)
         {
@@ -179,6 +189,7 @@ public sealed class UpscaleConverter : IReencodingConverter
         int width,
         int height,
         UpscaleOptions options,
+        double? idleDuty,
         byte[]? alpha,
         ILoadMonitor? monitor,
         IProgress<(int Done, int Total)> tiles,
@@ -187,7 +198,7 @@ public sealed class UpscaleConverter : IReencodingConverter
         byte[] enlarged;
         using (RenderPriority.Lower())
         {
-            var pacer = options.Duty < 1 || monitor is not null ? new TilePacer(options.Duty, monitor: monitor) : null;
+            var pacer = options.Duty < 1 || monitor is not null ? new TilePacer(options.Duty, monitor: monitor, idleDuty: idleDuty) : null;
             pacer?.Check();
             enlarged = TiledUpscaler.Run(model, source, width, height, options.TileSize, tiles, ct, pacer);
         }

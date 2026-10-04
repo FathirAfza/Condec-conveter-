@@ -175,6 +175,24 @@ public sealed class UpscaleConverterTests : IDisposable
         Assert.False(opened);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1.5)]
+    public async Task AnIdleShareOutsideZeroToOne_IsRefusedBeforeAnythingIsLoaded(double idle)
+    {
+        var source = _dir.File("gambar.png");
+        await WriteSourceAsync(source);
+        var opened = false;
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => CreatePipeline(factory: _ =>
+        {
+            opened = true;
+            return new NearestNeighborModel();
+        }).RunAsync(new ConversionJob(source, ".png", _dir.File("hasil.png"), new UpscaleOptions(64, 64, RenderEngine.Gpu, Duty: 0.4, Adaptive: true, IdleDuty: idle)), null, Ct));
+
+        Assert.False(opened);
+    }
+
     [Fact]
     public async Task APacedRender_GivesTheSamePicture_AndPutsThePriorityBack()
     {

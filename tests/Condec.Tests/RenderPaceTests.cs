@@ -206,6 +206,51 @@ public class RenderPaceTests
     }
 
     [Fact]
+    public void Adaptive_GoesAboveTheMode_OnlyOnTheGpu_AndNeverWithMemorySaver()
+    {
+        var store = new MemoryStore();
+        var settings = new AppSettings(store, Laptop) { PerformanceMode = PerformanceMode.Medium };
+
+        // Adaptive on at first: the GPU works 80% of the time while the device is idle, and the estimate counts on that.
+        Assert.Equal(0.8, settings.IdleDutyFor(RenderEngine.Gpu));
+        Assert.Equal(0.8, settings.ExpectedDutyFor(RenderEngine.Gpu));
+
+        // The CPU's load is not read, so the mode stays.
+        Assert.Null(settings.IdleDutyFor(RenderEngine.Cpu));
+        Assert.Equal(0.4, settings.ExpectedDutyFor(RenderEngine.Cpu));
+
+        settings.MemorySaver = true;
+        Assert.Null(settings.IdleDutyFor(RenderEngine.Gpu));
+        Assert.Equal(0.1, settings.ExpectedDutyFor(RenderEngine.Gpu));
+
+        settings.MemorySaver = false;
+        settings.Adaptive = false;
+        Assert.Null(settings.IdleDutyFor(RenderEngine.Gpu));
+        Assert.Equal(0.4, settings.ExpectedDutyFor(RenderEngine.Gpu));
+    }
+
+    [Fact]
+    public void Adaptive_HasNothingToRaise_AtExtraHigh()
+    {
+        var settings = new AppSettings(new MemoryStore(), Laptop);
+
+        Assert.Equal(PerformanceMode.ExtraHigh, settings.PerformanceMode);
+        Assert.Null(settings.IdleDutyFor(RenderEngine.Gpu));
+        Assert.Equal(0.8, settings.ExpectedDutyFor(RenderEngine.Gpu));
+    }
+
+    [Fact]
+    public void ThePaceHasAnIdleShare_OfExtraHigh_ExceptWithMemorySaver()
+    {
+        foreach (var mode in RenderPace.Modes)
+        {
+            Assert.Equal(0.8, RenderPace.For(mode, memorySaver: false).IdleDuty);
+        }
+
+        Assert.Equal(0.1, RenderPace.For(PerformanceMode.High, memorySaver: true).IdleDuty);
+    }
+
+    [Fact]
     public void Settings_RememberTheMode_AndMemorySaverCapsTheMemory()
     {
         var store = new MemoryStore();
@@ -280,6 +325,44 @@ public class RenderPaceTests
     [InlineData(0.8, 0.0, 90.0, 0.8)]
     public void Adaptive_LowersTheShare_WhileTheDeviceIsBusy(double duty, double? gpu, double? memory, double expected) =>
         Assert.Equal(expected, new AdaptivePace().Adjust(duty, new SystemLoad(gpu, memory)), 6);
+
+    [Theory]
+    [InlineData(0.4, 0.8, 0.0, 50.0, 0.8)]
+    [InlineData(0.4, 0.8, 19.9, 94.9, 0.8)]
+    [InlineData(0.2, 0.8, 0.0, 0.0, 0.8)]
+    [InlineData(0.4, 0.8, 20.0, 50.0, 0.2)]
+    [InlineData(0.8, 0.8, 20.0, 50.0, 0.2)]
+    [InlineData(0.4, 0.8, 0.0, 95.0, 0.2)]
+    [InlineData(0.2, 0.8, 0.0, 95.0, 0.1)]
+    [InlineData(0.2, 0.8, 50.0, 0.0, 0.1)]
+    [InlineData(0.8, 0.8, 90.0, 95.0, 0.1)]
+    [InlineData(0.1, 0.1, 0.0, 0.0, 0.1)]
+    [InlineData(0.1, 0.1, 90.0, 95.0, 0.1)]
+    public void Adaptive_GoesAboveTheMode_OnlyWhileTheDeviceIsIdle(double duty, double idleDuty, double gpu, double memory, double expected) =>
+        Assert.Equal(expected, new AdaptivePace().Adjust(duty, idleDuty, new SystemLoad(gpu, memory)), 6);
+
+    [Fact]
+    public void Adaptive_NeverTakesTheDeviceForIdle_WhenTheGpuCounterCannotBeRead()
+    {
+        var adaptive = new AdaptivePace();
+        Assert.Equal(0.4, adaptive.Adjust(0.4, 0.8, new SystemLoad(null, 50)), 6);
+        Assert.Equal(0.4, adaptive.Adjust(0.4, 0.8, new SystemLoad(null, null)), 6);
+
+        // Once the counter has read, it is.
+        Assert.Equal(0.8, adaptive.Adjust(0.4, 0.8, new SystemLoad(2, 50)), 6);
+    }
+
+    [Fact]
+    public void Adaptive_GoesBackAbove_WhenTheHoldIsOver()
+    {
+        var adaptive = new AdaptivePace();
+        Assert.Equal(0.8, adaptive.Adjust(0.4, 0.8, new SystemLoad(1, 50)), 6);
+        Assert.Equal(0.2, adaptive.Adjust(0.4, 0.8, new SystemLoad(60, 50)), 6);
+
+        // Not idle while held: a reading under 10% once is not enough.
+        Assert.Equal(0.2, adaptive.Adjust(0.4, 0.8, new SystemLoad(3, 50)), 6);
+        Assert.Equal(0.8, adaptive.Adjust(0.4, 0.8, new SystemLoad(3, 50)), 6);
+    }
 
     [Fact]
     public void Adaptive_NeverWorksMoreThanTheMode()
@@ -376,6 +459,42 @@ public class RenderPaceTests
         pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
         Assert.Equal(0.8, pacer.CurrentDuty, 6);
     }
+
+    [Fact]
+    public void ThePacer_WorksAboveTheMode_WhileTheDeviceIsIdle_AndEasesOffWhenItIsNot()
+    {
+        var monitor = new FixedMonitor(new SystemLoad(1, 50));
+        var pacer = new TilePacer(0.4, (_, _) => { }, monitor, TimeSpan.Zero, idleDuty: 0.8);
+
+        pacer.Check();
+        Assert.Equal(0.8, pacer.CurrentDuty, 6);
+
+        monitor.Load = new SystemLoad(60, 50);
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+
+        monitor.Load = new SystemLoad(1, 50);
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal(0.8, pacer.CurrentDuty, 6);
+    }
+
+    [Fact]
+    public void ThePacer_KeepsToTheMode_WithoutAnIdleShare()
+    {
+        var monitor = new FixedMonitor(new SystemLoad(1, 50));
+        var pacer = new TilePacer(0.4, (_, _) => { }, monitor, TimeSpan.Zero);
+
+        pacer.Check();
+        Assert.Equal(0.4, pacer.CurrentDuty, 6);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1.5)]
+    public void AnIdleShareOutsideZeroToOne_IsRefused(double idle) =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => new TilePacer(0.4, idleDuty: idle));
 
     [Fact]
     public void ThePacer_GoesByTheDevice_FromTheFirstRest_WhenCheckedBeforeTheFirstTile()
@@ -494,5 +613,10 @@ public class RenderPaceTests
         Assert.Equal("Extra high (80%)", PerformanceText.Mode(PerformanceMode.ExtraHigh, english));
         Assert.Equal("Medium (40%)", PerformanceText.Mode(PerformanceMode.Medium, english));
         Assert.Equal("Memory saver (10%)", PerformanceText.Describe(PerformanceMode.Low, memorySaver: true, english));
+
+        Assert.Equal("Adaptive (up to 80%)", PerformanceText.Describe(PerformanceMode.Medium, memorySaver: false, 0.8, english));
+        Assert.Equal("Adaptif (sampai 80%)", PerformanceText.Describe(PerformanceMode.Medium, memorySaver: false, 0.8, indonesian));
+        Assert.Equal("Medium (40%)", PerformanceText.Describe(PerformanceMode.Medium, memorySaver: false, null, english));
+        Assert.Equal("Memory saver (10%)", PerformanceText.Describe(PerformanceMode.Medium, memorySaver: true, null, english));
     }
 }

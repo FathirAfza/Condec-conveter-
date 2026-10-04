@@ -118,6 +118,16 @@ public sealed class AppSettings
     /// <summary>What the performance mode and Memory saver mean for a render.</summary>
     public RenderPace Pace => RenderPace.For(PerformanceMode, MemorySaver);
 
+    /// <summary>
+    /// The share of the time Adaptive works at while the device is idle, above the mode (owner's decision 2026-10-04, DESIGN §7.6).
+    /// Null when the render keeps to the mode: Adaptive is off, Memory saver is on, or the engine is the CPU, whose load isn't read.
+    /// </summary>
+    public double? IdleDutyFor(RenderEngine effectiveEngine) =>
+        Adaptive && effectiveEngine == RenderEngine.Gpu && Pace.IdleDuty > Pace.Duty ? Pace.IdleDuty : null;
+
+    /// <summary>The share of the time a render's estimate counts on (DESIGN §8): the idle share when Adaptive goes above the mode, else the mode's.</summary>
+    public double ExpectedDutyFor(RenderEngine effectiveEngine) => IdleDutyFor(effectiveEngine) ?? Pace.Duty;
+
     /// <summary>The memory a render may use: the limit above, or less with Memory saver on.</summary>
     public int EffectiveMemoryLimitGb => Pace.MemoryLimitGb is { } saver ? Math.Min(saver, MemoryLimitGb) : MemoryLimitGb;
 

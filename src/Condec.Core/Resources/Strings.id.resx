@@ -225,7 +225,7 @@
   <data name="Settings.PerformanceModeDescription" xml:space="preserve"><value>Seberapa keras perangkat bekerja saat upscale. Mode yang lebih rendah beristirahat di antara tile: render lebih lama, perangkat lebih dingin, dan aplikasi lain tetap lancar.</value></data>
   <data name="Settings.PerformanceModeLocked" xml:space="preserve"><value>Dikunci oleh Hemat memori: render bekerja 10% dari waktunya.</value></data>
   <data name="Settings.Adaptive" xml:space="preserve"><value>Adaptif</value></data>
-  <data name="Settings.AdaptiveDescription" xml:space="preserve"><value>Kurangi kerja render otomatis saat aplikasi lain memakai GPU atau RAM hampir penuh. Tidak pernah melebihi mode performa.</value></data>
+  <data name="Settings.AdaptiveDescription" xml:space="preserve"><value>Bekerja penuh saat perangkat sepi, dan mengalah sendiri saat aplikasi lain memakai GPU atau RAM hampir penuh. Mode performa mengatur kecepatannya bila ini mati. Hemat memori tidak pernah dinaikkan.</value></data>
   <data name="Settings.MemorySaver" xml:space="preserve"><value>Hemat memori</value></data>
   <data name="Settings.MemorySaverDescription" xml:space="preserve"><value>Batasi Condec ke memori 2 GB, tile 48 px, dan kerja 10% dari waktu render. Untuk perangkat dengan RAM kecil atau saat banyak aplikasi terbuka. Upscale jadi jauh lebih lama.</value></data>
   <data name="Settings.MemoryLimitLocked" xml:space="preserve"><value>Dikunci oleh Hemat memori: Condec memakai paling banyak {0} GB untuk upscale.</value></data>
@@ -316,6 +316,7 @@
   <data name="Upscale.PerformanceMode" xml:space="preserve"><value>Mode performa: {0}</value></data>
   <data name="Upscale.LongRender" xml:space="preserve"><value>Render ini perkiraannya lebih dari 10 menit. Colokkan charger dan biarkan Condec terbuka. Mode performa di Settings mengatur seberapa keras perangkat bekerja.</value></data>
   <data name="Performance.WithPercent" xml:space="preserve"><value>{0} ({1}%)</value></data>
+  <data name="Performance.Adaptive" xml:space="preserve"><value>Adaptif (sampai {0}%)</value></data>
   <data name="Performance.ExtraHigh" xml:space="preserve"><value>Sangat tinggi</value></data>
   <data name="Performance.High" xml:space="preserve"><value>Tinggi</value></data>
   <data name="Performance.Medium" xml:space="preserve"><value>Sedang</value></data>

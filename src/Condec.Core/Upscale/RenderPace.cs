@@ -47,6 +47,12 @@ public sealed record RenderPace(double Duty, int MaxTileSize, int? MemoryLimitGb
         ? MemorySaver
         : new RenderPace(DutyOf(mode), mode == PerformanceMode.Low ? 64 : TiledUpscaler.DefaultTileSize, null);
 
+    /// <summary>
+    /// The share of the time Adaptive works while the device is idle (DESIGN §7.6): Extra high's, whatever the mode, because an
+    /// idle device has no one to be gentle for. Memory saver keeps its own: the 2 GB and the small tile are as much a part of it.
+    /// </summary>
+    public double IdleDuty => MemoryLimitGb is null ? DutyOf(PerformanceMode.ExtraHigh) : Duty;
+
     /// <summary>The share of the time as a whole percent: 80, 60, 40, 20 or 10.</summary>
     public int Percent => (int)Math.Round(Duty * 100, MidpointRounding.AwayFromZero);
 }
@@ -63,8 +69,9 @@ public interface ILoadMonitor
 }
 
 /// <summary>
-/// Adaptive (DESIGN §7.6): the device's state lowers the share of the time a render works, never raises it above the mode.
-/// While another app uses the GPU the share is at most <see cref="BusyDuty"/>; while memory is nearly full it is halved.
+/// Adaptive (DESIGN §7.6): the share of the time a render works follows the device. While it is idle the render works at the idle
+/// share, above the mode (owner's decision 2026-10-04); while another app uses the GPU the share is at most <see cref="BusyDuty"/>,
+/// and while memory is nearly full it is halved, both from the mode's share.
 /// A render that works hard starves an app that shares the GPU, and a starved app shows hardly any use (DESIGN §13 #64), so
 /// the busy state is held until the others have been quiet for a few readings, not dropped the moment they look quiet.
 /// </summary>
@@ -86,15 +93,32 @@ public sealed class AdaptivePace
     public const double FullMemoryPercent = 95;
 
     private bool _gpuBusy;
+    private bool _gpuSeen;
     private int _quietReads;
 
     /// <summary>Another app was using the GPU and has not been quiet since.</summary>
     public bool GpuBusy => _gpuBusy;
 
-    /// <summary>The share of the time with the device as it is: the mode's share, at most <see cref="BusyDuty"/> (or half) for a busy GPU and halved again for full memory, never below 10% (or the mode's own share when that is lower).</summary>
-    public double Adjust(double duty, SystemLoad load)
+    /// <summary>The share with the device as it is, when the render may not go above the mode: <see cref="Adjust(double, double, SystemLoad)"/> with the idle share equal to the mode's.</summary>
+    public double Adjust(double duty, SystemLoad load) => Adjust(duty, duty, load);
+
+    /// <summary>
+    /// The share of the time with the device as it is. Idle (the GPU counter reads, no other app uses the GPU, memory is not
+    /// nearly full): <paramref name="idleDuty"/>. Otherwise the mode's share, at most <see cref="BusyDuty"/> (or half) for a busy GPU
+    /// and halved again for full memory, never below 10% (or the mode's own share when that is lower). A device whose GPU
+    /// counter can't be read is never taken for idle: there is no way to know no one needs the GPU.
+    /// </summary>
+    /// <param name="duty">The mode's share, what the render falls back on while the device is in use.</param>
+    /// <param name="idleDuty">The share while the device is idle; equal to <paramref name="duty"/> where the render may not go above the mode.</param>
+    public double Adjust(double duty, double idleDuty, SystemLoad load)
     {
         UpdateGpu(load.OtherGpuPercent);
+
+        var memoryFull = load.MemoryLoadPercent >= FullMemoryPercent;
+        if (_gpuSeen && !_gpuBusy && !memoryFull && idleDuty > duty)
+        {
+            return idleDuty;
+        }
 
         var adjusted = duty;
         if (_gpuBusy)
@@ -102,7 +126,7 @@ public sealed class AdaptivePace
             adjusted = Math.Min(adjusted / 2, BusyDuty);
         }
 
-        if (load.MemoryLoadPercent >= FullMemoryPercent)
+        if (memoryFull)
         {
             adjusted /= 2;
         }
@@ -117,6 +141,7 @@ public sealed class AdaptivePace
             return;
         }
 
+        _gpuSeen = true;
         if (!_gpuBusy)
         {
             _gpuBusy = gpu >= BusyGpuPercent;
@@ -160,6 +185,7 @@ public sealed class TilePacer
     private readonly Action<TimeSpan, CancellationToken> _wait;
     private readonly ILoadMonitor? _monitor;
     private readonly AdaptivePace _adaptive = new();
+    private readonly double _idleDuty;
     private readonly TimeSpan _checkInterval;
     private readonly Func<long> _timestamp;
     private long? _lastCheck;
@@ -169,14 +195,27 @@ public sealed class TilePacer
     /// <param name="monitor">Reads the device for Adaptive; null keeps <paramref name="duty"/>.</param>
     /// <param name="checkInterval">How often the monitor is read; <see cref="DefaultCheckInterval"/> when null.</param>
     /// <param name="timestamp">The clock, in <see cref="Stopwatch"/> ticks; tests pass a stand-in.</param>
-    public TilePacer(double duty, Action<TimeSpan, CancellationToken>? wait = null, ILoadMonitor? monitor = null, TimeSpan? checkInterval = null, Func<long>? timestamp = null)
+    /// <param name="idleDuty">The share Adaptive works at while the device is idle, above 0 and at most 1; null keeps the render to <paramref name="duty"/>.</param>
+    public TilePacer(
+        double duty,
+        Action<TimeSpan, CancellationToken>? wait = null,
+        ILoadMonitor? monitor = null,
+        TimeSpan? checkInterval = null,
+        Func<long>? timestamp = null,
+        double? idleDuty = null)
     {
         if (!(duty > 0 && duty <= 1))
         {
             throw new ArgumentOutOfRangeException(nameof(duty), duty, "The share of time working must be above 0 and at most 1.");
         }
 
+        if (idleDuty is { } idle && !(idle > 0 && idle <= 1))
+        {
+            throw new ArgumentOutOfRangeException(nameof(idleDuty), idleDuty, "The share of time working must be above 0 and at most 1.");
+        }
+
         Duty = duty;
+        _idleDuty = idleDuty ?? duty;
         CurrentDuty = duty;
         _wait = wait ?? Wait;
         _monitor = monitor;
@@ -187,7 +226,7 @@ public sealed class TilePacer
     /// <summary>The mode's share of the time.</summary>
     public double Duty { get; }
 
-    /// <summary>The share in use now: <see cref="Duty"/>, or less while Adaptive finds the device busy.</summary>
+    /// <summary>The share in use now: <see cref="Duty"/>, less while Adaptive finds the device busy, more while it finds it idle.</summary>
     public double CurrentDuty { get; private set; }
 
     /// <summary>
@@ -236,7 +275,7 @@ public sealed class TilePacer
     private void ReadDevice()
     {
         _lastCheck = _timestamp();
-        CurrentDuty = _adaptive.Adjust(Duty, _monitor!.Read());
+        CurrentDuty = _adaptive.Adjust(Duty, _idleDuty, _monitor!.Read());
     }
 
     private static void Wait(TimeSpan pause, CancellationToken ct) => ct.WaitHandle.WaitOne(pause);

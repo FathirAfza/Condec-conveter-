@@ -225,7 +225,7 @@
   <data name="Settings.PerformanceModeDescription" xml:space="preserve"><value>How hard the device works while upscaling. A lower mode rests between tiles: renders take longer, the device stays cooler, and other apps stay smooth.</value></data>
   <data name="Settings.PerformanceModeLocked" xml:space="preserve"><value>Locked by Memory saver: renders work 10% of the time.</value></data>
   <data name="Settings.Adaptive" xml:space="preserve"><value>Adaptive</value></data>
-  <data name="Settings.AdaptiveDescription" xml:space="preserve"><value>Renders work less on their own while other apps use the GPU or memory is nearly full. Never above the performance mode.</value></data>
+  <data name="Settings.AdaptiveDescription" xml:space="preserve"><value>Works at full speed while the device is idle, and eases off on its own while other apps use the GPU or memory is nearly full. The performance mode sets the pace when this is off. Memory saver is never raised.</value></data>
   <data name="Settings.MemorySaver" xml:space="preserve"><value>Memory saver</value></data>
   <data name="Settings.MemorySaverDescription" xml:space="preserve"><value>Limits Condec to 2 GB of memory, 48 px tiles, and working 10% of the render time. For devices with little RAM or when many apps are open. Upscales take much longer.</value></data>
   <data name="Settings.MemoryLimitLocked" xml:space="preserve"><value>Locked by Memory saver: Condec uses at most {0} GB for upscales.</value></data>
@@ -316,6 +316,7 @@
   <data name="Upscale.PerformanceMode" xml:space="preserve"><value>Performance mode: {0}</value></data>
   <data name="Upscale.LongRender" xml:space="preserve"><value>This render is expected to take more than 10 minutes. Keep the charger plugged in and Condec open. The performance mode in Settings sets how hard the device works.</value></data>
   <data name="Performance.WithPercent" xml:space="preserve"><value>{0} ({1}%)</value></data>
+  <data name="Performance.Adaptive" xml:space="preserve"><value>Adaptive (up to {0}%)</value></data>
   <data name="Performance.ExtraHigh" xml:space="preserve"><value>Extra high</value></data>
   <data name="Performance.High" xml:space="preserve"><value>High</value></data>
   <data name="Performance.Medium" xml:space="preserve"><value>Medium</value></data>

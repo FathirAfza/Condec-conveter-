@@ -28,6 +28,8 @@ public interface IUpscaleModel : IDisposable
 /// <param name="Style">Which bundled network renders (<see cref="UpscaleStyle"/>).</param>
 /// <param name="Duty">The share of the time the engine works, from the performance mode (<see cref="RenderPace.Duty"/>); 1 works without rest.</param>
 /// <param name="Adaptive">Lower <paramref name="Duty"/> while other apps use the GPU or the memory is nearly full (DESIGN §7.6).</param>
+/// <param name="IdleDuty">With <paramref name="Adaptive"/>: the share of the time to work at while the device is idle, above <paramref name="Duty"/>
+/// (<see cref="RenderPace.IdleDuty"/>); null keeps the render to <paramref name="Duty"/>. Only the GPU render uses it: the CPU's load isn't read.</param>
 public sealed record UpscaleOptions(
     int OutputWidth,
     int OutputHeight,
@@ -35,4 +37,5 @@ public sealed record UpscaleOptions(
     int TileSize = TiledUpscaler.DefaultTileSize,
     UpscaleStyle Style = UpscaleStyle.Sharp,
     double Duty = 1,
-    bool Adaptive = false) : ConversionOptions;
+    bool Adaptive = false,
+    double? IdleDuty = null) : ConversionOptions;
