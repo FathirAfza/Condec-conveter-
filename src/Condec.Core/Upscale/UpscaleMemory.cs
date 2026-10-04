@@ -38,7 +38,7 @@ public static class UpscaleMemory
         long network = 64L * width * height;
         long firstPass = 16L * outputWidth * height;
         long result = 4L * outputWidth * outputHeight;
-        long saving = 6L * outputWidth * outputHeight;
+        long saving = 9L * outputWidth * outputHeight;
         long alpha = keepsAlpha ? (long)width * height + ((long)outputWidth * height) + ((long)outputWidth * outputHeight) : 0;
         return AppBytes + ModelBytes(engine) + (TileBytesPerPixel(engine) * tileSize * tileSize) + source + network + firstPass + result + saving + alpha;
     }

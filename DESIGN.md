@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.17 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.18 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -349,7 +349,7 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9]): beberapa file sejenis bisa dikonver
 
 **Kartu kanan, berurutan**
 1. **Mesin render:** Caption "Mesin render", nilai BodyStrong ("GPU · `<nama>`", "CPU · `<nama>`", atau "NPU · `<nama>`") dari Settings, `HyperlinkButton` "Ubah di Settings". Mesin NPU belum bisa menjalankan model (§13 #8): bila NPU dipilih, Caption di bawahnya "NPU belum bisa menjalankan model ini, jadi `<GPU/CPU>` yang merender." dan perkiraan waktu memakai mesin yang benar-benar merender. Di bawahnya selalu Caption "Mode performa: Sangat tinggi (80%)" (atau mode lain, atau "Hemat memori (10%)"), dari Settings (§7.6).
-2. **Skala:** label "Skala", `ComboBox` dengan item 2×, 4×, 8×, 16× (keterangan kanan "200%", "400%", dst.). Item di atas batas efektif (§7) nonaktif dengan keterangan "Dikunci". Kalau skala berasal dari slider dan bukan preset, ComboBox menampilkan "Kustom 3,5×" lewat `PlaceholderText`.
+2. **Skala:** label "Skala", `ComboBox` dengan item 2×, 4×, 5×, 8×, 16× (keterangan kanan "200%", "400%", dst.). Item di atas batas efektif (§7) nonaktif dengan keterangan "Dikunci". Kalau skala berasal dari slider dan bukan preset, ComboBox menampilkan "Kustom 3,5×" lewat `PlaceholderText`.
 3. **Persentase upscale:** label dan nilai ("400%", BodyStrong). `Slider` Minimum=150, Maximum = batas efektif × 100, StepFrequency=50, TickFrequency=50, tick di bawah. Di bawah slider: Caption "150%" (kiri) dan nilai maksimum (kanan). Slider dan ComboBox Skala saling menyinkronkan.
 4. Bila ada skala terkunci: Caption berwarna peringatan dengan ikon gembok "Dikunci: 8×, 16×. `<alasan>`." (alasan dari §7.4).
 5. **Resolusi hasil:** `ComboBox`, tampilan "Full HD · 1920 × 1080" atau "Kustom · W × H". Preset: Full HD 1920 × 1080, 2K (QHD) 2560 × 1440, 4K (UHD) 3840 × 2160, 5K 5120 × 2880, 8K (UHD) 7680 × 4320 (untuk sumber 16:9). Preset menetapkan **sisi terpanjang** (1920, 2560, 3840, 5120, 7680); sisi lain mengikuti bentuk gambar, jadi gambar tegak 1080 × 1920 pada "Full HD" tetap tegak dan bentuk tidak pernah berubah `[ASUMSI]`. Item nonaktif bila skala yang dibutuhkan (sisi terpanjang target ÷ sisi terpanjang sumber) < 1,5 atau di atas batas efektif. Memilih skala atau menggeser slider memilih preset yang ukurannya persis sama, selain itu "Kustom".
@@ -520,8 +520,8 @@ Keputusan pemilik 2026-10-03 (§14 [0.2.9], [0.2.10]): PDF ke DWG/DXF bisa banya
 | Mode performa | `ComboBox` (lebar 200) | "Sangat tinggi (80%)", "Tinggi (60%)", "Sedang (40%)", "Rendah (20%)" (§7.6). Deskripsi: "Seberapa keras perangkat bekerja saat upscale. Mode yang lebih rendah beristirahat di antara tile: render lebih lama, perangkat lebih dingin, dan aplikasi lain tetap lancar." Saat Hemat memori aktif: nonaktif, menampilkan "Rendah (20%)", dan deskripsi "Dikunci oleh Hemat memori: render bekerja 10% dari waktunya." Mode yang dipilih tetap tersimpan dan kembali saat Hemat memori dimatikan. |
 | Adaptif | `ToggleSwitch` | "Kurangi kerja render otomatis saat aplikasi lain memakai GPU atau RAM hampir penuh. Tidak pernah melebihi mode performa." Label "Aktif"/"Nonaktif" (§7.6). |
 | Hemat memori | `ToggleSwitch` | "Batasi Condec ke memori 2 GB, tile 48 px, dan kerja 10% dari waktu render. Untuk perangkat dengan RAM kecil atau saat banyak aplikasi terbuka. Upscale jadi jauh lebih lama." Label "Aktif"/"Nonaktif". |
-| Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
-| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–4K 8 GB · 4K–8K 32 GB · di atas 8K 64 GB." Saat Hemat memori aktif: slider nonaktif (nilainya tetap tersimpan), nilai di kanan "2 GB", dan deskripsi "Dikunci oleh Hemat memori: Condec memakai paling banyak 2 GB untuk upscale." |
+| Batas upscale | `ComboBox` (lebar 160) | 2×, 4×, 5×, 8×, 16×. Item di atas kemampuan perangkat nonaktif ("Di atas batas perangkat"). Deskripsi: "Skala maksimum yang boleh dipilih di Upscale Image dan Architecture. Perangkat ini mampu sampai N×." |
+| Batas memori | `Slider` (lebar 220) + nilai | Minimum 4, Maximum RAM terpasang (GB), StepFrequency 1, TickFrequency 4. Nilai "N GB" di kanan. Deskripsi: "RAM maksimum yang boleh dipakai Condec. Batas kecil membuat upscale lebih lambat dan hasilnya bisa sedikit kurang rapi (tile lebih kecil); gambar yang tetap tidak muat tidak dimulai." Di bawahnya Caption: "Syarat RAM terpasang menurut resolusi hasil: HD–8K 8 GB · di atas 8K 64 GB." Saat Hemat memori aktif: slider nonaktif (nilainya tetap tersimpan), nilai di kanan "2 GB", dan deskripsi "Dikunci oleh Hemat memori: Condec memakai paling banyak 2 GB untuk upscale." |
 | Render dump | `Button` "Bersihkan cache" | Deskripsi: "Hapus cache render (tile dan data sementara). Ukuran sekarang: 1,8 GB." Setelah dibersihkan: "Cache kosong. Ukuran sekarang: 0 MB." dan tombol nonaktif. Folder cache: `%LOCALAPPDATA%\Condec\cache` (belum ada isinya sampai tahap 6). Bila ada file yang sedang dipakai: "Sebagian file cache sedang dipakai dan tidak terhapus. Ukuran sekarang: …". |
 
 #### Tab "Umum"
@@ -572,22 +572,22 @@ Nilai awal, ganti setelah benchmark. Diambil dari memori adapter lewat DXCore.
 
 | Perangkat | Batas skala |
 |---|---|
-| GPU terintegrasi atau VRAM < 6 GB | 2× |
-| VRAM 6–11 GB | 4× |
+| GPU terintegrasi atau VRAM < 12 GB | 5× |
 | VRAM 12–15 GB | 8× |
 | VRAM ≥ 16 GB | 16× |
 
 Batas yang sama berlaku untuk mode CPU dan NPU (batas perangkat, bukan batas mesin).
 
-Memori adapter dibulatkan ke GB terdekat sebelum dibandingkan (kartu 12 GB melapor 11,99 GB). Tanpa GPU yang terdeteksi, batasnya 2×, sama dengan GPU terintegrasi `[ASUMSI]`. Adapter perangkat lunak (Microsoft Basic Render Driver) tidak dihitung sebagai GPU.
+Keputusan pemilik 2026-10-04: perangkat RAM 8 GB boleh upscale sampai 5× (sebelumnya GPU terintegrasi dan VRAM di bawah 6 GB dibatasi 2×, VRAM 6–11 GB 4×). Barisan VRAM 6–11 GB ikut naik ke 5× supaya kartu yang lebih kuat tidak pernah di bawah yang lebih lemah (§13 #62). Mode performa (§7.6) yang menjaga perangkat tidak terbebani.
+
+Memori adapter dibulatkan ke GB terdekat sebelum dibandingkan (kartu 12 GB melapor 11,99 GB). Tanpa GPU yang terdeteksi, batasnya 5×, sama dengan GPU terintegrasi `[ASUMSI]`. Adapter perangkat lunak (Microsoft Basic Render Driver) tidak dihitung sebagai GPU.
 
 ### 7.2 Syarat RAM menurut resolusi hasil
 Dihitung dari **RAM terpasang**, bukan RAM yang dipakai Condec. Nilainya dari `GetPhysicallyInstalledSystemMemory` (tabel firmware), dibulatkan ke GB terdekat; bila Windows tidak bisa menjawab (mis. mesin virtual), dari `GlobalMemoryStatusEx` yang sedikit lebih kecil (laptop 8 GB melapor ±7,7 GB, jadi pembulatan itu perlu).
 
 | Resolusi hasil (piksel) | RAM terpasang minimal | Label | Tag |
 |---|---|---|---|
-| ≤ 3840 × 2160 | 8 GB | HD–4K | keputusan pemilik 2026-10-03 (sebelumnya 8 GB sampai 2K dan 16 GB sampai 4K) |
-| ≤ 7680 × 4320 | 32 GB | 4K–8K | `[ASUMSI]` |
+| ≤ 7680 × 4320 | 8 GB | HD–8K | keputusan pemilik 2026-10-04 (sebelumnya 8 GB sampai 4K, keputusan 2026-10-03; sebelum itu 8 GB sampai 2K dan 16 GB sampai 4K). Tingkat 32 GB tidak ada lagi |
 | lebih besar | 64 GB | di atas 8K | `[ASUMSI]` |
 
 ### 7.3 Batas efektif
@@ -601,7 +601,7 @@ efektif      = floor(raw * 2) / 2          // kelipatan 0,5
 tersedia     = efektif >= 1.5
 ```
 - Slider: 150%–(efektif × 100), langkah 50.
-- Item ComboBox Skala 2×/4×/8×/16×: nonaktif bila lebih besar dari efektif.
+- Item ComboBox Skala 2×/4×/5×/8×/16×: nonaktif bila lebih besar dari efektif.
 - Preset resolusi: nonaktif bila (lebar target ÷ lebar sumber) < 1,5 atau > efektif.
 - Skala awal di Upscale Image: min(4, efektif). Di Architecture, saran upscale awal 2× dan hanya ditawarkan bila efektif ≥ 2.
 - "Tersedia" = false: lihat InfoBar Error di §6.2 dan §6.3.1.
@@ -621,7 +621,7 @@ Memori puncak proses = `app + model + tile + gambar`:
 - app: 300 MB (WinUI, halaman, heap sebelum gambar).
 - model: 180 MB di GPU, 120 MB di CPU (bobot dan mesin).
 - tile: 22 KB (GPU) atau 14 KB (CPU) per piksel tile, jadi tile 128 px memakai 360 MB di GPU dan 230 MB di CPU. Di CPU, arena memori ONNX Runtime dimatikan (tile 128 butuh 183 MB, bukan 542 MB, tanpa jadi lebih lambat).
-- gambar: sumber (4 B/px) + hasil jaringan (64 B per piksel sumber) + langkah pertama resize (16 B × lebar hasil × tinggi sumber) + hasil (4 B/px hasil) + salinan saat menyimpan (6 B/px hasil) + transparansi bila hasilnya PNG. Gambar jaringan dan langkah pertama dilepas (GC paksa) sebelum hasil disimpan.
+- gambar: sumber (4 B/px) + hasil jaringan (64 B per piksel sumber) + langkah pertama resize (16 B × lebar hasil × tinggi sumber) + hasil (4 B/px hasil) + salinan saat menyimpan (9 B/px hasil, dari 6 B/px setelah ukur 8K, §13 #63) + transparansi bila hasilnya PNG. Gambar jaringan dan langkah pertama dilepas (GC paksa) sebelum hasil disimpan.
 
 Aturan: dari ukuran tile 128, 96, 64, 48 dipakai yang terbesar yang puncaknya masih ≤ batas dan tidak di atas batas tile mode performa (§7.6). Dengan Hemat memori, batasnya 2 GB (atau batas Settings bila lebih kecil). Tile yang lebih kecil lebih lambat per piksel (di GPU uji: 48 → 0,13, 64 → 0,20, 96 → 0,28, 128 → 0,32 MP/detik), dan hasilnya lebih jauh dari hasil gambar utuh (§13 #56). Bila tile 48 pun tidak muat, upscale tidak dimulai dan kartu perkiraan menulis "Batas memori N GB kurang: butuh X GB". Angka di atas diukur dengan proses penuh (§13 #26) dan setiap konstanta sedikit di atas hasil ukur.
 
@@ -663,9 +663,9 @@ Tiga profil untuk mock dan unit test:
 
 | Profil | CPU | RAM | GPU | NPU | Batas GPU |
 |---|---|---|---|---|---|
-| sedang | Intel Core Ultra 7 155H | 32 GB | NVIDIA GeForce RTX 4060 Laptop, 8 GB | Intel AI Boost | 4× |
+| sedang | Intel Core Ultra 7 155H | 32 GB | NVIDIA GeForce RTX 4060 Laptop, 8 GB | Intel AI Boost | 5× |
 | tinggi | AMD Ryzen 9 7950X | 64 GB | NVIDIA GeForce RTX 4090, 24 GB | tidak ada | 16× |
-| dasar | Intel Core i5-1135G7 | 8 GB | Intel Iris Xe (terintegrasi) | tidak ada | 2× |
+| dasar | Intel Core i5-1135G7 | 8 GB | Intel Iris Xe (terintegrasi) | tidak ada | 5× |
 
 **Test vector `CapabilityPolicy.EffectiveMaxScale`** (batas di Settings = batas GPU kecuali disebut lain). Wajib lulus:
 
@@ -673,18 +673,23 @@ Tiga profil untuk mock dan unit test:
 |---|---|---|---|---|---|---|
 | 1280 × 720 | 32 GB | 4× | 4× | 6,0 | 4,0 | ya |
 | 1280 × 720 | 64 GB | 16× | 16× | 16 | 16,0 | ya |
-| 1280 × 720 | 8 GB | 2× | 2× | 3,0 | 2,0 | ya |
-| 1280 × 720 | 16 GB | 4× | 4× | 3,0 | 3,0 | ya |
+| 1280 × 720 | 8 GB | 2× | 2× | 6,0 | 2,0 | ya |
+| 1280 × 720 | 16 GB | 4× | 4× | 6,0 | 4,0 | ya |
 | 1280 × 720 | 32 GB | 4× | 2× | 6,0 | 2,0 | ya |
 | 3840 × 2160 | 32 GB | 4× | 4× | 2,0 | 2,0 | ya |
-| 3840 × 2160 | 16 GB | 4× | 4× | 1,0 | 1,0 | tidak |
+| 3840 × 2160 | 16 GB | 4× | 4× | 2,0 | 2,0 | ya |
 | 1600 × 1200 | 32 GB | 4× | 4× | 4,157 | 4,0 | ya |
-| 1600 × 1200 | 8 GB | 2× | 2× | 2,078 | 2,0 | ya |
-| 2000 × 1500 | 8 GB | 2× | 2× | 1,663 | 1,5 | ya |
-| 3840 × 2160 | 8 GB | 2× | 2× | 1,0 | 1,0 | tidak |
+| 1600 × 1200 | 8 GB | 2× | 2× | 4,157 | 2,0 | ya |
+| 2000 × 1500 | 8 GB | 2× | 2× | 3,326 | 2,0 | ya |
+| 3840 × 2160 | 8 GB | 2× | 2× | 2,0 | 2,0 | ya |
+| 1536 × 864 | 8 GB | 5× | 5× | 5,0 | 5,0 | ya |
+| 1920 × 1080 | 8 GB | 5× | 5× | 4,0 | 4,0 | ya |
+| 1000 × 600 | 8 GB | 5× | 5× | 7,436 | 5,0 | ya |
+| 3840 × 2160 | 8 GB | 5× | 5× | 2,0 | 2,0 | ya |
+| 7680 × 4320 | 8 GB | 5× | 5× | 1,0 | 1,0 | tidak |
 | 1600 × 1200 | 4 GB | 2× | 2× | 0 | 0 | tidak |
 
-Turunan: RAM yang dibutuhkan untuk upscale 2× gambar 1600 × 1200 (3200 × 2400) = 8 GB. Upscale 4× gambar 1280 × 720 → 5120 × 2880 = 14,7 MP, PNG ± 23,9 MB, butuh tingkat 32 GB.
+Turunan: RAM yang dibutuhkan untuk upscale 2× gambar 1600 × 1200 (3200 × 2400) = 8 GB. Upscale 4× gambar 1280 × 720 → 5120 × 2880 = 14,7 MP, PNG ± 23,9 MB, butuh tingkat 8 GB. Upscale 5× gambar 1536 × 864 → 7680 × 4320 (tepat 8K) = 33,2 MP, PNG ± 53,8 MB, tingkat 8 GB; 5× gambar 1600 × 1200 → 8000 × 6000 = 48 MP butuh tingkat 64 GB.
 
 ## 10. Aksesibilitas
 
@@ -734,8 +739,8 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 
 | # | Hal | Status |
 |---|---|---|
-| 1 | Tingkat RAM 32 GB (4K–8K) dan 64 GB (di atas 8K) | `[ASUMSI]` usulan. Tingkat 8 GB diperluas pemilik sampai 4K (2026-10-03), sehingga tingkat 16 GB tidak ada lagi |
-| 2 | Ambang batas GPU 2×/4×/8×/16× (§7.1) | `[ASUMSI]`, ganti setelah benchmark |
+| 1 | Tingkat RAM 64 GB (di atas 8K) | `[ASUMSI]` usulan. Tingkat 8 GB diperluas pemilik sampai 4K (2026-10-03) lalu sampai 8K (2026-10-04), sehingga tingkat 16 GB dan 32 GB tidak ada lagi |
+| 2 | Ambang batas GPU 5×/8×/16× (§7.1) | `[ASUMSI]`, ganti setelah benchmark. 2× dan 4× diganti 5× oleh pemilik 2026-10-04 (#62) |
 | 3 | RAM dihitung dari RAM terpasang, bukan RAM yang dipakai Condec | `[ASUMSI]` |
 | 4 | Ukuran thumb `Slider` 20 px | `[ASUMSI]`, tidak ada di source yang dibaca |
 | 5 | Lebar pill `SelectorBar` | `[TERBUKA]` |
@@ -747,9 +752,9 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 11 | Ambang "banyak objek tidak jelas" (5 area) | `[ASUMSI]`. Satu area paling besar 6 × 6 petak 32 px, kecuraman tepi minimum 0,5, kontras minimum 40: dikalibrasi hanya pada gambar sintetis yang diburamkan, bukan pada denah nyata (§13 #31) |
 | 12 | Perkiraan ukuran file (§8) dan hasil DWG → gambar (§6.3.2) | `[ASUMSI]` |
 | 13 | Win2D untuk render DWG | Tidak dipakai. Tahap 7 menggambar sendiri (`CadPdfWriter` + `Windows.Data.Pdf`) sehingga tanpa paket tambahan dan hasil PDF vektor yang sama dengan pratinjau |
-| 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 2×) | `[ASUMSI]` |
+| 16 | Tanpa GPU terdeteksi dihitung seperti GPU terintegrasi (batas 5×) | `[ASUMSI]` |
 | 17 | Protokol benchmark: 1 tile pemanasan + 3 tile diukur, disimpan per mesin dan nama perangkat | `[ASUMSI]`. Terbukti di mesin uji (2026-10-03): GPU terintegrasi 0,32 MP/detik, CPU 0,061 MP/detik. Gambar 640 × 360 (24 tile) di CPU: perkiraan dari jumlah tile 73 detik, render nyata 61 detik (tanpa faktor memori) |
-| 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat 2×. **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
+| 18 | DXCore (GPU/NPU) di perangkat nyata | Terbukti jalan (2026-10-02, laptop pemilik, 51 ms): "AMD Ryzen 5 5600H with Radeon Graphics", RAM 8 GB, GPU "AMD Radeon(TM) Graphics" terintegrasi dengan memori khusus 496 MB (cocok dengan `Win32_VideoController`), NPU tidak ada, batas perangkat saat itu 2× (kini 5×, §7.1). **Belum dicoba** pada GPU diskrit dan pada perangkat dengan NPU; `[TERBUKA]` untuk dua kasus itu |
 | 19 | Konverter gambar tidak membawa metadata (EXIF, GPS, profil ICC); warna dikonversi ke sRGB, transparansi dilebur ke putih untuk format tanpa alfa (§6.1.1) | Diputuskan pemilik untuk beta: tidak dibawa (lebih aman untuk privasi). Opsi "pertahankan metadata" (bawaan mati, JPG/PNG/TIFF) hanya ditambah bila diminta. |
 | 20 | Batas gambar 536.870.911 piksel (`int.MaxValue / 4`, §6.1.1) dan kehabisan memori dianggap "terlalu besar" | `[ASUMSI]`. Batas itu adalah batas satu array .NET; batas nyata bergantung memori mesin dan belum diukur untuk gambar di antara 100 dan 537 MP |
 | 21 | Daftar sumber audio/video (§6.1.2): hanya MP3, M4A, WAV, WMA, FLAC, MP4, M4V, MOV, WMV, AVI. `.mkv`, `.ogg`, `.opus`, `.aac`, `.3gp`, `.webm`, dan lain-lain belum ditawarkan karena belum dicoba pada file asli, walau mesin ini punya dekodernya (Opus, FFmpeg lewat Web Media Extensions, AV1, VP9, HEVC) | `[TERBUKA]`. Tambahkan setelah pemilik memberi contoh file |
@@ -757,10 +762,10 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 23 | Opsi kualitas audio dan ukuran video (§6.1, §6.1.2) | Diputuskan pemilik 2026-10-02 ("justru itu yang aku butuhkan"). Tiga tingkat audio dan tiga ukuran video adalah usulan; bitrate kustom tidak ada |
 | 24 | Ukuran video yang dipilih untuk video dengan metadata rotasi (rekaman ponsel tegak) | `[TERBUKA]`, belum diuji; butuh contoh file dari ponsel |
 | 25 | Data latih Real-ESRGAN (DIV2K, Flickr2K, OST) punya ketentuan sendiri yang tidak dijelaskan repo Real-ESRGAN untuk bobotnya | Diputuskan pemilik 2026-10-02: dicatat apa adanya di THIRD-PARTY-NOTICES.md, model tetap dibawa |
-| 26 | Batas memori di Settings (§7.5) | Diputuskan pemilik 2026-10-03: dibuat nyata. Diukur dengan proses penuh (puncak memori privat di atas proses kosong): GPU 640 × 360 → 1280 × 720 tile 128 +400 MB, 2000 × 1500 → 4000 × 3000 tile 128 +782 MB (PNG) / +777 MB (JPG), 1000 × 600 → 2000 × 1200 tile 96 +436 MB dan tile 48 +305 MB; CPU tile 128 +300 MB (640 × 360) dan +322 MB (1000 × 600), tile 64 +191 MB, tile 48 +187 MB. Perkiraan selalu di atas hasil ukur dan paling jauh 1,5× di atasnya (test). Di mesin uji (RAM 8 GB, sumber paling besar ±1,6 MP) batas 4 GB tidak pernah tercapai; tile mengecil hanya untuk gambar besar di perangkat dengan RAM besar dan batas yang rendah. `[ASUMSI]`: aplikasi diukur 104–210 MB saat idle, dihitung 300 MB; transparansi PNG dianggap ada, karena baru ketahuan setelah gambar dibaca |
+| 26 | Batas memori di Settings (§7.5) | Diputuskan pemilik 2026-10-03: dibuat nyata. Diukur dengan proses penuh (puncak memori privat di atas proses kosong): GPU 640 × 360 → 1280 × 720 tile 128 +400 MB, 2000 × 1500 → 4000 × 3000 tile 128 +782 MB (PNG) / +777 MB (JPG), 1000 × 600 → 2000 × 1200 tile 96 +436 MB dan tile 48 +305 MB; CPU tile 128 +300 MB (640 × 360) dan +322 MB (1000 × 600), tile 64 +191 MB, tile 48 +187 MB. Perkiraan selalu di atas hasil ukur dan paling jauh 1,5× di atasnya (test). Di mesin uji (RAM 8 GB, sumber paling besar ±1,6 MP) batas 4 GB tidak pernah tercapai; tile mengecil hanya untuk gambar besar di perangkat dengan RAM besar dan batas yang rendah. `[ASUMSI]`: aplikasi diukur 104–210 MB saat idle, dihitung 300 MB; transparansi PNG dianggap ada, karena baru ketahuan setelah gambar dibaca. Ditambah 2026-10-04: GPU 1536 × 864 → 7680 × 4320 (8K) tile 128, PNG dari sumber tanpa transparansi: +1141 MB, dengan RAM tersedia di laptop uji turun sampai 326 MB (§13 #63) |
 | 27 | Laptop dengan dua GPU: DirectML memakai adaptor 0, yang belum tentu GPU yang ditampilkan Settings | `[TERBUKA]`, belum ada perangkat untuk diuji |
 | 28 | Microsoft menyatakan DirectML dalam mode pemeliharaan (Windows ML disarankan untuk proyek baru) | `[TERBUKA]`. DirectML dipakai karena berjalan tanpa identitas paket (build portabel) dan sudah diuji di mesin ini; pindah ke Windows ML dipertimbangkan setelah beta |
-| 29 | Skala di atas 4×: model berhenti di 4×, sisanya diperbesar dengan Lanczos3, jadi 8× dan 16× tidak menambah detail baru | `[ASUMSI]`. Alternatifnya (model dijalankan dua kali) jauh lebih lama dan butuh jauh lebih banyak memori; belum bisa dicoba di mesin uji (batas 2×) |
+| 29 | Skala di atas 4×: model berhenti di 4×, sisanya diperbesar dengan Lanczos3 (5× = 4× dari model lalu 1,25× dari Lanczos), jadi bagian di atas 4× tidak menambah detail baru | `[ASUMSI]`. Alternatifnya (model dijalankan dua kali) jauh lebih lama dan butuh jauh lebih banyak memori. 5× dan 8K dicoba langsung di mesin uji 2026-10-04 (hasil lolos cek integritas, 38,4 dB terhadap sumber setelah dikecilkan); 8× dan 16× belum bisa dicoba (batas 5×) |
 | 30 | `PdfDocument` (Windows.Data.Pdf) yang sudah merender lalu dilepas membuat proses crash beberapa saat kemudian di driver grafis (AMD `atidxx64.dll`), juga di test host | Diatasi tahap 6: dokumen yang sudah dirender disimpan sampai proses selesai (maksimal 64). Belum dicoba di driver lain |
 | 31 | Heuristik analisis gambar (tahap 7): pintu = busur 60–120° dengan jari-jari kurang dari 15% sisi dan daun sepanjang jari-jari ±20%; jendela = 3–5 garis sejajar berjarak rapat; tabel = bingkai dengan sedikitnya 4 sel kecil; logo = daerah berwarna jenuh ≥ 70 dengan sisi ≥ 3% dan luas ≤ 50%; teks = tanda kecil berderet (tinggi ≤ 6% sisi, rentang tinggi ≤ 3,5×) | `[ASUMSI]`. Tidak ada denah nyata untuk dikalibrasi (contoh pemilik hanya gambar kerja PDF/DWG dan DXF); diuji dengan gambar sintetis. Perlu satu-dua denah pemilik |
 | 32 | Lebar teks hasil OCR diskalakan 0,75 dari lebar kotak, dan tinggi dari tinggi kotak | `[ASUMSI]`, supaya TEXT tidak lebih lebar dari tulisan asli |
@@ -793,12 +798,20 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 59 | Mode performa: bawaan Sangat tinggi (render ±25% lebih lama dari sebelumnya); prioritas proses rendah selama render di semua mode, tanpa setelan; Rendah membatasi tile ke 64; Hemat memori menampilkan "Rendah" di ComboBox yang dikunci; peringatan render lama mulai 10 menit | `[ASUMSI]`. Persen per mode dan isi Hemat memori (2 GB, 10%) dari pemilik 2026-10-03 |
 | 60 | Ambang Adaptif: GPU proses lain ≥ 30% dan memori ≥ 90%, masing-masing membagi dua waktu kerja; dibaca tiap 2 detik; bawaan aktif; perkiraan waktu tidak ikut berubah | `[ASUMSI]`. Semua proses lain di semua adaptor dihitung, karena adaptor yang dipakai DirectML tidak diketahui Condec (§13 #27) |
 | 61 | Model FP16 untuk GPU | `[TERBUKA]`, menunggu keputusan pemilik; aplikasi belum berubah. Uji 2026-10-04 di laptop pemilik (Radeon terintegrasi, ONNX Runtime DirectML 1.24.4 seperti aplikasi, tile 128, x4plus diubah dengan `onnxconverter-common`, masukan dan keluaran tetap float32): FP32 0,64–0,72 detik per tile, FP16 0,40–0,42 detik (±1,6× lebih cepat); file model 34 MB, bukan 67 MB. Hasil FP16 terhadap FP32 pada dua tile (8x07ex dan "low quality"): 59,6 dan 57,1 dB, selisih terbesar 4–5 dari 255, tanpa NaN. Catatan: CPU tidak lebih cepat dengan FP16, jadi model FP32 tetap dibutuhkan untuk CPU; GPU tanpa dukungan FP16 bisa lebih lambat; gaya Setia butuh berkas FP16 sendiri |
+| 62 | Batas perangkat 5× untuk GPU terintegrasi dan VRAM < 12 GB (§7.1); Architecture tetap menawarkan 2×, 4×, 8× dan menyarankan 2× | Diputuskan pemilik 2026-10-04 untuk RAM 8 GB dan GPU terintegrasi. Baris VRAM 6–11 GB naik dari 4× ke 5× `[ASUMSI]`: pemilik hanya menyebut RAM 8 GB, dan kartu yang lebih kuat tidak boleh di bawah yang lebih lemah |
+| 63 | Hasil sampai 8K di RAM 8 GB (§7.2) dan perkiraan memori | Diputuskan pemilik 2026-10-04 ("RAM masih banyak sisa"). Diukur di laptop uji: 1536 × 864 → 7680 × 4320 (5×, mode Sedang) selesai 177 detik (perkiraan 173 detik), puncak memori privat 1269 MB (1141 MB di atas proses setelah gambar dimuat), perkiraan lama 1075 MB sehingga konstanta salinan saat menyimpan dinaikkan dari 6 ke 9 B/px hasil (perkiraan kini 1170 MB, di atas hasil ukur). **Risiko:** selama render itu RAM tersedia di seluruh sistem turun sampai 326 MB (browser, editor, dan aplikasi lain terbuka); Condec menghitung memorinya sendiri dan tidak membaca RAM bebas, jadi di 8 GB dengan banyak aplikasi terbuka hasil 8K bisa membuat sistem lambat. Adaptif (§7.6) memperlambat render bila memori ≥ 90%, dan Hemat memori menurunkan batas ke 2 GB |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.18] 2026-10-04 (RAM 8 GB sampai 5× dan 8K)
+- **Keputusan pemilik (2026-10-04):** perangkat RAM 8 GB boleh upscale sampai 5× dan hasil sampai 8K (7680 × 4320). Mengubah §7.1 (GPU terintegrasi dan VRAM di bawah 12 GB: 5×, sebelumnya 2× dan 4×) dan §7.2 (8 GB sampai 8K, sebelumnya sampai 4K, keputusan 2026-10-03). Dasar: mode performa dan Adaptif (0.2.16, 0.2.17) menjaga perangkat, dan hasil ukur §13 #63.
+- **Diubah:** tabel §7.1 (5× / 8× / 16×) dan §7.2 (HD–8K 8 GB, di atas 8K 64 GB; tingkat 32 GB dihapus); ComboBox skala dan Batas upscale mendapat item 5× (§6.2, §6.4); vektor test §9 (11 baris berubah atau baru); keterangan RAM di Settings dan pesan "Upscale tidak tersedia" ("…sampai 8K"); konstanta salinan saat menyimpan di §7.5 dari 6 ke 9 B/px hasil. Kunci `Ram.Tier.HdTo4K` dan `Ram.Tier.4KTo8K` diganti `Ram.Tier.HdTo8K`.
+- **Diajukan:** §13 #62 dan #63.
+- **Dicek:** `dotnet build Condec.sln` 0 warning 0 error; `dotnet test --solution Condec.sln` 1507 lulus, 0 gagal, 0 dilewati (vektor §9 diperbarui, baris ukur 8K di test perkiraan memori, batas 5× di Settings, rencana resolusi, dan Architecture). Uji langsung di laptop pemilik (RAM 8 GB, GPU terintegrasi, setelan pemilik tidak diubah: mode Sedang, batas memori 7 GB): Settings menampilkan "Device upscale limit 5×", daftar "Upscale limit" 2×, 4×, 5× dan 8×, 16× terkunci, serta "HD–8K 8 GB · di atas 8K 64 GB"; Upscale Image dengan gambar 1536 × 864: slider sampai 500%, 5× ada di daftar Skala dan bisa dipilih, 8× dan 16× "Locked" dengan alasan "Device limit 5× · 8 GB of RAM: results up to HD–8K", resolusi "8K (UHD) 7680 × 4320" tersedia. Render 5× ke 7680 × 4320 (PNG 17,8 MB, lolos cek integritas 17 potongan) selesai 177 detik (perkiraan 2 menit 53 detik), ukuran file benar, hasil dikecilkan kembali 38,4 dB terhadap sumber. Memori: puncak privat 1269 MB (1141 MB di atas proses setelah gambar dimuat), RAM tersedia sistem turun sampai 326 MB (§13 #63). **Belum dicoba langsung:** 8× dan 16× (dikunci), gaya Setia pada 8K, CPU, Windows berbahasa Indonesia, paket MSIX, dan 8K pada perangkat dengan banyak aplikasi terbuka.
 
 ### [0.2.17] 2026-10-04 (Adaptif)
 - **Keputusan pemilik (2026-10-03):** fitur Adaptif, yang menyesuaikan render dengan kondisi perangkat.

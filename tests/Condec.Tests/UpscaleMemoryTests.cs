@@ -13,7 +13,7 @@ public class UpscaleMemoryTests
     private const long Gib = 1024L * Mib;
 
     /// <summary>
-    /// What the whole pipeline really held on top of the idle process (peak private bytes, 2026-10-03, AMD Ryzen 5 5600H with
+    /// What the whole pipeline really held on top of the idle process (peak private bytes, 2026-10-03, and 2026-10-04 for the 8K row, AMD Ryzen 5 5600H with
     /// its integrated Radeon, DirectML and CPU, Windows 11), against what <see cref="UpscaleMemory.PeakBytes"/> says.
     /// The estimate must not be below what was measured, and must not be far above it either: a limit that refuses
     /// pictures that would have fitted is no better than one that doesn't hold.
@@ -22,6 +22,7 @@ public class UpscaleMemoryTests
     [InlineData(640, 360, 1280, 720, RenderEngine.Gpu, 128, true, 400)]
     [InlineData(2000, 1500, 4000, 3000, RenderEngine.Gpu, 128, true, 782)]
     [InlineData(2000, 1500, 4000, 3000, RenderEngine.Gpu, 128, false, 777)]
+    [InlineData(1536, 864, 7680, 4320, RenderEngine.Gpu, 128, true, 1141)]
     [InlineData(1000, 600, 2000, 1200, RenderEngine.Gpu, 96, true, 436)]
     [InlineData(1000, 600, 2000, 1200, RenderEngine.Gpu, 48, true, 305)]
     [InlineData(640, 360, 1280, 720, RenderEngine.Cpu, 128, true, 300)]

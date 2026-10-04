@@ -137,7 +137,7 @@ public class AppSettingsTests : IDisposable
         var settings = new AppSettings(new MemoryStore(), Medium);
 
         Assert.Equal(RenderEngine.Gpu, settings.RenderMode);
-        Assert.Equal(4, settings.ScaleLimit);
+        Assert.Equal(5, settings.ScaleLimit);
         Assert.Equal(24, settings.MemoryLimitGb); // 75% of 32
         Assert.Equal(ThemePreference.System, settings.Theme);
         Assert.True(settings.MicaEnabled);
@@ -176,10 +176,16 @@ public class AppSettingsTests : IDisposable
     {
         var store = new MemoryStore();
         store.Values[AppSettings.ScaleLimitKey] = "16";
-        Assert.Equal(2, new AppSettings(store, Basic).ScaleLimit);
+        Assert.Equal(5, new AppSettings(store, Basic).ScaleLimit);
+        Assert.Equal(5, new AppSettings(store, Medium).ScaleLimit);
+
+        store.Values[AppSettings.ScaleLimitKey] = "4";
         Assert.Equal(4, new AppSettings(store, Medium).ScaleLimit);
 
         store.Values[AppSettings.ScaleLimitKey] = "2";
+        Assert.Equal(2, new AppSettings(store, Medium).ScaleLimit);
+
+        store.Values[AppSettings.ScaleLimitKey] = "1";
         Assert.Equal(2, new AppSettings(store, Medium).ScaleLimit);
     }
 

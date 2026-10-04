@@ -20,15 +20,20 @@ public class CapabilityPolicyTests
     [Theory]
     [InlineData(1280, 720, 32, 4, 4, 6.0, 4.0, true)]
     [InlineData(1280, 720, 64, 16, 16, 16.0, 16.0, true)]
-    [InlineData(1280, 720, 8, 2, 2, 3.0, 2.0, true)]
-    [InlineData(1280, 720, 16, 4, 4, 3.0, 3.0, true)]
+    [InlineData(1280, 720, 8, 2, 2, 6.0, 2.0, true)]
+    [InlineData(1280, 720, 16, 4, 4, 6.0, 4.0, true)]
     [InlineData(1280, 720, 32, 4, 2, 6.0, 2.0, true)]
     [InlineData(3840, 2160, 32, 4, 4, 2.0, 2.0, true)]
-    [InlineData(3840, 2160, 16, 4, 4, 1.0, 1.0, false)]
+    [InlineData(3840, 2160, 16, 4, 4, 2.0, 2.0, true)]
     [InlineData(1600, 1200, 32, 4, 4, 4.157, 4.0, true)]
-    [InlineData(1600, 1200, 8, 2, 2, 2.078, 2.0, true)]
-    [InlineData(2000, 1500, 8, 2, 2, 1.663, 1.5, true)]
-    [InlineData(3840, 2160, 8, 2, 2, 1.0, 1.0, false)]
+    [InlineData(1600, 1200, 8, 2, 2, 4.157, 2.0, true)]
+    [InlineData(2000, 1500, 8, 2, 2, 3.326, 2.0, true)]
+    [InlineData(3840, 2160, 8, 2, 2, 2.0, 2.0, true)]
+    [InlineData(1536, 864, 8, 5, 5, 5.0, 5.0, true)]
+    [InlineData(1920, 1080, 8, 5, 5, 4.0, 4.0, true)]
+    [InlineData(1000, 600, 8, 5, 5, 7.436, 5.0, true)]
+    [InlineData(3840, 2160, 8, 5, 5, 2.0, 2.0, true)]
+    [InlineData(7680, 4320, 8, 5, 5, 1.0, 1.0, false)]
     [InlineData(1600, 1200, 4, 2, 2, 0.0, 0.0, false)]
     public void EffectiveMaxScale_MatchesTheDesignVectors(int width, int height, int ramGb, int gpuLimit, int settingsLimit, double ramMax, double effective, bool available)
     {
@@ -40,12 +45,12 @@ public class CapabilityPolicyTests
     }
 
     [Theory]
-    [InlineData(0, 2)]
-    [InlineData(1, 2)]
-    [InlineData(5, 2)]
-    [InlineData(6, 4)]
-    [InlineData(8, 4)]
-    [InlineData(11, 4)]
+    [InlineData(0, 5)]
+    [InlineData(1, 5)]
+    [InlineData(5, 5)]
+    [InlineData(6, 5)]
+    [InlineData(8, 5)]
+    [InlineData(11, 5)]
     [InlineData(12, 8)]
     [InlineData(15, 8)]
     [InlineData(16, 16)]
@@ -54,10 +59,10 @@ public class CapabilityPolicyTests
         Assert.Equal(expected, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("cpu", 32 * Gib, Gpu(vramGb), null)));
 
     [Fact]
-    public void GpuScaleLimit_IsTwoForAnIntegratedGpuOrNone()
+    public void GpuScaleLimit_IsFiveForAnIntegratedGpuOrNone()
     {
-        Assert.Equal(2, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("cpu", 32 * Gib, Gpu(16, integrated: true), null)));
-        Assert.Equal(2, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("cpu", 32 * Gib, null, null)));
+        Assert.Equal(5, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("cpu", 32 * Gib, Gpu(16, integrated: true), null)));
+        Assert.Equal(5, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("cpu", 32 * Gib, null, null)));
     }
 
     [Fact]
@@ -77,13 +82,13 @@ public class CapabilityPolicyTests
     }
 
     [Theory]
-    [InlineData(2560 * 1440, 8, "Ram.Tier.HdTo4K")]
-    [InlineData(3840 * 2160, 8, "Ram.Tier.HdTo4K")]
-    [InlineData(3840 * 2160 + 1, 32, "Ram.Tier.4KTo8K")]
-    [InlineData(5120 * 2880, 32, "Ram.Tier.4KTo8K")]
-    [InlineData(7680 * 4320, 32, "Ram.Tier.4KTo8K")]
+    [InlineData(2560 * 1440, 8, "Ram.Tier.HdTo8K")]
+    [InlineData(3840 * 2160, 8, "Ram.Tier.HdTo8K")]
+    [InlineData(3840 * 2160 + 1, 8, "Ram.Tier.HdTo8K")]
+    [InlineData(5120 * 2880, 8, "Ram.Tier.HdTo8K")]
+    [InlineData(7680 * 4320, 8, "Ram.Tier.HdTo8K")]
     [InlineData(7680 * 4320 + 1, 64, "Ram.Tier.Above8K")]
-    [InlineData(100, 8, "Ram.Tier.HdTo4K")]
+    [InlineData(100, 8, "Ram.Tier.HdTo8K")]
     public void RequiredRam_FollowsTheResultSize(long pixels, int gb, string label)
     {
         var tier = CapabilityPolicy.RequiredRam(pixels);
@@ -94,9 +99,10 @@ public class CapabilityPolicyTests
     [Fact]
     public void RequiredRam_MatchesTheWorkedExamplesOfTheDesign()
     {
-        // 2x of 1600 x 1200 (3200 x 2400) fits the 8 GB tier; 4x of 1280 x 720 (5120 x 2880) needs 32 GB.
+        // 2x of 1600 x 1200 (3200 x 2400) and 5x of 1536 x 864 (exactly 8K) fit the 8 GB tier; 5x of 1600 x 1200 (8000 x 6000) needs 64 GB.
         Assert.Equal(8, CapabilityPolicy.RequiredRam(Core.Upscale.UpscaleEstimator.OutputPixels(1600, 1200, 2)).Gb);
-        Assert.Equal(32, CapabilityPolicy.RequiredRam(Core.Upscale.UpscaleEstimator.OutputPixels(1280, 720, 4)).Gb);
+        Assert.Equal(8, CapabilityPolicy.RequiredRam(Core.Upscale.UpscaleEstimator.OutputPixels(1536, 864, 5)).Gb);
+        Assert.Equal(64, CapabilityPolicy.RequiredRam(Core.Upscale.UpscaleEstimator.OutputPixels(1600, 1200, 5)).Gb);
     }
 
     [Fact]
@@ -110,18 +116,18 @@ public class CapabilityPolicyTests
         // Settings at 2x under a 4x device.
         Assert.Equal("Limit in Settings 2×", CapabilityPolicy.EffectiveMaxScale(1280, 720, 32, 4, 2).DescribeReasons(English));
 
-        // 16 GB RAM, 1280 x 720: ramMax 3 is lower than the 4x device limit.
-        Assert.Equal("16 GB of RAM: results up to HD–4K", CapabilityPolicy.EffectiveMaxScale(1280, 720, 16, 4, 4).DescribeReasons(English));
-        Assert.Equal("RAM 16 GB: hasil maksimal HD–4K", CapabilityPolicy.EffectiveMaxScale(1280, 720, 16, 4, 4).DescribeReasons(Indonesian));
+        // 16 GB RAM, 1920 x 1080: ramMax 4 is lower than the 8x device limit.
+        Assert.Equal("16 GB of RAM: results up to HD–8K", CapabilityPolicy.EffectiveMaxScale(1920, 1080, 16, 8, 8).DescribeReasons(English));
+        Assert.Equal("RAM 16 GB: hasil maksimal HD–8K", CapabilityPolicy.EffectiveMaxScale(1920, 1080, 16, 8, 8).DescribeReasons(Indonesian));
     }
 
     [Fact]
     public void Reasons_CanNameSeveralLimitsAtOnce()
     {
-        // 8 GB RAM, 1920 x 1080: ramMax 2 equals the 2x device limit and the 2x Settings limit.
-        var limit = CapabilityPolicy.EffectiveMaxScale(1920, 1080, 8, 2, 2);
+        // 8 GB RAM, 1920 x 1080: ramMax 4 equals the 4x device limit and the 4x Settings limit.
+        var limit = CapabilityPolicy.EffectiveMaxScale(1920, 1080, 8, 4, 4);
         Assert.Equal([LimitKind.Device, LimitKind.Ram], limit.Reasons.Select(r => r.Kind));
-        Assert.Equal("Device limit 2× · 8 GB of RAM: results up to HD–4K", limit.DescribeReasons(English));
+        Assert.Equal("Device limit 4× · 8 GB of RAM: results up to HD–8K", limit.DescribeReasons(English));
     }
 
     [Fact]
@@ -151,10 +157,12 @@ public class CapabilityPolicyTests
     [Fact]
     public void Presets_AreLockedAboveTheEffectiveLimit()
     {
-        var limit = CapabilityPolicy.EffectiveMaxScale(1280, 720, 16, 4, 4); // effective 3.0
-        Assert.Equal([4, 8, 16], CapabilityPolicy.LockedPresets(limit));
+        var limit = CapabilityPolicy.EffectiveMaxScale(1920, 1080, 8, 3, 3); // effective 3.0
+        Assert.Equal([4, 5, 8, 16], CapabilityPolicy.LockedPresets(limit));
         Assert.True(CapabilityPolicy.IsScaleAllowed(2, limit));
         Assert.False(CapabilityPolicy.IsScaleAllowed(4, limit));
+        Assert.Equal([8, 16], CapabilityPolicy.LockedPresets(CapabilityPolicy.EffectiveMaxScale(1280, 720, 8, 5, 5)));
+        Assert.True(CapabilityPolicy.IsScaleAllowed(5, CapabilityPolicy.EffectiveMaxScale(1536, 864, 8, 5, 5)));
         Assert.False(CapabilityPolicy.IsScaleAllowed(1.0, limit));
     }
 
@@ -169,14 +177,14 @@ public class CapabilityPolicyTests
     public void SuggestedArchitectureScale_NeedsAtLeastTwo()
     {
         Assert.Equal(2, CapabilityPolicy.SuggestedArchitectureScale(CapabilityPolicy.EffectiveMaxScale(1280, 720, 8, 2, 2)));
-        Assert.Null(CapabilityPolicy.SuggestedArchitectureScale(CapabilityPolicy.EffectiveMaxScale(3840, 2160, 16, 4, 4)));
+        Assert.Null(CapabilityPolicy.SuggestedArchitectureScale(CapabilityPolicy.EffectiveMaxScale(7680, 4320, 8, 5, 5)));
     }
 
     [Fact]
     public void TheThreeExampleDevices_GetTheLimitsOfTheDesign()
     {
-        Assert.Equal(4, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("Intel Core Ultra 7 155H", 32 * Gib, new GpuInfo("RTX 4060 Laptop", 8 * Gib, false), "Intel AI Boost")));
+        Assert.Equal(5, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("Intel Core Ultra 7 155H", 32 * Gib, new GpuInfo("RTX 4060 Laptop", 8 * Gib, false), "Intel AI Boost")));
         Assert.Equal(16, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("AMD Ryzen 9 7950X", 64 * Gib, new GpuInfo("RTX 4090", 24 * Gib, false), null)));
-        Assert.Equal(2, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("Intel Core i5-1135G7", 8 * Gib, new GpuInfo("Intel Iris Xe", 0, true), null)));
+        Assert.Equal(5, CapabilityPolicy.GpuScaleLimit(new DeviceProfile("Intel Core i5-1135G7", 8 * Gib, new GpuInfo("Intel Iris Xe", 0, true), null)));
     }
 }

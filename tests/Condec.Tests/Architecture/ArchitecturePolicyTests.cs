@@ -52,7 +52,7 @@ public class ArchitecturePolicyTests
     [Fact]
     public void ScalesBeyondTheLimitAreLockedButStayInTheMenu()
     {
-        // 32 GB RAM and an 8 GB card: 4× by the card; Settings caps at 4.
+        // 32 GB RAM and an 8 GB card: 5× by the card; Settings caps at 4.
         var advice = Advise(9, Device(32, 8), settingsLimit: 4);
 
         Assert.Equal(4, advice.Limit.Effective);
@@ -71,14 +71,14 @@ public class ArchitecturePolicyTests
     [Fact]
     public void ADeviceWithTooLittleRam_IsNotEligible_AndTheRamIsTheReason()
     {
-        // 3000 × 2000 at 2× is 24 MP, which wants 32 GB; this device has 8.
-        var advice = Advise(12, Device(8), 3000, 2000, settingsLimit: 2);
+        // 4000 × 3000 at 2× is 48 MP, which wants 64 GB; this device has 8.
+        var advice = Advise(12, Device(8), 4000, 3000, settingsLimit: 2);
 
         Assert.Equal(UpscaleAdviceKind.NotEligible, advice.Kind);
         Assert.False(advice.CanUpscale);
         Assert.Null(advice.DefaultScale);
         Assert.True(advice.IsRamShort);
-        Assert.Equal(32, advice.RequiredRamGb);
+        Assert.Equal(64, advice.RequiredRamGb);
         Assert.Equal(8, advice.InstalledRamGb);
     }
 
@@ -111,10 +111,12 @@ public class ArchitecturePolicyTests
     [Fact]
     public void TheRequiredRamIsThatOfTheTwoTimesResult()
     {
-        // 1600 × 1200 → 3200 × 2400 = 7.68 MP, in the HD–4K row (8 GB).
+        // 1600 × 1200 → 3200 × 2400 = 7.68 MP, in the HD–8K row (8 GB).
         Assert.Equal(8, Advise(5, Device(32, 8)).RequiredRamGb);
-        // 2000 × 1500 → 4000 × 3000 = 12 MP, in the 4K–8K row (32 GB).
-        Assert.Equal(32, Advise(5, Device(32, 8), 2000, 1500).RequiredRamGb);
+        // 3000 × 2000 → 6000 × 4000 = 24 MP, still in the HD–8K row (8 GB).
+        Assert.Equal(8, Advise(5, Device(32, 8), 3000, 2000).RequiredRamGb);
+        // 4000 × 3000 → 8000 × 6000 = 48 MP, above 8K (64 GB).
+        Assert.Equal(64, Advise(5, Device(32, 8), 4000, 3000).RequiredRamGb);
     }
 
     [Fact]

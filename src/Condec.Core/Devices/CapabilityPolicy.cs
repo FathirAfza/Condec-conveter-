@@ -63,35 +63,35 @@ public static class CapabilityPolicy
     public const int MinimumRamGb = 8;
 
     /// <summary>The scales in the ComboBox, in order.</summary>
-    public static IReadOnlyList<int> Presets { get; } = [2, 4, 8, 16];
+    public static IReadOnlyList<int> Presets { get; } = [2, 4, 5, 8, 16];
 
     /// <summary>
-    /// Installed RAM needed for a result of a given size. 8 GB up to 4K was decided by the owner (2026-10-03: a 4000 × 3000
-    /// result was measured at about 0.8 GB, and the memory limit guards the rest); 32 and 64 GB are an assumption (DESIGN §13 #1).
+    /// Installed RAM needed for a result of a given size. 8 GB up to 8K was decided by the owner (2026-10-04, after 4K at 8 GB
+    /// on 2026-10-03: a 4000 × 3000 result was measured at about 0.8 GB, and the memory limit guards the rest); 64 GB above
+    /// 8K is an assumption (DESIGN §13 #1).
     /// </summary>
     public static IReadOnlyList<RamTier> RamTiers { get; } =
     [
-        new(8, 3840L * 2160, "Ram.Tier.HdTo4K"),
-        new(32, 7680L * 4320, "Ram.Tier.4KTo8K"),
+        new(8, 7680L * 4320, "Ram.Tier.HdTo8K"),
         new(64, null, "Ram.Tier.Above8K"),
     ];
 
     /// <summary>
-    /// The limit the graphics adapter sets (DESIGN §7.1, an assumption until measured): an integrated GPU or under
-    /// 6 GB of VRAM allows 2×, 6–11 GB 4×, 12–15 GB 8×, 16 GB and more 16×. No GPU counts as an integrated one.
+    /// The limit the graphics adapter sets (DESIGN §7.1, an assumption until measured): an integrated GPU or under 12 GB of
+    /// VRAM allows 5× (the owner raised it from 2× on 2026-10-04, and 6–11 GB with it so that a stronger card is never
+    /// below a weaker one), 12–15 GB 8×, 16 GB and more 16×. No GPU counts as an integrated one.
     /// </summary>
     public static int GpuScaleLimit(DeviceProfile device)
     {
         ArgumentNullException.ThrowIfNull(device);
         if (device.Gpu is null || device.Gpu.IsIntegrated)
         {
-            return 2;
+            return 5;
         }
 
         return device.GpuMemoryGb switch
         {
-            < 6 => 2,
-            < 12 => 4,
+            < 12 => 5,
             < 16 => 8,
             _ => 16,
         };

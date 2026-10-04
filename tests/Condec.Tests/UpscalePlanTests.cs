@@ -44,12 +44,16 @@ public class UpscalePlanTests
         Assert.False(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[1], 1920, 1080, full));
         Assert.True(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[2], 1920, 1080, full));
 
-        // A small device: 8 GB RAM and an integrated-class limit of 2x.
+        // A small device: 8 GB RAM and a weak card, 5x at most: 1920 (1.5x) up to 5120 (4x) are reachable, 7680 (6x) is not.
         var small = UpscalePlan.EffectiveLimit(Device(8, 2), 1280, 720, settingsLimit: 16);
-        Assert.Equal(2, small.Effective);
+        Assert.Equal(5, small.Effective);
         Assert.True(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[0], 1280, 720, small));
-        Assert.True(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[1], 1280, 720, small));
-        Assert.False(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[2], 1280, 720, small));
+        Assert.True(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[3], 1280, 720, small));
+        Assert.False(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[4], 1280, 720, small));
+
+        // 8K is exactly 5x of 1536 x 864, so the 8 GB device reaches it from that size and from nothing smaller.
+        Assert.True(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[4], 1536, 864, UpscalePlan.EffectiveLimit(Device(8, 2), 1536, 864, settingsLimit: 5)));
+        Assert.False(UpscalePlan.IsPresetAllowed(UpscalePlan.Presets[4], 1500, 844, UpscalePlan.EffectiveLimit(Device(8, 2), 1500, 844, settingsLimit: 5)));
     }
 
     [Fact]

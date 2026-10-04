@@ -175,8 +175,7 @@
   <data name="Limit.Settings" xml:space="preserve"><value>Batas di Settings {0}</value></data>
   <data name="Limit.Ram" xml:space="preserve"><value>RAM {0} GB: hasil maksimal {1}</value></data>
   <data name="Limit.RamTooLow" xml:space="preserve"><value>RAM {0} GB: butuh minimal {1} GB</value></data>
-  <data name="Ram.Tier.HdTo4K" xml:space="preserve"><value>HD–4K</value></data>
-  <data name="Ram.Tier.4KTo8K" xml:space="preserve"><value>4K–8K</value></data>
+  <data name="Ram.Tier.HdTo8K" xml:space="preserve"><value>HD–8K</value></data>
   <data name="Ram.Tier.Above8K" xml:space="preserve"><value>di atas 8K</value></data>
   <data name="Duration.LessThanSecond" xml:space="preserve"><value>&lt; 1 detik</value></data>
   <data name="Duration.Seconds" xml:space="preserve"><value>{0} detik</value></data>
@@ -324,7 +323,7 @@
   <data name="Performance.MemorySaver" xml:space="preserve"><value>Hemat memori</value></data>
   <data name="Upscale.Start" xml:space="preserve"><value>Upscale dan simpan…</value></data>
   <data name="Upscale.UnavailableTitle" xml:space="preserve"><value>Perangkat ini belum memenuhi syarat upscale</value></data>
-  <data name="Upscale.UnavailableRam" xml:space="preserve"><value>Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 4K. Perangkat ini hanya punya {0} GB.</value></data>
+  <data name="Upscale.UnavailableRam" xml:space="preserve"><value>Upscale butuh RAM terpasang minimal 8 GB untuk hasil sampai 8K. Perangkat ini hanya punya {0} GB.</value></data>
   <data name="Upscale.UnavailableTooBig" xml:space="preserve"><value>Gambar ini terlalu besar untuk diperbesar di perangkat ini. {0}.</value></data>
   <data name="Upscale.ModelProblemTitle" xml:space="preserve"><value>Upscale tidak tersedia</value></data>
   <data name="Upscale.Processing.Title" xml:space="preserve"><value>Meng-upscale {0}</value></data>
