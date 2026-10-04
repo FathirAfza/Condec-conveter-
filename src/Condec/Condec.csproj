@@ -54,16 +54,15 @@
     <Content Include="..\..\third_party\models\**\model.onnx" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <!-- The license and third-party notice files of ONNX Runtime and DirectML go with their DLLs (THIRD-PARTY-NOTICES.md §1). -->
+  <!-- The license and third-party notice files of Windows ML (with ONNX Runtime and DirectML inside) go with its DLLs
+       (THIRD-PARTY-NOTICES.md §1). -->
   <ItemGroup>
-    <Content Include="$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\LICENSE" Link="Licenses\ONNXRuntime\LICENSE.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\LICENSE')" />
-    <Content Include="$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\ThirdPartyNotices.txt" Link="Licenses\ONNXRuntime\ThirdPartyNotices.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntime.directml\$(CondecOnnxRuntimeVersion)\ThirdPartyNotices.txt')" />
-    <Content Include="$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\LICENSE.txt" Link="Licenses\DirectML\LICENSE.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\LICENSE.txt')" />
-    <Content Include="$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\ThirdPartyNotices.txt" Link="Licenses\DirectML\ThirdPartyNotices.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.ai.directml\$(CondecDirectMLVersion)\ThirdPartyNotices.txt')" />
+    <Content Include="$(NuGetPackageRoot)microsoft.windows.ai.machinelearning\$(CondecWindowsMLVersion)\license.txt" Link="Licenses\WindowsML\LICENSE.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.windows.ai.machinelearning\$(CondecWindowsMLVersion)\license.txt')" />
+    <Content Include="$(NuGetPackageRoot)microsoft.windows.ai.machinelearning\$(CondecWindowsMLVersion)\ThirdPartyNotices.txt" Link="Licenses\WindowsML\ThirdPartyNotices.txt" Condition="Exists('$(NuGetPackageRoot)microsoft.windows.ai.machinelearning\$(CondecWindowsMLVersion)\ThirdPartyNotices.txt')" />
   </ItemGroup>
 
-  <!-- ONNX Runtime and DirectML bring files that are only for people who build against them (the import library, and the
-       DirectML debug layer with the symbol files, about 15 MB). The app loads none of them. -->
+  <!-- Files that are only for people who build against ONNX Runtime and DirectML (import libraries, and the DirectML debug
+       layer with the symbol files). The app loads none of them. -->
   <Target Name="TrimDevelopmentOnlyNativeFiles" AfterTargets="ResolvePackageAssets">
     <ItemGroup>
       <_DevOnlyFile Include="@(Content);@(None);@(ReferenceCopyLocalPaths);@(RuntimeTargetsCopyLocalItems)" Condition="'%(Filename)%(Extension)' == 'DirectML.Debug.dll' or '%(Filename)%(Extension)' == 'DirectML.Debug.pdb' or '%(Filename)%(Extension)' == 'DirectML.pdb' or '%(Filename)%(Extension)' == 'onnxruntime.lib'" />
@@ -85,6 +84,7 @@
     <!-- Framework-dependent: the Windows App SDK runtime is a system framework package, not bundled. -->
     <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" />
     <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.ML" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
 

@@ -3,9 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Pins the transitive Windows App SDK components below. -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <!-- Also used by src\Condec\Condec.csproj to package the license files of these two packages. -->
-    <CondecOnnxRuntimeVersion>1.24.4</CondecOnnxRuntimeVersion>
-    <CondecDirectMLVersion>1.15.4</CondecDirectMLVersion>
+    <!-- The lowest Windows ML runtime that Microsoft.WindowsAppSDK.ML 2.1.94 accepts (ONNX Runtime and DirectML inside). Also used
+         by src\Condec\Condec.csproj to package its license files. -->
+    <CondecWindowsMLVersion>2.1.74</CondecWindowsMLVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Windows App SDK 2.5.1 (component packages, framework-dependent)">
@@ -17,16 +17,15 @@
     <PackageVersion Include="Microsoft.WindowsAppSDK.Foundation" Version="2.3.12" />
     <PackageVersion Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.9" />
     <PackageVersion Include="Microsoft.WindowsAppSDK.Base" Version="2.0.4" />
+    <!-- Windows ML (Upscale): ONNX Runtime on the CPU or any DirectX 12 GPU through DirectML, the way Windows ships it. -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK.ML" Version="2.1.94" />
+    <PackageVersion Include="Microsoft.Windows.AI.MachineLearning" Version="$(CondecWindowsMLVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="Libraries">
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="PdfPig" Version="0.1.16" />
     <PackageVersion Include="ACadSharp" Version="3.8.0" />
-    <!-- DirectML build of ONNX Runtime: runs on the CPU or any DirectX 12 GPU (Upscale). -->
-    <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML" Version="$(CondecOnnxRuntimeVersion)" />
-    <!-- Pinned so the packaged DirectML license files match the DirectML.dll that ships. -->
-    <PackageVersion Include="Microsoft.AI.DirectML" Version="$(CondecDirectMLVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">

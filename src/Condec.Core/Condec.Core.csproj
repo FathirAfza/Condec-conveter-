@@ -26,7 +26,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
+    <!-- Compiled against the ONNX Runtime API of Windows ML only. The app brings the runtime itself (Microsoft.WindowsAppSDK.ML,
+         from the Windows App SDK framework in the MSIX, next to the app in the portable build), and so do the tests. -->
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" IncludeAssets="compile" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

@@ -30,6 +30,11 @@
     <Compile Remove="Windows\**" />
   </ItemGroup>
 
+  <!-- The Windows ML runtime next to the tests, as in the portable build, so Upscale runs for real. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" />
+  </ItemGroup>
+
   <!-- The upscale models from tools\fetch-model.ps1, when they have been fetched; the tests that need the real network skip without them. -->
   <ItemGroup Condition="Exists('..\..\third_party\models\realesrgan-x4plus\model.onnx')">
     <Content Include="..\..\third_party\models\**\model.onnx" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
