@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.23 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.24 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -415,7 +415,7 @@ Sumber yang didukung: DXF, PNG, JPG, HEIC, HEIF, PDF. Jenis sumber menentukan ja
 | Dinding dan garis denah | 126 garis | Jadi LINE dan POLYLINE | dicentang |
 | Pintu dan jendela | 14 objek | Jadi ARC dan garis ganda | dicentang |
 | Teks dan dimensi | 22 teks | Jadi TEXT (hasil OCR, periksa ulang) | dicentang |
-| Logo dan kop | 1 objek | Jadi objek CAD | tidak |
+| Logo dan kop | 1 objek | Logo jadi bidang warna asli (HATCH) | tidak |
 | Tabel keterangan | 1 tabel | Jadi objek CAD | tidak |
 
   Tidak dicentang → keterangan "Tidak dijadikan CAD", kotak di pratinjau jadi putus-putus abu dan terhapus samar. Dicentang → kotak biru. Jumlah dan jenis objek dihitung dari analisis nyata, tabel ini hanya contoh.
@@ -448,6 +448,14 @@ Hal yang tidak ada atau berbeda di §6.3.1 dan §6.3.2 (tiap butir yang bertanda
 - Jenis objek yang tidak ditemukan **tidak ditampilkan** di daftar (baris "Logo dan kop" muncul hanya bila ada logo).
 - "Teks dan dimensi" dibaca dengan `Windows.Media.Ocr` memakai bahasa profil pengguna Windows. Bila tidak ada paket bahasa OCR, teks tetap dikenali letaknya tetapi digambar sebagai garis, dan baris itu berkata "Digambar sebagai garis (tulisan tidak terbaca)" (§13 #9).
 - Gambar yang sebagian besar berwarna (render berwarna, foto) menjadi **satu** objek "Logo dan kop", tidak ditelusuri jadi garis.
+- Logo menjadi **bidang berwarna**, bukan garis tepi (sejak [0.2.24], keputusan pemilik 2026-10-04; ambang di §13 #68):
+  - Logo dibaca dari file pada resolusi aslinya, bukan dari gambar 2400 px yang dianalisis. Logo di atas 4 juta piksel dirata-rata dulu.
+  - Warnanya diringkas menjadi paling banyak 8. Daerah tiap warna menjadi satu HATCH padat di layer LOGO.
+  - Warnanya indeks terdekat dari seluruh palet (format R2000 tidak punya warna asli). Hitam, putih, dan abu-abu dipetakan seperti di PDF ke CAD (tujuh warna dasar dan deret abu-abu), jadi hitam tetap indeks 7.
+  - Kertas di dalam logo tetap terbuka: lubang hatch, gaya Normal.
+  - Daerah warna yang bersebelahan bertumpuk 1 piksel supaya tidak ada celah. Daerah yang lebih kecil ditulis belakangan, jadi tergambar di atas.
+  - Garis tabel dan teks kop tetap garis dan teks.
+  - Sebelumnya logo ditelusuri menjadi garis tepi magenta yang terputus-putus dan kehilangan warnanya.
 - Tidak ada garis atau teks sama sekali: `InfoBar` Warning "Tidak ada objek yang terdeteksi" dan tombol Konversi nonaktif.
 - Tidak ada yang dicentang: Caption "Tidak ada yang dicentang, jadi tidak ada yang dikonversi." dan tombol Konversi nonaktif.
 
@@ -478,6 +486,7 @@ Hal yang tidak ada atau berbeda di §6.3.1 dan §6.3.2 (tiap butir yang bertanda
 
 **Arah "dari CAD"**
 - Pratinjau dan hasil digambar oleh penggambar sendiri (`CadFlattener` → `CadPdfWriter` → render PDF Windows), bukan LibreOffice dan bukan Win2D (§13 #13). Format hasil PDF ditulis langsung oleh penggambar itu (vektor); PNG dan JPG dirender dari PDF yang sama pada DPI pilihan, JPG dengan latar putih.
+- HATCH padat dengan pulau (gaya Normal atau Outer) digambar sebagai satu bentuk yang diisi genap-ganjil, jadi lubangnya tetap terbuka (sejak [0.2.24]). Gaya Ignore tetap mengisi tiap garis batasnya.
 - Teks di hasil ditulis dalam Helvetica dengan WinAnsiEncoding: huruf Latin 1 ditambah tanda kutip lengkung, tanda pisah en dan em, elipsis, euro, dan huruf Windows-1252 lain di 0x80 sampai 0x9F tampil apa adanya (sebelum [0.2.23] semua huruf di atas U+00FF menjadi "?"). Huruf lain menjadi "?", karakter kendali menjadi spasi.
 - Menonaktifkan semua layer: Caption "Tampilkan minimal satu layer." dan tombol nonaktif. Pratinjau yang gagal digambar: Caption "Pratinjau tidak bisa digambar, tapi file tetap bisa dikonversi."
 
@@ -819,12 +828,46 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 65 | Dua pertanyaan untuk pemilik dari uji efisiensi: (a) apakah Adaptif boleh **menaikkan** waktu kerja di atas mode saat perangkat benar-benar sepi, dan (b) apakah Adaptif memakai tile 64 saat GPU sudah dipakai aplikasi lain ketika render dimulai | (a) **Diputuskan pemilik 2026-10-04** ("boleh kok namanya adaptif"; §7.6, 0.2.20): saat sepi Adaptif bekerja 80% dari waktunya di mesin GPU, apa pun modenya (Hemat memori tidak). Dasar: saat sepi (GPU lain 0,7–1,4%) Sedang butuh 18,4–19,3 detik dan Sangat tinggi 10,4–11,6 detik untuk hasil piksel yang sama. Diukur setelah perubahan (400 × 300, 12 tile; Rendah 63 tile, tile 64): Sedang dengan Adaptif 10,7 detik (tanpa Adaptif 19,3), Rendah dengan Adaptif 15,5 (tanpa 51,3), Hemat memori dengan Adaptif 152,5 (tidak dinaikkan). Dengan aplikasi lain: sudah jalan sejak render mulai, Sedang dengan Adaptif 38,7 detik, aplikasi lain 54–59 panggilan per detik (sendirian 54–55), persentil 99 12–13 ms; datang 14 detik setelah render mulai: 50–62 panggilan per detik, persentil 99 12–13 ms. **Akibat yang perlu diketahui:** dengan Adaptif aktif di GPU, Sangat tinggi, Tinggi, dan Sedang menjadi sama; mode baru menentukan kecepatan saat Adaptif mati, di CPU, dan bila penghitung GPU tidak terbaca (Rendah tetap berbeda: 10% saat dipakai dan tile 64). Bila pemilik ingin mode tetap bermakna dengan Adaptif aktif, itu keputusan baru. (b) `[TERBUKA]`, aplikasi belum berubah, tidak ditanyakan lagi: saat sibuk Rendah-dengan-tile-64 membuat hambatan terpanjang 178 ms, bukan 654 ms, dengan 1,4× waktu; tile tidak bisa diganti di tengah render, jadi hanya bisa diputuskan saat mulai (perkiraan waktu dan rencana memori ikut berubah). Usul: tidak sekarang |
 | 66 | Ambang PDF vektor ke CAD (§6.3.3, [0.2.23]): latar = bagian tampak ≥ 95% halaman, dihitung dengan 32 × 32 titik sampel dan aturan isi path (tiap Bézier dipotong 8 garis); isian pucat = warna terdekatnya di palet indeks adalah putih (abu-abu ±235 ke atas), dibuang bila jaraknya ke tepi halaman ≤ 1 pt; isian penutup clip = satu persegi panjang lurus yang memuat seluruh kotak clip (toleransi 0,01 pt); form XObject diikuti sampai 16 tingkat; BBox form tidak dihitung sebagai clip | `[ASUMSI]`. Diukur 2026-10-04 dengan program uji sementara di luar repo pada 9 salinan PDF gambar kerja pemilik (25 halaman): sampul 7–8 → 46–51 entitas (bingkai tebal dan garis tepi halaman kembali), halaman lain tepat 4 polyline lebih sedikit (pita #EDEDEE di tepi kertas), entitas lain sama; render ulang dicek mata. Bila operator halaman dan path PdfPig tidak sejajar, atau form tidak terbaca, halaman dipotong tepi halaman saja seperti sebelumnya. Belum diuji: PDF dari produsen lain (AutoCAD, Revit, ArchiCAD) yang memakai form bersarang atau isian pucat di tepi untuk hal lain |
 | 67 | Gambar raster (logo, foto) di PDF vektor tidak ikut ke CAD; hasilnya hanya membawa catatan dengan jumlahnya | `[ASUMSI]`: pemilik menjawab "langsung perbaiki" tanpa memilih antara catatan dan menyematkan gambar, jadi yang dibuat yang lebih ringan. Gambar dihitung bila kotaknya mengenai halaman. Menyematkan gambar (entitas IMAGE dengan file gambar di samping DWG) tetap `[TERBUKA]` |
+| 68 | Ambang logo sebagai bidang warna (§6.3.3, [0.2.24]): paling banyak 8 warna; warna yang jaraknya di bawah 48 (RGB 0–255) digabung; warna di bawah 0,5% tinta logo dilebur ke warna terdekat; k-means paling banyak 8 putaran, lalu tiap piksel mengambil warna mayoritas 3 × 3 di sekitarnya; logo dibaca paling banyak 4 juta piksel; garis tepi boleh menyimpang 1 piksel; warna dengan selisih kanal terkuat dan terlemah di bawah 24 dianggap abu-abu | `[ASUMSI]`. Diukur 2026-10-04 dengan program uji sementara di luar repo pada render halaman 1 dan 2 gambar kerja pemilik: sebelumnya 118 dan 20 polyline magenta yang terputus, sekarang 18 dan 15 HATCH berwarna (indeks 40, 41, 53, 101, 113, 114, 142, 143, 145, 151, 175, 223, 250, 251, 252); render ulang dicek mata (perisai dan tulisan, burung hantu, roda gigi, lengkung, ombak, dan segi lima terbaca). Kasus berat: foto 1000 × 1500 px di lembar 2480 × 1754 px dianggap beberapa logo, menjadi 27 HATCH dengan 768 garis batas, DWG 147 KB, analisis 2,4 detik, memori puncak 217 MB. Belum diuji: AutoCAD dan program CAD lain membuka HATCH ini, logo bergradasi halus, logo yang hanya hitam (tidak dikenali sebagai logo, §13 #31) |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
 
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.24] 2026-10-04 (Logo jadi bidang warna)
+- **Keputusan pemilik (2026-10-04):** "opsi logo, harusnya tidak kena render garis sih, sementara customnya hilang jadi kemungkinan komponen tidak tersambung, kamu benerin ya". Logo di gambar raster ke CAD tidak lagi ditelusuri jadi garis tepi.
+- **Diubah (§6.3.3, ke CAD):** logo menjadi HATCH padat dengan warnanya sendiri (paling banyak 8 warna, indeks terdekat), dibaca dari file pada resolusi aslinya. Kertas di dalam logo tetap terbuka, dan daerah warna yang bersebelahan bertumpuk 1 piksel. Ambang di §13 #68.
+- **Diubah (§6.3.1 tabel objek):** keterangan baris "Logo dan kop" menjadi "Logo jadi bidang warna asli (HATCH)" (`Architecture.Desc.Logo`, 1 kunci resource baru, ID dan EN).
+- **Diubah (§6.3.3, dari CAD):** HATCH padat dengan pulau digambar dengan lubangnya terbuka di pratinjau dan di PDF, PNG, dan JPG hasil. Sebelumnya tiap garis batas diisi penuh, jadi lubangnya tertutup.
+- **Kode:**
+  - Baru: `LogoPainter`, `FillPrimitive`, dan `CadColors.FromRgbFine`.
+  - `ArchitectureCadBuilder` menulis `FillPrimitive` sebagai `Hatch`.
+  - `CadPath.Holes` dan `CadPdfWriter` mengisi genap-ganjil (`f*`).
+  - `DrawingAnalyzer.LogoOutlines` dihapus.
+- **Dicek:**
+  - `dotnet build Condec.sln`: 0 warning, 0 error.
+  - `dotnet test --solution Condec.sln --max-parallel-test-modules 1`: 1653 lulus, 0 gagal, 0 dilewati. RAM tersedia terendah 497 MB.
+  - Test baru:
+    - logo satu warna dengan lubang;
+    - logo dua warna tanpa celah;
+    - logo pada gambar yang diperkecil;
+    - batal saat melukis logo;
+    - logo di denah dan di kop menjadi isian;
+    - HATCH padat dengan warna, tanda luar, dan ukuran yang benar;
+    - HATCH terbaca lagi dari DXF dan DWG;
+    - warna logo: hitam, putih, dan abu-abu tetap, warna lain lebih dekat;
+    - HATCH dengan pulau dan gaya Ignore saat digambar;
+    - lubang di PDF.
+  - Tiap aturan baru dipastikan membuat test gagal bila dimatikan (8 mutasi).
+  - Audit key resource: 558 kunci, ID dan EN sama.
+  - Uji di luar repo pada render gambar kerja pemilik dan satu kasus berat (§13 #68).
+- **Belum dicoba langsung:**
+  - Lewat jendela aplikasi, termasuk apakah keterangan baris baru muat tanpa terpotong.
+  - DWG hasil dibuka di AutoCAD.
+  - Paket MSIX.
+- **Tidak berubah:** logo di PDF vektor tetap tidak ikut dan hanya diberi catatan (§13 #67).
 
 ### [0.2.23] 2026-10-04 (PDF ke CAD: bingkai, pita pucat, tanda kutip, gambar)
 - **Keputusan pemilik (2026-10-04):** "Langsung saja perbaiki", untuk empat kesalahan yang ditemukan dengan gambar kerja pemilik (PDF vektor 4 halaman). Untuk logo pemilik tidak memilih antara catatan dan menyematkan gambar; yang dibuat catatan (§13 #67).

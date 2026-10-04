@@ -410,6 +410,7 @@
   <data name="Architecture.Desc.Text" xml:space="preserve"><value>Jadi TEXT (hasil OCR, periksa ulang)</value></data>
   <data name="Architecture.Desc.TextLines" xml:space="preserve"><value>Digambar sebagai garis (tulisan tidak terbaca)</value></data>
   <data name="Architecture.Desc.Object" xml:space="preserve"><value>Jadi objek CAD</value></data>
+  <data name="Architecture.Desc.Logo" xml:space="preserve"><value>Logo jadi bidang warna asli (HATCH)</value></data>
   <data name="Architecture.Desc.Excluded" xml:space="preserve"><value>Tidak dijadikan CAD</value></data>
   <data name="Architecture.CadFormat" xml:space="preserve"><value>Format CAD</value></data>
   <data name="Architecture.Scale.Label" xml:space="preserve"><value>Skala gambar</value></data>

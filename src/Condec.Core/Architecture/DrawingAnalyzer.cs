@@ -34,13 +34,13 @@ public static class DrawingAnalyzer
         var height = picture.Height;
         progress?.Report(0.06);
 
-        // Logos first: their ink is theirs, whatever it looks like.
+        // Logos first: their ink is theirs, whatever it looks like. Each becomes areas of its own colors, read from the file.
         var logoRects = LogoFinder.Find(picture, ct);
         var logoShapes = new List<IReadOnlyList<DrawingPrimitive>>();
         foreach (var rect in logoRects)
         {
             ct.ThrowIfCancellationRequested();
-            logoShapes.Add(LogoOutlines(picture, ink, rect, ct));
+            logoShapes.Add(LogoPainter.Paint(file, reduction, threshold, rect, height, ct));
             ink.Clear(rect);
         }
 
@@ -195,27 +195,6 @@ public static class DrawingAnalyzer
         return analysis;
     }
 
-    private static List<DrawingPrimitive> LogoOutlines(RasterPicture picture, BitMask ink, PixelRect rect, CancellationToken ct)
-    {
-        // Colored pixels and ink inside the area, as one shape to outline.
-        var width = rect.Width;
-        var height = rect.Height;
-        var mask = new bool[width * height];
-        for (var y = 0; y < height; y++)
-        {
-            for (var x = 0; x < width; x++)
-            {
-                var at = ((rect.Top + y) * picture.Width) + rect.Left + x;
-                var b = picture.Bgra[at * 4];
-                var g = picture.Bgra[(at * 4) + 1];
-                var r = picture.Bgra[(at * 4) + 2];
-                mask[(y * width) + x] = ink.Bits[at] || Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) >= LogoFinder.MinimumSaturation;
-            }
-        }
-
-        return LineWorkExtractor.Outlines(mask, width, height, rect.Left, rect.Top, picture.Height, TraceTolerance, ct).ToList();
-    }
-
     /// <summary>Whether the blob has a pixel under the grid's ruling.</summary>
     private static bool Touches(RuledGrid grid, Blob blob, int[] labels, int pictureWidth)
     {
@@ -350,6 +329,13 @@ public static class DrawingGeometry
                     Take(circle.CenterX - circle.Radius, circle.CenterY - circle.Radius);
                     Take(circle.CenterX + circle.Radius, circle.CenterY + circle.Radius);
                     break;
+                case FillPrimitive fill:
+                    foreach (var (x, y) in fill.Loops.SelectMany(loop => loop))
+                    {
+                        Take(x, y);
+                    }
+
+                    break;
             }
         }
 
@@ -375,6 +361,7 @@ public static class DrawingGeometry
             PolylinePrimitive p => new PolylinePrimitive(p.Points.Select(q => (q.X + left, Y(q.Y))).ToList(), p.IsClosed),
             ArcPrimitive a => new ArcPrimitive(a.CenterX + left, Y(a.CenterY), a.Radius, a.StartAngle, a.EndAngle),
             CirclePrimitive c => new CirclePrimitive(c.CenterX + left, Y(c.CenterY), c.Radius),
+            FillPrimitive f => new FillPrimitive(f.Loops.Select(loop => (IReadOnlyList<(double X, double Y)>)loop.Select(q => (q.X + left, Y(q.Y))).ToList()).ToList(), f.Color),
             _ => primitive,
         };
     }

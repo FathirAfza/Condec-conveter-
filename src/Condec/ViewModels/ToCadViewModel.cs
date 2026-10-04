@@ -1193,6 +1193,7 @@ public sealed partial class ToCadViewModel : ObservableObject
         DrawingObjectKind.Walls => "Architecture.Desc.Walls",
         DrawingObjectKind.Openings => "Architecture.Desc.Openings",
         DrawingObjectKind.Text => analysis.TextWasRead ? "Architecture.Desc.Text" : "Architecture.Desc.TextLines",
+        DrawingObjectKind.Logo => "Architecture.Desc.Logo",
         _ => "Architecture.Desc.Object",
     });
 

@@ -410,6 +410,7 @@
   <data name="Architecture.Desc.Text" xml:space="preserve"><value>Becomes TEXT (read by OCR, check it again)</value></data>
   <data name="Architecture.Desc.TextLines" xml:space="preserve"><value>Drawn as lines (the writing could not be read)</value></data>
   <data name="Architecture.Desc.Object" xml:space="preserve"><value>Becomes a CAD object</value></data>
+  <data name="Architecture.Desc.Logo" xml:space="preserve"><value>Logos become color fills (HATCH)</value></data>
   <data name="Architecture.Desc.Excluded" xml:space="preserve"><value>Not made into CAD</value></data>
   <data name="Architecture.CadFormat" xml:space="preserve"><value>CAD format</value></data>
   <data name="Architecture.Scale.Label" xml:space="preserve"><value>Drawing scale</value></data>

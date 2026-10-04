@@ -16,7 +16,15 @@ public readonly record struct Rgb(byte R, byte G, byte B)
 
 /// <summary>A stroked or filled outline of a drawing, in drawing units with y up.</summary>
 /// <param name="WidthMm">Line width on paper; ignored for fills.</param>
-public sealed record CadPath(IReadOnlyList<(double X, double Y)> Points, bool IsClosed, bool IsFilled, Rgb Color, double WidthMm, string Layer);
+/// <param name="Holes">For a fill, more outlines filled with it odd-even (a solid HATCH with islands): a hole stays open.</param>
+public sealed record CadPath(
+    IReadOnlyList<(double X, double Y)> Points,
+    bool IsClosed,
+    bool IsFilled,
+    Rgb Color,
+    double WidthMm,
+    string Layer,
+    IReadOnlyList<IReadOnlyList<(double X, double Y)>>? Holes = null);
 
 /// <summary>A line of text, anchored at its bottom left, in drawing units.</summary>
 /// <param name="Rotation">Counterclockwise, in radians.</param>
@@ -52,7 +60,7 @@ public sealed record CadScene(IReadOnlyList<CadPath> Paths, IReadOnlyList<CadLab
 
         foreach (var path in Paths.Where(p => visible(p.Layer)))
         {
-            foreach (var (x, y) in path.Points)
+            foreach (var (x, y) in path.Points.Concat(path.Holes?.SelectMany(hole => hole) ?? []))
             {
                 Take(x, y);
             }
@@ -185,6 +193,18 @@ public static class CadFlattener
                 Stroke([(solid.FirstCorner.X, solid.FirstCorner.Y), (solid.SecondCorner.X, solid.SecondCorner.Y), (solid.FourthCorner.X, solid.FourthCorner.Y), (solid.ThirdCorner.X, solid.ThirdCorner.Y)], true, filled: true);
                 break;
             case Hatch hatch:
+                var loops = hatch.Paths
+                    .Select(boundary => boundary.GetPoints(CirclePoints).Select(p => at.Apply(p.X, p.Y)).ToList())
+                    .Where(loop => loop.Count >= 3)
+                    .ToList();
+
+                // A solid hatch with islands (style Normal or Outer) is filled odd-even as AutoCAD fills it, so its holes stay open.
+                if (hatch.IsSolid && hatch.Style != HatchStyleType.Ignore && loops.Count > 1)
+                {
+                    into.Paths.Add(new CadPath(loops[0], true, true, rgb, width, layer, loops.Skip(1).ToList()));
+                    break;
+                }
+
                 foreach (var boundary in hatch.Paths)
                 {
                     Stroke(boundary.GetPoints(CirclePoints).Select(p => (p.X, p.Y)), true, filled: hatch.IsSolid);

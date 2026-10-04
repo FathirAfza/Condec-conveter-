@@ -182,7 +182,58 @@ public static class ArchitectureCadBuilder
                     Radius = circle.Radius * scale,
                 };
                 break;
+            case FillPrimitive fill when ToHatch(fill, scale) is { } hatch:
+                yield return hatch;
+                break;
         }
+    }
+
+    /// <summary>
+    /// A solid HATCH in the area's own color (the nearest index color: the R2000 format has no true color). Its outlines are
+    /// filled odd-even, the HATCH "Normal" style, so a hole stays open; an outline inside an even number of others is an
+    /// outer edge.
+    /// </summary>
+    private static Hatch? ToHatch(FillPrimitive fill, double scale)
+    {
+        var loops = fill.Loops.Where(loop => loop.Count >= 3).ToList();
+        if (loops.Count == 0)
+        {
+            return null;
+        }
+
+        var hatch = new Hatch
+        {
+            IsSolid = true,
+            Style = HatchStyleType.Normal,
+            Color = CadColors.FromRgbFine(fill.Color.R, fill.Color.G, fill.Color.B),
+        };
+        foreach (var loop in loops)
+        {
+            var depth = loops.Count(other => !ReferenceEquals(other, loop) && Encloses(other, loop[0]));
+            var edge = new Hatch.BoundaryPath.Polyline(loop.Select(p => new XYZ(p.X * scale, p.Y * scale, 0)), true);
+            hatch.Paths.Add(new Hatch.BoundaryPath([edge])
+            {
+                Flags = depth % 2 == 0 ? BoundaryPathFlags.Polyline | BoundaryPathFlags.External : BoundaryPathFlags.Polyline,
+            });
+        }
+
+        return hatch;
+    }
+
+    /// <summary>Whether the closed outline goes around the point (crossing count).</summary>
+    private static bool Encloses(IReadOnlyList<(double X, double Y)> loop, (double X, double Y) point)
+    {
+        var inside = false;
+        for (int i = 0, j = loop.Count - 1; i < loop.Count; j = i++)
+        {
+            var (a, b) = (loop[i], loop[j]);
+            if ((a.Y > point.Y) != (b.Y > point.Y) && point.X < a.X + ((point.Y - a.Y) * (b.X - a.X) / (b.Y - a.Y)))
+            {
+                inside = !inside;
+            }
+        }
+
+        return inside;
     }
 }
 

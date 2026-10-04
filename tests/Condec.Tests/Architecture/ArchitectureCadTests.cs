@@ -220,6 +220,83 @@ public sealed class ArchitectureCadTests : IDisposable
         Assert.Equal(offered ? [".dwg", ".dxf"] : [], targets);
     }
 
+    /// <summary>A logo as the analysis gives it: a red square with a square hole, in a 1000 × 500 picture at 254 dpi.</summary>
+    private static DrawingAnalysis LogoAnalysis()
+    {
+        List<(double X, double Y)> outer = [(900, 400), (950, 400), (950, 450), (900, 450)];
+        List<(double X, double Y)> hole = [(915, 415), (935, 415), (935, 435), (915, 435)];
+        var fill = new FillPrimitive([outer, hole], new Rgb(220, 30, 30));
+        return new DrawingAnalysis(1000, 500, 1, 254, 254, [Group(DrawingObjectKind.Logo, DrawingItem.OfShapes(new PixelRect(900, 50, 950, 100), [fill]))], [], 1, true);
+    }
+
+    [Fact]
+    public void ALogoBecomesASolidHatchInItsOwnColorWithItsHoleOpen()
+    {
+        var cad = Build(LogoAnalysis(), Everything);
+
+        var hatch = Assert.Single(cad.Entities.OfType<Hatch>());
+        Assert.Single(cad.Entities);
+        Assert.Equal("LOGO", hatch.Layer.Name);
+        Assert.True(hatch.IsSolid);
+        Assert.Equal(HatchStyleType.Normal, hatch.Style);
+        Assert.Equal(CadColors.FromRgbFine(220, 30, 30).Index, hatch.Color.Index);
+
+        // The outline is the outer edge; the hole, inside it, is not.
+        Assert.Equal(2, hatch.Paths.Count);
+        Assert.True(hatch.Paths[0].Flags.HasFlag(BoundaryPathFlags.External));
+        Assert.False(hatch.Paths[1].Flags.HasFlag(BoundaryPathFlags.External));
+
+        // 0.1 mm per pixel: the square spans 90 to 95 mm.
+        var corners = hatch.Paths[0].GetPoints(4).ToList();
+        Assert.Equal(90, corners.Min(p => p.X), 6);
+        Assert.Equal(95, corners.Max(p => p.X), 6);
+    }
+
+    [Theory]
+    [InlineData(".dxf")]
+    [InlineData(".dwg")]
+    public async Task ALogoHatchReadsBackFromTheSavedFile(string target)
+    {
+        var registry = new ConverterRegistry([new ArchitectureToCadConverter()], [new CadOutputValidator()]);
+        var pipeline = new ConversionPipeline(registry, new TempFileJournal(_dir.File("journal")));
+        var source = _dir.File("kop.png");
+        await File.WriteAllBytesAsync(source, [1, 2, 3], Ct);
+        var destination = _dir.File("kop" + target);
+
+        await pipeline.RunAsync(new ConversionJob(source, target, destination, new ArchitectureCadOptions(LogoAnalysis(), Everything, 0.1)), null, Ct);
+
+        var hatch = Assert.Single(CadFiles.Read(destination, target).Entities.OfType<Hatch>());
+        Assert.True(hatch.IsSolid);
+        Assert.Equal(2, hatch.Paths.Count);
+        Assert.Equal(CadColors.FromRgbFine(220, 30, 30).Index, hatch.Color.Index);
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0, 7)]
+    [InlineData(255, 255, 255, 7)]
+    [InlineData(128, 128, 128, 8)]
+    [InlineData(255, 0, 0, 1)]
+    public void ALogoColorKeepsBlackWhiteAndGreysAsTheyWere(int r, int g, int b, int expected) =>
+        Assert.Equal(expected, CadColors.FromRgbFine((byte)r, (byte)g, (byte)b).Index);
+
+    [Theory]
+    [InlineData(64, 96, 128)]
+    [InlineData(165, 82, 140)]
+    [InlineData(80, 160, 120)]
+    public void ALogoColorIsCloserThanTheSevenBasicColorsAllow(int r, int g, int b)
+    {
+        static double Away(Color color, int r, int g, int b)
+        {
+            var rgb = Color.GetIndexRGB((byte)color.Index);
+            return Math.Sqrt(((rgb[0] - r) * (rgb[0] - r)) + ((rgb[1] - g) * (rgb[1] - g)) + ((rgb[2] - b) * (rgb[2] - b)));
+        }
+
+        var fine = CadColors.FromRgbFine((byte)r, (byte)g, (byte)b);
+        var coarse = CadColors.FromRgb((byte)r, (byte)g, (byte)b);
+
+        Assert.True(Away(fine, r, g, b) < Away(coarse, r, g, b), $"index {fine.Index} against {coarse.Index}");
+    }
+
     [Fact]
     public async Task APlanGoesAllTheWayFromPixelsToCadLayers()
     {

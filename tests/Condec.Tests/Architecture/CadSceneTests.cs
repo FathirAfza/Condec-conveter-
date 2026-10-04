@@ -256,6 +256,48 @@ public sealed class CadSceneTests
         Assert.Equal(4, path.Points.Count);
     }
 
+    /// <summary>A solid 10 × 10 square with a 4 × 4 square island, as a logo is written.</summary>
+    private static Hatch SquareWithAHole(HatchStyleType style)
+    {
+        var hatch = new Hatch { IsSolid = true, Style = style };
+        hatch.Paths.Add(new Hatch.BoundaryPath([new Hatch.BoundaryPath.Polyline([new XYZ(0, 0, 0), new XYZ(10, 0, 0), new XYZ(10, 10, 0), new XYZ(0, 10, 0)], true)])
+        {
+            Flags = BoundaryPathFlags.Polyline | BoundaryPathFlags.External,
+        });
+        hatch.Paths.Add(new Hatch.BoundaryPath([new Hatch.BoundaryPath.Polyline([new XYZ(3, 3, 0), new XYZ(7, 3, 0), new XYZ(7, 7, 0), new XYZ(3, 7, 0)], true)])
+        {
+            Flags = BoundaryPathFlags.Polyline,
+        });
+        return hatch;
+    }
+
+    [Fact]
+    public void ASolidHatchWithAnIslandIsOneFillWithAHole()
+    {
+        var cad = NewDrawing();
+        cad.Entities.Add(SquareWithAHole(HatchStyleType.Normal));
+
+        var path = Assert.Single(Flatten(cad).Paths);
+
+        Assert.True(path.IsFilled);
+        Assert.Contains((10.0, 10.0), path.Points);
+        var hole = Assert.Single(path.Holes!);
+        Assert.Contains((3.0, 3.0), hole);
+        Assert.Contains((7.0, 7.0), hole);
+    }
+
+    [Fact]
+    public void AHatchThatIgnoresItsIslandsFillsEveryOutline()
+    {
+        var cad = NewDrawing();
+        cad.Entities.Add(SquareWithAHole(HatchStyleType.Ignore));
+
+        var paths = Flatten(cad).Paths;
+
+        Assert.Equal(2, paths.Count);
+        Assert.All(paths, p => Assert.True(p.IsFilled && p.Holes is null));
+    }
+
     [Fact]
     public void BoundsCoverWhatIsShown()
     {
@@ -351,6 +393,20 @@ public sealed class CadSceneTests
         var pdf = Encoding.Latin1.GetString(CadPdfWriter.Write(scene, name => name != "OFF", PaperSize.A4));
 
         Assert.Single(Regex.Matches(pdf, @"\nS\n"));
+    }
+
+    [Fact]
+    public void TheHoleOfAFillStaysOpenInThePdf()
+    {
+        var cad = NewDrawing();
+        cad.Entities.Add(SquareWithAHole(HatchStyleType.Normal));
+
+        var pdf = Pdf(Flatten(cad));
+
+        // Both outlines in one path, filled even-odd.
+        Assert.Equal(2, Regex.Matches(pdf, @" m\n").Count);
+        Assert.Single(Regex.Matches(pdf, @"\nf\*\n"));
+        Assert.DoesNotMatch(@"\nf\n", pdf);
     }
 
     [Fact]

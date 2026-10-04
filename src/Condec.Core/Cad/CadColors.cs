@@ -48,6 +48,21 @@ internal static class CadColors
         (172, 41, 0, 165),
     ];
 
+    /// <summary>
+    /// The colours of the full index range that are not greys: 1 to 6 and 10 to 249, as ACadSharp lists them. Used for fills
+    /// that should keep their look, such as logos, where seven basic colours are too few.
+    /// </summary>
+    private static readonly (short Index, byte R, byte G, byte B)[] Hues = Enumerable.Range(1, 6).Concat(Enumerable.Range(10, 240))
+        .Select(index =>
+        {
+            var rgb = Color.GetIndexRGB((byte)index);
+            return ((short)index, rgb[0], rgb[1], rgb[2]);
+        })
+        .ToArray();
+
+    /// <summary>Strongest minus weakest channel below this: a grey, which <see cref="FromRgbFine"/> leaves to the grey ramp and index 7.</summary>
+    private const int GreySpread = 24;
+
     public static Color FromPdf(IColor? color)
     {
         if (color is null)
@@ -59,7 +74,14 @@ internal static class CadColors
         return FromRgb(To255(r), To255(g), To255(b));
     }
 
-    public static Color FromRgb(byte r, byte g, byte b) => new(Nearest(r, g, b).Index);
+    public static Color FromRgb(byte r, byte g, byte b) => new(Nearest(r, g, b, Palette).Index);
+
+    /// <summary>
+    /// The nearest index colour over the whole range of hues, for a filled area that should look like its source (a logo).
+    /// Greys and black go where <see cref="FromRgb"/> puts them, so black is still index 7.
+    /// </summary>
+    public static Color FromRgbFine(byte r, byte g, byte b) =>
+        Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) < GreySpread ? FromRgb(r, g, b) : new(Nearest(r, g, b, Hues).Index);
 
     /// <summary>
     /// True for a colour that goes to white: a light tint that is barely visible on paper but becomes index 7,
@@ -73,14 +95,14 @@ internal static class CadColors
         }
 
         var (r, g, b) = color.ToRGBValues();
-        return Nearest(To255(r), To255(g), To255(b)) is { Index: 7, R: 255 };
+        return Nearest(To255(r), To255(g), To255(b), Palette) is { Index: 7, R: 255 };
     }
 
-    private static (short Index, byte R, byte G, byte B) Nearest(byte r, byte g, byte b)
+    private static (short Index, byte R, byte G, byte B) Nearest(byte r, byte g, byte b, (short Index, byte R, byte G, byte B)[] palette)
     {
-        var best = Palette[0];
+        var best = palette[0];
         var bestDistance = double.MaxValue;
-        foreach (var entry in Palette)
+        foreach (var entry in palette)
         {
             var distance = Sq(r - entry.R) + Sq(g - entry.G) + Sq(b - entry.B);
             if (distance < bestDistance)

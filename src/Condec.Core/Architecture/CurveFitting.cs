@@ -33,6 +33,12 @@ public sealed record ArcPrimitive(double CenterX, double CenterY, double Radius,
 
 public sealed record CirclePrimitive(double CenterX, double CenterY, double Radius) : DrawingPrimitive;
 
+/// <summary>
+/// An area filled with one color, such as a part of a logo: its outlines in picture pixels with y up, outer edges and holes
+/// alike. A point is inside when an odd number of outlines go around it.
+/// </summary>
+public sealed record FillPrimitive(IReadOnlyList<IReadOnlyList<(double X, double Y)>> Loops, Rgb Color) : DrawingPrimitive;
+
 /// <summary>Turns a traced path into lines, polylines, arcs and circles.</summary>
 internal static class CurveFitter
 {

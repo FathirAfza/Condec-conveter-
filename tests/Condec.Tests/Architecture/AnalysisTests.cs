@@ -57,6 +57,84 @@ public sealed class AnalysisTests
         Assert.Empty(LogoFinder.Find(drawing.Picture(), CancellationToken.None));
     }
 
+    // --- logos become areas of their own colors (owner decision 2026-10-04) ---
+
+    private static readonly (byte B, byte G, byte R) Blue = (200, 60, 20);
+
+    private static (double MinX, double MinY, double MaxX, double MaxY) BoundsOf(IEnumerable<(double X, double Y)> points)
+    {
+        var list = points.ToList();
+        return (list.Min(p => p.X), list.Min(p => p.Y), list.Max(p => p.X), list.Max(p => p.Y));
+    }
+
+    [Fact]
+    public void ALogoIsFilledInItsOwnColorAndItsPaperStaysOpen()
+    {
+        // A red block with a white square in it, in a 1000 × 700 picture read as is.
+        var drawing = new SyntheticDrawing(1000, 700).Fill(100, 100, 220, 180, Red).Fill(140, 120, 180, 160, (255, 255, 255));
+
+        var fill = Assert.IsType<FillPrimitive>(Assert.Single(LogoPainter.Paint(drawing.Picture(), 1, 128, new PixelRect(100, 100, 220, 180), 700, CancellationToken.None)));
+
+        Assert.Equal(new Rgb(220, 30, 30), fill.Color);
+        Assert.Equal(2, fill.Loops.Count);
+
+        // The outline sits on the edge of the block and the hole on the edge of the white square, y counted up from row 700.
+        var outer = fill.Loops.Select(BoundsOf).MaxBy(b => b.MaxX - b.MinX);
+        var hole = fill.Loops.Select(BoundsOf).MinBy(b => b.MaxX - b.MinX);
+        Assert.Equal((100.0, 520.0, 220.0, 600.0), outer);
+        Assert.Equal((140.0, 540.0, 180.0, 580.0), hole);
+    }
+
+    [Fact]
+    public void ALogoOfTwoColorsBecomesTwoAreasThatLeaveNoGap()
+    {
+        // Red on the left, blue on the right, touching at x 200.
+        var drawing = new SyntheticDrawing(1000, 700).Fill(100, 100, 200, 180, Red).Fill(200, 100, 240, 180, Blue);
+
+        var fills = LogoPainter.Paint(drawing.Picture(), 1, 128, new PixelRect(100, 100, 240, 180), 700, CancellationToken.None)
+            .Cast<FillPrimitive>()
+            .ToList();
+
+        Assert.Equal(2, fills.Count);
+
+        // The larger area comes first and reaches one pixel under the smaller one, which is drawn over it.
+        Assert.Equal(new Rgb(220, 30, 30), fills[0].Color);
+        Assert.Equal(new Rgb(20, 60, 200), fills[1].Color);
+        var red = BoundsOf(fills[0].Loops.SelectMany(loop => loop));
+        var blue = BoundsOf(fills[1].Loops.SelectMany(loop => loop));
+        Assert.Equal(200, blue.MinX, 6);
+        Assert.Equal(201, red.MaxX, 6);
+    }
+
+    [Fact]
+    public void ALogoIsReadFromTheFileAndPlacedInAnalysisPixels()
+    {
+        // The analysis halved the picture: its logo at 50..110 × 50..90 is 100..220 × 100..180 in the file.
+        var drawing = new SyntheticDrawing(1000, 700).Fill(100, 100, 220, 180, Red);
+
+        var fill = Assert.IsType<FillPrimitive>(Assert.Single(LogoPainter.Paint(drawing.Picture(), 2, 128, new PixelRect(50, 50, 110, 90), 350, CancellationToken.None)));
+
+        Assert.Equal((50.0, 260.0, 110.0, 300.0), BoundsOf(Assert.Single(fill.Loops)));
+    }
+
+    [Fact]
+    public void CancellingStopsPaintingALogo()
+    {
+        var drawing = new SyntheticDrawing(400, 300).Fill(100, 100, 220, 180, Red);
+
+        Assert.ThrowsAny<OperationCanceledException>(() => LogoPainter.Paint(drawing.Picture(), 1, 128, new PixelRect(100, 100, 220, 180), 300, new CancellationToken(canceled: true)));
+    }
+
+    [Fact]
+    public async Task TheLogoOfAPlanIsFilledNotOutlined()
+    {
+        var analysis = await DrawingAnalyzer.AnalyzeAsync(Plan().Picture(), null, null, CancellationToken.None);
+
+        var logo = Assert.Single(analysis.Group(DrawingObjectKind.Logo).Items);
+        var fill = Assert.IsType<FillPrimitive>(Assert.Single(logo.Primitives));
+        Assert.Equal(new Rgb(220, 30, 30), fill.Color);
+    }
+
     // --- tables ---
 
     private static SyntheticDrawing Ruled(SyntheticDrawing drawing, int left, int top, int columns, int rows, int cellWidth, int cellHeight, int writtenCells = 0)
@@ -351,6 +429,7 @@ public sealed class AnalysisTests
         Assert.Equal(0, analysis.Group(DrawingObjectKind.Table).Count);
         Assert.Equal(0, analysis.Group(DrawingObjectKind.Text).Count);
         Assert.NotEmpty(kop.Texts);
+        Assert.Single(kop.Primitives.OfType<FillPrimitive>());
     }
 
     [Fact]

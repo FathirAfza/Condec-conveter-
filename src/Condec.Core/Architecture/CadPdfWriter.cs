@@ -112,8 +112,13 @@ public static class CadPdfWriter
                     fill = path.Color;
                 }
 
-                AppendPath(content, path, originX, originY, scale);
-                content.Append("f\n");
+                AppendPath(content, path.Points, originX, originY, scale);
+                foreach (var hole in path.Holes ?? [])
+                {
+                    AppendPath(content, hole, originX, originY, scale);
+                }
+
+                content.Append(path.Holes is { Count: > 0 } ? "f*\n" : "f\n");
                 continue;
             }
 
@@ -130,7 +135,7 @@ public static class CadPdfWriter
                 lineWidth = widthPoints;
             }
 
-            AppendPath(content, path, originX, originY, scale);
+            AppendPath(content, path.Points, originX, originY, scale);
             content.Append(path.IsClosed ? "s\n" : "S\n");
         }
 
@@ -160,11 +165,11 @@ public static class CadPdfWriter
         return Assemble(pageWidth, pageHeight, content.ToString());
     }
 
-    private static void AppendPath(StringBuilder content, CadPath path, double originX, double originY, double scale)
+    private static void AppendPath(StringBuilder content, IReadOnlyList<(double X, double Y)> points, double originX, double originY, double scale)
     {
-        for (var i = 0; i < path.Points.Count; i++)
+        for (var i = 0; i < points.Count; i++)
         {
-            var (x, y) = path.Points[i];
+            var (x, y) = points[i];
             content.Append(Number((x * scale) + originX)).Append(' ').Append(Number((y * scale) + originY)).Append(i == 0 ? " m\n" : " l\n");
         }
     }
