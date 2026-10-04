@@ -64,22 +64,42 @@ public interface ILoadMonitor
 
 /// <summary>
 /// Adaptive (DESIGN §7.6): the device's state lowers the share of the time a render works, never raises it above the mode.
+/// While another app uses the GPU the share is at most <see cref="BusyDuty"/>; while memory is nearly full it is halved.
+/// A render that works hard starves an app that shares the GPU, and a starved app shows hardly any use (DESIGN §13 #64), so
+/// the busy state is held until the others have been quiet for a few readings, not dropped the moment they look quiet.
 /// </summary>
-public static class AdaptivePace
+public sealed class AdaptivePace
 {
-    /// <summary>Other apps use the GPU at least this much: the render works half as much.</summary>
-    public const double BusyGpuPercent = 30;
+    /// <summary>Other apps use the GPU at least this much: Adaptive holds the render back.</summary>
+    public const double BusyGpuPercent = 20;
 
-    /// <summary>The memory is at least this full: the render works half as much.</summary>
-    public const double FullMemoryPercent = 90;
+    /// <summary>Held back until other apps use the GPU less than this, <see cref="QuietReads"/> readings in a row: a gap between 10 and 20 keeps it from flipping.</summary>
+    public const double QuietGpuPercent = 10;
 
-    /// <summary>The share of the time with the device as it is: the mode's share, halved for a busy GPU and again for full memory, never below 10% (or the mode's own share when that is lower).</summary>
-    public static double Adjust(double duty, SystemLoad load)
+    /// <summary>How many quiet readings in a row end the hold.</summary>
+    public const int QuietReads = 2;
+
+    /// <summary>The most a render works while another app uses the GPU: Low's share. On the author's laptop a frame-paced app kept 96% of its frames beside it, against 43% beside a render at 80% (DESIGN §13 #64).</summary>
+    public const double BusyDuty = 0.2;
+
+    /// <summary>The memory is at least this full: the render works half as much. A laptop with 8 GB rests near 90% with a browser open, and a render adds a few points, so 90% would fire on every render.</summary>
+    public const double FullMemoryPercent = 95;
+
+    private bool _gpuBusy;
+    private int _quietReads;
+
+    /// <summary>Another app was using the GPU and has not been quiet since.</summary>
+    public bool GpuBusy => _gpuBusy;
+
+    /// <summary>The share of the time with the device as it is: the mode's share, at most <see cref="BusyDuty"/> (or half) for a busy GPU and halved again for full memory, never below 10% (or the mode's own share when that is lower).</summary>
+    public double Adjust(double duty, SystemLoad load)
     {
+        UpdateGpu(load.OtherGpuPercent);
+
         var adjusted = duty;
-        if (load.OtherGpuPercent >= BusyGpuPercent)
+        if (_gpuBusy)
         {
-            adjusted /= 2;
+            adjusted = Math.Min(adjusted / 2, BusyDuty);
         }
 
         if (load.MemoryLoadPercent >= FullMemoryPercent)
@@ -88,6 +108,32 @@ public static class AdaptivePace
         }
 
         return Math.Max(adjusted, Math.Min(duty, RenderPace.MemorySaver.Duty));
+    }
+
+    private void UpdateGpu(double? percent)
+    {
+        if (percent is not { } gpu)
+        {
+            return;
+        }
+
+        if (!_gpuBusy)
+        {
+            _gpuBusy = gpu >= BusyGpuPercent;
+            _quietReads = 0;
+        }
+        else if (gpu < QuietGpuPercent)
+        {
+            if (++_quietReads >= QuietReads)
+            {
+                _gpuBusy = false;
+                _quietReads = 0;
+            }
+        }
+        else
+        {
+            _quietReads = 0;
+        }
     }
 }
 
@@ -99,19 +145,31 @@ public static class AdaptivePace
 /// </summary>
 public sealed class TilePacer
 {
-    /// <summary>How often Adaptive reads the device: reading the GPU counters of every process takes a few milliseconds.</summary>
-    public static readonly TimeSpan DefaultCheckInterval = TimeSpan.FromSeconds(2);
+    /// <summary>How often Adaptive reads the device. Each reading takes a rest of at least <see cref="ProbePause"/>, which costs a render at ExtraHigh (rests of 0.1 s) about 7%.</summary>
+    public static readonly TimeSpan DefaultCheckInterval = TimeSpan.FromSeconds(5);
+
+    /// <summary>How often it reads while holding the render back: at every rest. The rests are long then (0.5 s and more), so a reading costs nothing, and the render is freed sooner when the other app is done.</summary>
+    public static readonly TimeSpan HeldCheckInterval = TimeSpan.Zero;
+
+    /// <summary>
+    /// The shortest rest a reading is taken across. What other apps want of the GPU shows only while this render rests: while it
+    /// works, they are starved and look idle (DESIGN §13 #64).
+    /// </summary>
+    public static readonly TimeSpan ProbePause = TimeSpan.FromMilliseconds(500);
 
     private readonly Action<TimeSpan, CancellationToken> _wait;
     private readonly ILoadMonitor? _monitor;
+    private readonly AdaptivePace _adaptive = new();
     private readonly TimeSpan _checkInterval;
+    private readonly Func<long> _timestamp;
     private long? _lastCheck;
 
     /// <param name="duty">Above 0 and at most 1.</param>
     /// <param name="wait">Waits the given time or until cancelled; tests pass a stand-in.</param>
     /// <param name="monitor">Reads the device for Adaptive; null keeps <paramref name="duty"/>.</param>
     /// <param name="checkInterval">How often the monitor is read; <see cref="DefaultCheckInterval"/> when null.</param>
-    public TilePacer(double duty, Action<TimeSpan, CancellationToken>? wait = null, ILoadMonitor? monitor = null, TimeSpan? checkInterval = null)
+    /// <param name="timestamp">The clock, in <see cref="Stopwatch"/> ticks; tests pass a stand-in.</param>
+    public TilePacer(double duty, Action<TimeSpan, CancellationToken>? wait = null, ILoadMonitor? monitor = null, TimeSpan? checkInterval = null, Func<long>? timestamp = null)
     {
         if (!(duty > 0 && duty <= 1))
         {
@@ -123,6 +181,7 @@ public sealed class TilePacer
         _wait = wait ?? Wait;
         _monitor = monitor;
         _checkInterval = checkInterval ?? DefaultCheckInterval;
+        _timestamp = timestamp ?? Stopwatch.GetTimestamp;
     }
 
     /// <summary>The mode's share of the time.</summary>
@@ -131,6 +190,18 @@ public sealed class TilePacer
     /// <summary>The share in use now: <see cref="Duty"/>, or less while Adaptive finds the device busy.</summary>
     public double CurrentDuty { get; private set; }
 
+    /// <summary>
+    /// Reads the device now, so the first rest already goes by it. Called before the first tile, while the render has not yet
+    /// started to use the GPU: from then on a render that works hard starves the apps beside it and hides how much they want.
+    /// </summary>
+    public void Check()
+    {
+        if (_monitor is not null)
+        {
+            ReadDevice();
+        }
+    }
+
     /// <summary>The rest after <paramref name="work"/> that leaves the engine working <paramref name="duty"/> of the time.</summary>
     public static TimeSpan PauseAfter(TimeSpan work, double duty) =>
         work <= TimeSpan.Zero || duty >= 1 ? TimeSpan.Zero : work * ((1 / duty) - 1);
@@ -138,19 +209,34 @@ public sealed class TilePacer
     /// <summary>Rests after a tile that took <paramref name="work"/>. Throws <see cref="OperationCanceledException"/> when cancelled.</summary>
     public void Rest(TimeSpan work, CancellationToken ct)
     {
-        if (_monitor is not null && (_lastCheck is not { } last || Stopwatch.GetElapsedTime(last) >= _checkInterval))
-        {
-            _lastCheck = Stopwatch.GetTimestamp();
-            CurrentDuty = AdaptivePace.Adjust(Duty, _monitor.Read());
-        }
-
         var pause = PauseAfter(work, CurrentDuty);
-        if (pause > TimeSpan.Zero)
+        var interval = _adaptive.GpuBusy && HeldCheckInterval < _checkInterval ? HeldCheckInterval : _checkInterval;
+        if (_monitor is not null && (_lastCheck is not { } last || Stopwatch.GetElapsedTime(last, _timestamp()) >= interval))
+        {
+            // The reading is the others' use of the GPU across a rest of this render, and the rest goes on when the reading asks for a longer one.
+            _ = _monitor.Read();
+            var waited = pause > ProbePause ? pause : ProbePause;
+            _wait(waited, ct);
+            ct.ThrowIfCancellationRequested();
+            ReadDevice();
+            var needed = PauseAfter(work, CurrentDuty);
+            if (needed > waited)
+            {
+                _wait(needed - waited, ct);
+            }
+        }
+        else if (pause > TimeSpan.Zero)
         {
             _wait(pause, ct);
         }
 
         ct.ThrowIfCancellationRequested();
+    }
+
+    private void ReadDevice()
+    {
+        _lastCheck = _timestamp();
+        CurrentDuty = _adaptive.Adjust(Duty, _monitor!.Read());
     }
 
     private static void Wait(TimeSpan pause, CancellationToken ct) => ct.WaitHandle.WaitOne(pause);

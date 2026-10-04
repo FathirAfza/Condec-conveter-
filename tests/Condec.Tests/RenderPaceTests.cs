@@ -267,14 +267,19 @@ public class RenderPaceTests
     [Theory]
     [InlineData(0.8, null, null, 0.8)]
     [InlineData(0.8, 10.0, 50.0, 0.8)]
-    [InlineData(0.8, 30.0, 50.0, 0.4)]
-    [InlineData(0.8, 10.0, 90.0, 0.4)]
-    [InlineData(0.8, 90.0, 95.0, 0.2)]
+    [InlineData(0.8, 20.0, 50.0, 0.2)]
+    [InlineData(0.8, 19.9, 50.0, 0.8)]
+    [InlineData(0.6, 30.0, 0.0, 0.2)]
+    [InlineData(0.4, 30.0, 0.0, 0.2)]
+    [InlineData(0.2, 30.0, 0.0, 0.1)]
+    [InlineData(0.8, 10.0, 95.0, 0.4)]
+    [InlineData(0.8, 90.0, 95.0, 0.1)]
     [InlineData(0.2, 90.0, 95.0, 0.1)]
     [InlineData(0.1, 90.0, 95.0, 0.1)]
-    [InlineData(0.6, 29.9, 89.9, 0.6)]
+    [InlineData(0.6, 19.9, 94.9, 0.6)]
+    [InlineData(0.8, 0.0, 90.0, 0.8)]
     public void Adaptive_LowersTheShare_WhileTheDeviceIsBusy(double duty, double? gpu, double? memory, double expected) =>
-        Assert.Equal(expected, AdaptivePace.Adjust(duty, new SystemLoad(gpu, memory)), 6);
+        Assert.Equal(expected, new AdaptivePace().Adjust(duty, new SystemLoad(gpu, memory)), 6);
 
     [Fact]
     public void Adaptive_NeverWorksMoreThanTheMode()
@@ -282,26 +287,172 @@ public class RenderPaceTests
         foreach (var mode in RenderPace.Modes)
         {
             var duty = RenderPace.For(mode, false).Duty;
-            Assert.True(AdaptivePace.Adjust(duty, new SystemLoad(0, 0)) <= duty);
-            Assert.True(AdaptivePace.Adjust(duty, new SystemLoad(100, 100)) <= duty);
+            Assert.True(new AdaptivePace().Adjust(duty, new SystemLoad(0, 0)) <= duty);
+            Assert.True(new AdaptivePace().Adjust(duty, new SystemLoad(100, 100)) <= duty);
         }
     }
 
     [Fact]
-    public void ThePacer_RestsLonger_WhileAdaptiveFindsTheDeviceBusy()
+    public void Adaptive_HoldsBack_UntilTheOthersHaveBeenQuietTwiceInARow()
+    {
+        var adaptive = new AdaptivePace();
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(45, 0)), 6);
+
+        // Between 10 and 20 is not busy enough to start, and not quiet enough to stop.
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(15, 0)), 6);
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(5, 0)), 6);
+
+        // A reading that is not quiet starts the count again.
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(15, 0)), 6);
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(5, 0)), 6);
+        Assert.True(adaptive.GpuBusy);
+
+        Assert.Equal(0.8, adaptive.Adjust(0.8, new SystemLoad(5, 0)), 6);
+        Assert.False(adaptive.GpuBusy);
+    }
+
+    [Fact]
+    public void Adaptive_DoesNotStart_ForUseBetweenTenAndTwenty()
+    {
+        var adaptive = new AdaptivePace();
+        Assert.Equal(0.8, adaptive.Adjust(0.8, new SystemLoad(15, 0)), 6);
+        Assert.False(adaptive.GpuBusy);
+    }
+
+    [Fact]
+    public void Adaptive_KeepsItsState_WhenTheGpuCounterCannotBeRead()
+    {
+        var adaptive = new AdaptivePace();
+        Assert.Equal(0.8, adaptive.Adjust(0.8, new SystemLoad(null, 0)), 6);
+
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(60, 0)), 6);
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(null, 0)), 6);
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(null, 0)), 6);
+        Assert.Equal(0.2, adaptive.Adjust(0.8, new SystemLoad(null, 0)), 6);
+        Assert.True(adaptive.GpuBusy);
+    }
+
+    [Fact]
+    public void ThePacer_ReadsTheDeviceAcrossARest_AtLeastHalfASecondLong()
     {
         var waits = new List<TimeSpan>();
         var monitor = new FixedMonitor(new SystemLoad(50, 40));
         var pacer = new TilePacer(0.8, (pause, _) => waits.Add(pause), monitor, TimeSpan.Zero);
 
-        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
-        monitor.Load = new SystemLoad(0, 40);
+        // 100 ms of work at 80% rests 25 ms, but what other apps want of the GPU shows only while this render rests.
         pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
 
-        // Busy GPU: 40% of the time, so 150 ms after 100 ms of work; then back to 80%, 25 ms.
+        Assert.Equal([TilePacer.ProbePause], waits);
+        Assert.Equal(2, monitor.Reads);
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+    }
+
+    [Fact]
+    public void ThePacer_RestsLongerAtOnce_WhenTheReadingAsksForIt()
+    {
+        var waits = new List<TimeSpan>();
+        var monitor = new FixedMonitor(new SystemLoad(50, 40));
+        var pacer = new TilePacer(0.8, (pause, _) => waits.Add(pause), monitor, TimeSpan.Zero);
+
+        // 1 s of work: 250 ms at 80%; the reading says busy, so the render works 20% of the time and rests 4 s in all.
+        pacer.Rest(TimeSpan.FromSeconds(1), Ct);
+
+        Assert.Equal([TilePacer.ProbePause, TimeSpan.FromMilliseconds(3500)], waits);
+    }
+
+    [Fact]
+    public void ThePacer_LetsGo_AfterTwoQuietReadings()
+    {
+        var monitor = new FixedMonitor(new SystemLoad(50, 40));
+        var pacer = new TilePacer(0.8, (_, _) => { }, monitor, TimeSpan.Zero);
+
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+
+        monitor.Load = new SystemLoad(0, 40);
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal(0.8, pacer.CurrentDuty, 6);
+    }
+
+    [Fact]
+    public void ThePacer_GoesByTheDevice_FromTheFirstRest_WhenCheckedBeforeTheFirstTile()
+    {
+        var waits = new List<TimeSpan>();
+        var monitor = new FixedMonitor(new SystemLoad(0, 96));
+        var pacer = new TilePacer(0.8, (pause, _) => waits.Add(pause), monitor, TimeSpan.FromMinutes(1));
+
+        pacer.Check();
+        Assert.Equal(0.4, pacer.CurrentDuty, 6);
+
+        // The reading is made already; the first rest is 150 ms after 100 ms of work, not 25 ms, and makes no reading of its own.
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
         Assert.Equal(150, waits[0].TotalMilliseconds, 3);
-        Assert.Equal(25, waits[1].TotalMilliseconds, 3);
-        Assert.Equal(0.8, pacer.CurrentDuty);
+        Assert.Equal(1, monitor.Reads);
+    }
+
+    [Fact]
+    public void ThePacer_ReadsAtEveryRest_OnceTheCheckFoundTheGpuBusy()
+    {
+        var waits = new List<TimeSpan>();
+        var monitor = new FixedMonitor(new SystemLoad(50, 0));
+        var pacer = new TilePacer(0.8, (pause, _) => waits.Add(pause), monitor, TimeSpan.FromMinutes(1));
+
+        pacer.Check();
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+
+        // Holding back, so the rest is a reading too: 400 ms after 100 ms of work, made 500 ms to be long enough to read across.
+        pacer.Rest(TimeSpan.FromMilliseconds(100), Ct);
+        Assert.Equal([TilePacer.ProbePause], waits);
+        Assert.Equal(3, monitor.Reads);
+
+        // A rest of 1.6 s is already long enough: no longer than the mode asks.
+        pacer.Rest(TimeSpan.FromMilliseconds(400), Ct);
+        Assert.Equal(TimeSpan.FromMilliseconds(1600), waits[1]);
+        Assert.Equal(5, monitor.Reads);
+    }
+
+    [Fact]
+    public void CheckingAPacerWithoutAMonitor_ChangesNothing()
+    {
+        var pacer = new TilePacer(0.6);
+        pacer.Check();
+        Assert.Equal(0.6, pacer.CurrentDuty);
+    }
+
+    [Fact]
+    public void ThePacer_ReadsTheDevice_EveryFiveSeconds_AndAtEveryRestWhileHoldingBack()
+    {
+        long now = 0;
+        var monitor = new FixedMonitor(new SystemLoad(0, 0));
+        var pacer = new TilePacer(0.8, (_, _) => { }, monitor, timestamp: () => now);
+
+        // Idle: a reading is two Reads (the start of the rest and its end), one probe every 5 s.
+        pacer.Check();
+        Assert.Equal(1, monitor.Reads);
+        foreach (var seconds in new[] { 3, 5, 8, 10 })
+        {
+            now = seconds * Stopwatch.Frequency;
+            pacer.Rest(TimeSpan.FromMilliseconds(10), Ct);
+        }
+
+        // At 3 s: none. At 5 s: a probe, 2 Reads. At 8 s: none. At 10 s: a probe, 2 Reads.
+        Assert.Equal(5, monitor.Reads);
+
+        // Holding back: a reading at every rest, which is long enough then to cost nothing.
+        monitor.Load = new SystemLoad(60, 0);
+        now = 15 * Stopwatch.Frequency;
+        pacer.Rest(TimeSpan.FromMilliseconds(10), Ct);
+        Assert.Equal(7, monitor.Reads);
+        Assert.Equal(0.2, pacer.CurrentDuty, 6);
+
+        now = 15 * Stopwatch.Frequency + (Stopwatch.Frequency / 2);
+        pacer.Rest(TimeSpan.FromMilliseconds(10), Ct);
+        Assert.Equal(9, monitor.Reads);
+        pacer.Rest(TimeSpan.FromMilliseconds(10), Ct);
+        Assert.Equal(11, monitor.Reads);
     }
 
     [Fact]
@@ -315,7 +466,8 @@ public class RenderPaceTests
             pacer.Rest(TimeSpan.FromMilliseconds(10), Ct);
         }
 
-        Assert.Equal(1, monitor.Reads);
+        // The first rest makes the one reading (2 Reads); the others rest as the mode says.
+        Assert.Equal(2, monitor.Reads);
     }
 
     [Fact]

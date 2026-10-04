@@ -73,6 +73,10 @@ public sealed class UpscaleConverter : IReencodingConverter
             throw new NotSupportedException($"'{request.TargetExtension}' is not an upscale target.");
         }
 
+        // Opened before the picture and the model are loaded: Adaptive's first reading covers the time the render has not yet
+        // used the GPU, which is the only time it can see how much the other apps want it (DESIGN §13 #64).
+        using var monitor = options.Adaptive ? WindowsLoadMonitor.Open() : null;
+
         progress.Report(new ConversionProgress(ConversionStage.Decode, 0));
         if (ImageStructure.IsComplete(request.SourcePath) == false)
         {
@@ -114,7 +118,7 @@ public sealed class UpscaleConverter : IReencodingConverter
         byte[] pixels;
         try
         {
-            pixels = await Task.Run(() => Render(model, image.Pixels, width, height, options, alpha, tiles, ct), ct).ConfigureAwait(false);
+            pixels = await Task.Run(() => Render(model, image.Pixels, width, height, options, alpha, monitor, tiles, ct), ct).ConfigureAwait(false);
         }
         catch (OutOfMemoryException ex)
         {
@@ -176,14 +180,15 @@ public sealed class UpscaleConverter : IReencodingConverter
         int height,
         UpscaleOptions options,
         byte[]? alpha,
+        ILoadMonitor? monitor,
         IProgress<(int Done, int Total)> tiles,
         CancellationToken ct)
     {
         byte[] enlarged;
         using (RenderPriority.Lower())
-        using (var monitor = options.Adaptive ? WindowsLoadMonitor.Open() : null)
         {
             var pacer = options.Duty < 1 || monitor is not null ? new TilePacer(options.Duty, monitor: monitor) : null;
+            pacer?.Check();
             enlarged = TiledUpscaler.Run(model, source, width, height, options.TileSize, tiles, ct, pacer);
         }
 
