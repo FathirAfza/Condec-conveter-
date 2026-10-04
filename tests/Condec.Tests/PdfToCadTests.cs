@@ -3,8 +3,11 @@
 
 using ACadSharp.Entities;
 using Condec.Core.Cad;
+using Condec.Core.Conversion;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using CSMath;
+using UglyToad.PdfPig.Graphics.Colors;
 
 namespace Condec.Tests;
 
@@ -18,12 +21,25 @@ public sealed class PdfToCadTests : IDisposable
 
     public void Dispose() => _temp.Dispose();
 
-    private List<Entity> Read(string content, CadOptions? options = null, int rotate = 0, string? form = null, string formMatrix = "1 0 0 1 0 0", double width = 200, double height = 100)
+    private List<Entity> Read(
+        string content,
+        CadOptions? options = null,
+        int rotate = 0,
+        string? form = null,
+        string formMatrix = "1 0 0 1 0 0",
+        double width = 200,
+        double height = 100,
+        string? innerForm = null)
     {
-        var path = TestPdf.Write(_temp.File(Guid.NewGuid().ToString("N") + ".pdf"), content, width, height, rotate, form: form, formMatrix: formMatrix);
+        var path = TestPdf.Write(NewPdf(), content, width, height, rotate, form: form, formMatrix: formMatrix, innerForm: innerForm);
         using var pdf = PdfInspector.Open(path);
-        return PdfToCadConverter.ReadVectors(pdf.GetPage(1), options ?? PointUnits, CancellationToken.None);
+        return PdfToCadConverter.ReadVectors(pdf, pdf.GetPage(1), options ?? PointUnits, CancellationToken.None);
     }
+
+    private string NewPdf() => _temp.File(Guid.NewGuid().ToString("N") + ".pdf");
+
+    private static (double From, double To) Span(Line line) =>
+        (Math.Min(line.StartPoint.X, line.EndPoint.X), Math.Max(line.StartPoint.X, line.EndPoint.X));
 
     [Fact]
     public void RotatedPage_ComesOutTheWayAViewerShowsIt()
@@ -182,7 +198,7 @@ public sealed class PdfToCadTests : IDisposable
     }
 
     [Fact]
-    public void FormXObject_FallsBackToClippingByThePage()
+    public void FormXObject_IsPlacedByItsMatrix_AndWhatFallsOffThePageGoes()
     {
         var entities = Read("/Fx Do\n", form: "0 0 m 30 0 l S\n-500 -500 m -400 -400 l S\n", formMatrix: "1 0 0 1 50 20");
 
@@ -190,6 +206,135 @@ public sealed class PdfToCadTests : IDisposable
         Assert.Equal(50, line.StartPoint.X, 6);
         Assert.Equal(20, line.StartPoint.Y, 6);
         Assert.Equal(80, line.EndPoint.X, 6);
+    }
+
+    [Fact]
+    public void FormXObject_IsCutByTheClipItIsPaintedIn()
+    {
+        // Before forms were followed, a page with a form was clipped by the page only and the line ran to 150.
+        var entities = Read("q 60 10 50 50 re W n /Fx Do Q\n", form: "0 0 m 100 0 l S\n", formMatrix: "1 0 0 1 50 20");
+
+        var line = Assert.Single(entities.OfType<Line>());
+        Assert.Equal((60, 110), Span(line));
+        Assert.Equal(20, line.StartPoint.Y, 6);
+    }
+
+    [Fact]
+    public void ClipInsideAFormXObject_EndsWithItsGraphicsState_AndWithTheForm()
+    {
+        // The form clips its first line, not its second; its last clip, set outside any q, ends with the form.
+        var entities = Read(
+            "/Fx Do\n0 50 m 200 50 l S\n",
+            form: "q 10 -10 20 20 re W n 0 0 m 100 0 l S Q\n0 10 m 100 10 l S\n0 0 30 30 re W n\n",
+            formMatrix: "1 0 0 1 50 20");
+
+        var lines = entities.OfType<Line>().OrderBy(l => l.StartPoint.Y).ToList();
+        Assert.Equal(3, lines.Count);
+        Assert.Equal((60, 80), Span(lines[0]));
+        Assert.Equal((50, 150), Span(lines[1]));
+        Assert.Equal((0, 200), Span(lines[2]));
+    }
+
+    [Fact]
+    public void FormInsideAForm_IsFoundInTheOuterFormsResources_AndClipped()
+    {
+        var entities = Read(
+            "/Fx Do\n",
+            form: "q 0 0 40 40 re W n /Fy Do Q\n",
+            formMatrix: "1 0 0 1 50 20",
+            innerForm: "0 5 m 100 5 l S\n");
+
+        var line = Assert.Single(entities.OfType<Line>());
+        Assert.Equal((50, 90), Span(line));
+        Assert.Equal(25, line.StartPoint.Y, 6);
+    }
+
+    [Fact]
+    public void FrameDrawnByClippingAPageSizeFill_BecomesTheClipShape()
+    {
+        // How the owner's drawing (2026-10-04) draws its border: an L-shaped clip, then a black fill of the whole
+        // page inside a form. Before, the fill was taken for the page background and the border was lost.
+        var entities = Read(
+            "q 10 10 m 10 90 l 12 90 l 12 12 l 190 12 l 190 10 l h W n /Fx Do Q\n",
+            form: "0 g 0 0 200 100 re f\n");
+
+        var frame = Assert.IsType<LwPolyline>(Assert.Single(entities));
+        Assert.True(frame.IsClosed);
+        Assert.Equal(6, frame.Vertices.Count);
+        Assert.Equal(10, frame.Vertices.Min(v => v.Location.X), 6);
+        Assert.Equal(190, frame.Vertices.Max(v => v.Location.X), 6);
+        Assert.Equal(90, frame.Vertices.Max(v => v.Location.Y), 6);
+        Assert.Equal(7, frame.Color.Index);
+    }
+
+    [Fact]
+    public void FillClippedToThePage_IsStillTheBackground()
+    {
+        var entities = Read("q 0 0 200 100 re W n 0.2 g -10 -10 220 120 re f Q\n0 G 20 20 m 40 20 l S\n");
+
+        var line = Assert.IsType<Line>(Assert.Single(entities));
+        Assert.Equal(20, line.StartPoint.X, 6);
+    }
+
+    [Fact]
+    public void PageSizeFillWithAHole_IsAFrameNotABackground()
+    {
+        var entities = Read("0 g 0 0 200 100 re 10 10 180 80 re f*\n");
+
+        var rings = entities.OfType<LwPolyline>().OrderBy(p => p.Vertices.Min(v => v.Location.X)).ToList();
+        Assert.Equal(2, rings.Count);
+        Assert.All(rings, ring => Assert.True(ring.IsClosed));
+        Assert.Equal(0, rings[0].Vertices.Min(v => v.Location.X), 6);
+        Assert.Equal(10, rings[1].Vertices.Min(v => v.Location.X), 6);
+    }
+
+    [Fact]
+    public void PaleBandAtThePageEdge_IsLeftOut_ButPaleShapesInsideAndDarkerBandsStay()
+    {
+        var entities = Read(
+            "0.93 0.93 0.94 rg 0 0 200 15 re f\n"   // #EDEDF0 band along the bottom edge: gone
+            + "0.93 g 50 40 40 20 re f\n"           // pale shape inside the page: kept
+            + "0.8 g 0 85 200 15 re f\n"            // grey band along the top edge: kept
+            + "0 G 20 50 m 40 50 l S\n");
+
+        var shapes = entities.OfType<LwPolyline>().OrderBy(p => p.Vertices.Min(v => v.Location.Y)).ToList();
+        Assert.Equal(2, shapes.Count);
+        Assert.Equal(40, shapes[0].Vertices.Min(v => v.Location.Y), 6);
+        Assert.Equal(85, shapes[1].Vertices.Min(v => v.Location.Y), 6);
+        Assert.Single(entities.OfType<Line>());
+    }
+
+    [Fact]
+    public void PicturesOnThePage_AreCounted_AndOffThePageAreNot()
+    {
+        var path = TestPdf.Write(NewPdf(), "q 20 0 0 20 150 60 cm /Im Do Q\nq 20 0 0 20 500 500 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+        using var pdf = PdfInspector.Open(path);
+
+        Assert.Equal(1, PdfToCadConverter.CountPictures(pdf.GetPage(1)));
+    }
+
+    [Fact]
+    public async Task PicturesLeftOut_AreNoted()
+    {
+        var path = TestPdf.Write(NewPdf(), "q 20 0 0 20 150 60 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+        var request = new ConversionRequest(path, ".pdf", ".dxf", new MemoryStream(), PointUnits);
+
+        await new PdfToCadConverter(null).ConvertAsync(request, new Progress<ConversionProgress>(), TestContext.Current.CancellationToken);
+
+        var note = Assert.Single(request.Notes.Items);
+        Assert.Equal(NoteSeverity.Informational, note.Severity);
+        Assert.Equal(Loc.Format("Note.PicturesLeftOut", 1), note.Message);
+    }
+
+    [Fact]
+    public async Task PageWithoutPictures_HasNoNote()
+    {
+        var path = TestPdf.Write(NewPdf(), "10 10 m 60 10 l S\n");
+        var request = new ConversionRequest(path, ".pdf", ".dxf", new MemoryStream(), PointUnits);
+
+        await new PdfToCadConverter(null).ConvertAsync(request, new Progress<ConversionProgress>(), TestContext.Current.CancellationToken);
+
+        Assert.Empty(request.Notes.Items);
     }
 
     [Fact]
@@ -411,6 +556,17 @@ public sealed class ClipAndColourTests
     [InlineData(255, 128, 0, 30)]
     public void Colours_MapToTheNearestIndex(int r, int g, int b, int expected) =>
         Assert.Equal(expected, CadColors.FromRgb((byte)r, (byte)g, (byte)b).Index);
+
+    [Theory]
+    [InlineData(237, 237, 238, true)]
+    [InlineData(240, 240, 240, true)]
+    [InlineData(255, 255, 255, true)]
+    [InlineData(230, 230, 230, false)]
+    [InlineData(204, 204, 204, false)]
+    [InlineData(0, 0, 0, false)]
+    [InlineData(255, 0, 0, false)]
+    public void PaleColours_AreTheOnesThatBecomeWhite(int r, int g, int b, bool pale) =>
+        Assert.Equal(pale, CadColors.IsPale(new RGBColor(r / 255.0, g / 255.0, b / 255.0)));
 
     [Fact]
     public void FlatBezier_IsRecognized()

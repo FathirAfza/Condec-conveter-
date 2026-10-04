@@ -10,6 +10,7 @@ using Condec.Core.Formats;
 using Condec.Core.Localization;
 using Condec.Core.Pdf;
 using CSMath;
+using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
@@ -43,8 +44,20 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
     /// <summary>How far a traced outline may deviate from the pixel contour, in pixels.</summary>
     internal const double ScanTolerancePixels = 1.0;
 
-    /// <summary>A fill without an outline that covers this much of the page is its background.</summary>
+    /// <summary>A fill without an outline whose visible part covers this much of the page is its background.</summary>
     internal const double BackgroundCoverage = 0.95;
+
+    /// <summary>
+    /// A pale fill (one that would become white, index 7) reaching this close to the page edge, in points, is a
+    /// margin band or page tint: barely visible on paper, but a hard outline in CAD.
+    /// </summary>
+    internal const double PageEdgePoints = 1;
+
+    /// <summary>Sample points per side when measuring how much of the page a fill covers.</summary>
+    private const int CoverageSamples = 32;
+
+    /// <summary>Straight pieces per Bézier when measuring how much of the page a fill covers.</summary>
+    private const int CurvePieces = 8;
 
     /// <summary>Cap height of common fonts relative to the font size; DXF text height is the cap height.</summary>
     internal const double CapHeightRatio = 0.7;
@@ -82,9 +95,16 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
             }
 
             var page = pdf.GetPage(options.PageNumber);
-            var entities = PdfInspector.GetPageKind(page) == PdfPageKind.Scan
-                ? await TraceScanAsync(request.SourcePath, page, options, ct).ConfigureAwait(false)
-                : ReadVectors(page, options, ct);
+            List<Entity> entities;
+            if (PdfInspector.GetPageKind(page) == PdfPageKind.Scan)
+            {
+                entities = await TraceScanAsync(request.SourcePath, page, options, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                entities = ReadVectors(pdf, page, options, ct);
+                AddPicturesNote(request.Notes, CountPictures(page));
+            }
 
             foreach (var entity in entities)
             {
@@ -134,11 +154,30 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
         }
     }
 
-    internal static List<Entity> ReadVectors(Page page, CadOptions options, CancellationToken ct)
+    /// <summary>
+    /// Pictures (logos, photos, stamps) placed on a vector page. A DXF or DWG from this converter holds lines,
+    /// curves and text only, so these are left out; the count is for the note that says so.
+    /// </summary>
+    internal static int CountPictures(Page page)
+    {
+        var pageBox = new Rect(0, 0, page.Width, page.Height);
+        return page.GetImages().Count(image => pageBox.Intersects(ToRect(image.BoundingBox)));
+    }
+
+    /// <summary>Tells the user that the pictures of the converted pages didn't come along, when there were any.</summary>
+    internal static void AddPicturesNote(ConversionNotes notes, int pictures)
+    {
+        if (pictures > 0)
+        {
+            notes.Add(NoteSeverity.Informational, Loc.Format("Note.PicturesLeftOut", pictures));
+        }
+    }
+
+    internal static List<Entity> ReadVectors(PdfDocument document, Page page, CadOptions options, CancellationToken ct)
     {
         var transform = new PageTransform(options.UnitsPerPoint);
         var pageBox = new Rect(0, 0, page.Width, page.Height);
-        var clips = PdfClipTracker.Resolve(page, pageBox);
+        var clips = PdfClipTracker.Resolve(document, page, pageBox);
         var builder = new EntityBuilder(transform, options.JoinLines);
 
         // Invisible text (render mode 3, "neither") is either an OCR layer over a picture, which has no place
@@ -172,23 +211,33 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
 
             // A fill whose outline is stroked in the same colour is just a solid shape.
             var solid = path.IsFilled && (!path.IsStroked || SameColour(path.FillColor, path.StrokeColor));
-            var clip = clips?[i] ?? pageBox;
+            var pathClip = clips?[i] ?? new PathClip(pageBox, null);
+            var clip = pathClip.Bounds;
+
+            // Some producers draw a shape, such as a frame, by filling a rectangle larger than the clip and
+            // clipping it to the shape. What shows is the clipping path, so that becomes the drawing.
+            var geometry = solid && pathClip.Shape is { } clipShape && CoversClip(path, clip) ? clipShape : path;
             Rect? pathBounds = null;
-            if (path.GetBoundingRectangle() is { } bounds)
+            if (geometry.GetBoundingRectangle() is { } bounds)
             {
                 pathBounds = ToRect(bounds);
-                if (solid && bounds.Width * bounds.Height >= BackgroundCoverage * pageArea)
+                if (!clip.Intersects(pathBounds.Value))
                 {
                     continue;
                 }
 
-                if (!clip.Intersects(pathBounds.Value))
+                if (solid && IsBackground(geometry, pathBounds.Value.Intersect(clip), pageArea))
+                {
+                    continue;
+                }
+
+                if (solid && CadColors.IsPale(path.FillColor) && TouchesEdge(pathBounds.Value.Intersect(clip), pageBox))
                 {
                     continue;
                 }
             }
 
-            if (!seen.Add(Signature(path)))
+            if (!seen.Add(Signature(geometry)))
             {
                 continue;
             }
@@ -200,13 +249,13 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
             }
 
             var color = CadColors.FromPdf(path.IsStroked ? path.StrokeColor : path.FillColor);
-            if (solid && Sliver(path) is { } sliver)
+            if (solid && Sliver(geometry) is { } sliver)
             {
                 builder.AddSegment(transform.Map(sliver.From.X, sliver.From.Y), transform.Map(sliver.To.X, sliver.To.Y), transform.Map(clip), color);
                 continue;
             }
 
-            if (solid && path.Count >= 2 && Rings(path) is { } rings)
+            if (solid && geometry.Count >= 2 && Rings(geometry) is { } rings)
             {
                 foreach (var ring in PolygonMerger.Merge(rings, JoinTolerancePoints))
                 {
@@ -216,7 +265,7 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
                 continue;
             }
 
-            foreach (var subpath in path)
+            foreach (var subpath in geometry)
             {
                 builder.AddSubpath(subpath, transform.Map(clip), color);
             }
@@ -266,6 +315,137 @@ public sealed class PdfToCadConverter(IPdfPageRasterizer? rasterizer) : IConvert
 
     private static bool Contains(Rect outer, Rect inner) =>
         inner.MinX >= outer.MinX && inner.MaxX <= outer.MaxX && inner.MinY >= outer.MinY && inner.MaxY <= outer.MaxY;
+
+    /// <summary>
+    /// True when the fill is one axis-aligned rectangle that holds the whole clip region, so the clip, not the
+    /// fill, decides what shows.
+    /// </summary>
+    internal static bool CoversClip(PdfPath path, Rect clip)
+    {
+        if (path.Count != 1 || Rings(path) is not [var ring])
+        {
+            return false;
+        }
+
+        var corners = ring.ToList();
+        if (corners.Count == 5 && CadGeometry.Distance(corners[0], corners[4]) <= JoinTolerancePoints)
+        {
+            corners.RemoveAt(4);
+        }
+
+        if (corners.Count != 4)
+        {
+            return false;
+        }
+
+        var box = Rect.Around(corners);
+        static bool OnEdge(double value, double low, double high) =>
+            Math.Abs(value - low) <= JoinTolerancePoints || Math.Abs(value - high) <= JoinTolerancePoints;
+        return corners.All(c => OnEdge(c.X, box.MinX, box.MaxX) && OnEdge(c.Y, box.MinY, box.MaxY))
+            && Contains(box.Grow(JoinTolerancePoints), clip);
+    }
+
+    /// <summary>
+    /// True when the part of a fill that shows inside <paramref name="visible"/> (its extent, clipped) covers
+    /// <see cref="BackgroundCoverage"/> of the page. Counted by sampling with the path's filling rule, so a frame
+    /// drawn as a page-size outline with a hole is not taken for a background.
+    /// </summary>
+    internal static bool IsBackground(PdfPath path, Rect visible, double pageArea)
+    {
+        var width = visible.MaxX - visible.MinX;
+        var height = visible.MaxY - visible.MinY;
+        if (visible.IsEmpty || width * height < BackgroundCoverage * pageArea)
+        {
+            return false;
+        }
+
+        var rings = path.Select(Flatten).Where(ring => ring.Count >= 3).ToList();
+        var evenOdd = path.FillingRule == FillingRule.EvenOdd;
+        var inside = 0;
+        for (var row = 0; row < CoverageSamples; row++)
+        {
+            for (var column = 0; column < CoverageSamples; column++)
+            {
+                var point = new XY(visible.MinX + ((column + 0.5) * width / CoverageSamples), visible.MinY + ((row + 0.5) * height / CoverageSamples));
+                var winding = rings.Sum(ring => Winding(ring, point));
+                if (evenOdd ? winding % 2 != 0 : winding != 0)
+                {
+                    inside++;
+                }
+            }
+        }
+
+        return inside * width * height / (CoverageSamples * CoverageSamples) >= BackgroundCoverage * pageArea;
+    }
+
+    /// <summary>A subpath as a closed polygon, its Béziers cut into straight pieces.</summary>
+    private static List<XY> Flatten(PdfSubpath subpath)
+    {
+        var points = new List<XY>();
+        foreach (var command in subpath.Commands)
+        {
+            switch (command)
+            {
+                case PdfSubpath.Move m:
+                    points.Add(P(m.Location));
+                    break;
+                case PdfSubpath.Line l:
+                    if (points.Count == 0)
+                    {
+                        points.Add(P(l.From));
+                    }
+
+                    points.Add(P(l.To));
+                    break;
+                case PdfSubpath.CubicBezierCurve c:
+                    if (points.Count == 0)
+                    {
+                        points.Add(P(c.StartPoint));
+                    }
+
+                    for (var k = 1; k <= CurvePieces; k++)
+                    {
+                        var t = (double)k / CurvePieces;
+                        var u = 1 - t;
+                        points.Add(new XY(
+                            (u * u * u * c.StartPoint.X) + (3 * u * u * t * c.FirstControlPoint.X) + (3 * u * t * t * c.SecondControlPoint.X) + (t * t * t * c.EndPoint.X),
+                            (u * u * u * c.StartPoint.Y) + (3 * u * u * t * c.FirstControlPoint.Y) + (3 * u * t * t * c.SecondControlPoint.Y) + (t * t * t * c.EndPoint.Y)));
+                    }
+
+                    break;
+            }
+        }
+
+        return points;
+    }
+
+    /// <summary>How many times the closed polygon winds around the point, counter-clockwise positive.</summary>
+    private static int Winding(List<XY> ring, XY point)
+    {
+        var winding = 0;
+        for (var i = 0; i < ring.Count; i++)
+        {
+            var a = ring[i];
+            var b = ring[(i + 1) % ring.Count];
+            var side = ((b.X - a.X) * (point.Y - a.Y)) - ((point.X - a.X) * (b.Y - a.Y));
+            if (a.Y <= point.Y && b.Y > point.Y && side > 0)
+            {
+                winding++;
+            }
+            else if (a.Y > point.Y && b.Y <= point.Y && side < 0)
+            {
+                winding--;
+            }
+        }
+
+        return winding;
+    }
+
+    /// <summary>True when the extent reaches within <see cref="PageEdgePoints"/> of any side of the page.</summary>
+    private static bool TouchesEdge(Rect extent, Rect pageBox) =>
+        !extent.IsEmpty
+        && (extent.MinX <= pageBox.MinX + PageEdgePoints || extent.MinY <= pageBox.MinY + PageEdgePoints
+            || extent.MaxX >= pageBox.MaxX - PageEdgePoints || extent.MaxY >= pageBox.MaxY - PageEdgePoints);
 
     /// <summary>The subpaths as closed polygons, or null when any of them has a curve.</summary>
     private static List<IReadOnlyList<XY>>? Rings(PdfPath path)

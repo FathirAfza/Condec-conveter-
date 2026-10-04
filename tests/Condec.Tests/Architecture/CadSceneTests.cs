@@ -327,6 +327,19 @@ public sealed class CadSceneTests
     }
 
     [Fact]
+    public void CurlyQuotesDashesAndTheEuroSign_KeepTheirWinAnsiCodes()
+    {
+        // Before, every letter past U+00FF became "?", so the curly quotes of the owner's drawing (2026-10-04) showed as "?".
+        var pdf = Pdf(OneLine(100, 100, "“Denah” – ‘A’ 5 €"));
+
+        Assert.Contains("(\u0093Denah\u0094 \u0096 \u0091A\u0092 5 \u0080) Tj", pdf, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ControlCharacters_BecomeSpaces() =>
+        Assert.Equal("a b c", CadPdfWriter.Escape("a\tb\u0085c"));
+
+    [Fact]
     public void ALayerThatIsNotShownIsNotInThePdf()
     {
         var cad = NewDrawing();

@@ -59,7 +59,24 @@ internal static class CadColors
         return FromRgb(To255(r), To255(g), To255(b));
     }
 
-    public static Color FromRgb(byte r, byte g, byte b)
+    public static Color FromRgb(byte r, byte g, byte b) => new(Nearest(r, g, b).Index);
+
+    /// <summary>
+    /// True for a colour that goes to white: a light tint that is barely visible on paper but becomes index 7,
+    /// which CAD programs draw in their foreground colour. Greys from about 235 up count.
+    /// </summary>
+    public static bool IsPale(IColor? color)
+    {
+        if (color is null)
+        {
+            return false;
+        }
+
+        var (r, g, b) = color.ToRGBValues();
+        return Nearest(To255(r), To255(g), To255(b)) is { Index: 7, R: 255 };
+    }
+
+    private static (short Index, byte R, byte G, byte B) Nearest(byte r, byte g, byte b)
     {
         var best = Palette[0];
         var bestDistance = double.MaxValue;
@@ -73,7 +90,7 @@ internal static class CadColors
             }
         }
 
-        return new Color(best.Index);
+        return best;
     }
 
     private static byte To255(double value) => (byte)Math.Clamp(Math.Round(value * 255), 0, 255);

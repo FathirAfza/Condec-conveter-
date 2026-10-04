@@ -6,6 +6,7 @@ using ACadSharp.Types.Units;
 using Condec.Core.Architecture;
 using Condec.Core.Cad;
 using Condec.Core.Conversion;
+using Condec.Core.Localization;
 using Condec.Core.Pdf;
 
 namespace Condec.Tests.Architecture;
@@ -46,7 +47,7 @@ public sealed class CombinedCadTests : IDisposable
     {
         var path = Pdf("10 10 m 60 10 l S\n", "10 10 m 60 10 l S\n", "10 10 m 60 10 l S\n");
 
-        var (cad, count) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Points with { PageNumber = 2 }, Points with { PageNumber = 3 }]), Ct);
+        var (cad, count) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Points with { PageNumber = 2 }, Points with { PageNumber = 3 }]), null, Ct);
 
         Assert.Equal(3, count);
         var starts = cad.Entities.OfType<Line>().Select(l => l.StartPoint.X).Order().ToList();
@@ -61,7 +62,7 @@ public sealed class CombinedCadTests : IDisposable
     {
         var path = Pdf("10 10 m 60 10 l S\n", "10 20 m 60 20 l S\n", "10 30 m 60 30 l S\n");
 
-        var (cad, _) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 3 }, Points with { PageNumber = 1 }]), Ct);
+        var (cad, _) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 3 }, Points with { PageNumber = 1 }]), null, Ct);
 
         var lines = cad.Entities.OfType<Line>().OrderBy(l => l.StartPoint.X).ToList();
         Assert.Equal(2, lines.Count);
@@ -75,7 +76,7 @@ public sealed class CombinedCadTests : IDisposable
         var path = Pdf("10 10 m 60 10 l S\n");
         var centimeters = new CadOptions(1, CadUnit.Centimeters);
 
-        var (cad, _) = CombinedCadBuilder.Build(path, new CombinedCadOptions([centimeters, Picture(millimetersPerPixel: 0.5)]), Ct);
+        var (cad, _) = CombinedCadBuilder.Build(path, new CombinedCadOptions([centimeters, Picture(millimetersPerPixel: 0.5)]), null, Ct);
 
         Assert.Equal(UnitsType.Centimeters, cad.Header.InsUnits);
 
@@ -91,7 +92,7 @@ public sealed class CombinedCadTests : IDisposable
     public void TheDrawingSurvivesBeingWrittenAndReadBack()
     {
         var path = Pdf("10 10 m 60 10 l S\nBT /F1 12 Tf 10 50 Td (Denah) Tj ET\n", "10 10 m 60 10 l S\n");
-        var (cad, count) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Picture(1), Points with { PageNumber = 2 }]), Ct);
+        var (cad, count) = CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 1 }, Picture(1), Points with { PageNumber = 2 }]), null, Ct);
 
         var read = CadFiles.ReadDxf(CadFiles.Write(cad, ".dxf"));
 
@@ -101,11 +102,24 @@ public sealed class CombinedCadTests : IDisposable
     }
 
     [Fact]
+    public void PicturesOnTheVectorPages_AreNoted()
+    {
+        var path = TestPdf.Write(_dir.File("logo.pdf"), "q 20 0 0 20 150 60 cm /Im Do Q\n10 10 m 60 10 l S\n", image: true);
+        var notes = new ConversionNotes();
+
+        CombinedCadBuilder.Build(path, new CombinedCadOptions([Points, Picture(1), Points]), notes, Ct);
+
+        var note = Assert.Single(notes.Items);
+        Assert.Equal(NoteSeverity.Informational, note.Severity);
+        Assert.Equal(Loc.Format("Note.PicturesLeftOut", 2), note.Message);
+    }
+
+    [Fact]
     public void NothingOnAnyPageIsRefused()
     {
         var path = Pdf("", "");
 
-        Assert.Throws<NothingToConvertException>(() => CombinedCadBuilder.Build(path, new CombinedCadOptions([Points, Points with { PageNumber = 2 }]), Ct));
+        Assert.Throws<NothingToConvertException>(() => CombinedCadBuilder.Build(path, new CombinedCadOptions([Points, Points with { PageNumber = 2 }]), null, Ct));
     }
 
     [Fact]
@@ -113,6 +127,6 @@ public sealed class CombinedCadTests : IDisposable
     {
         var path = Pdf("10 10 m 60 10 l S\n");
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 2 }]), Ct));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CombinedCadBuilder.Build(path, new CombinedCadOptions([Points with { PageNumber = 2 }]), null, Ct));
     }
 }

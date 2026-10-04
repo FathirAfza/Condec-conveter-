@@ -264,6 +264,7 @@
   <data name="Note.FirstFrameOnly" xml:space="preserve"><value>File ini berisi {0} gambar (frame atau halaman). Hanya yang pertama yang dikonversi.</value></data>
   <data name="Error.ImageTooLarge" xml:space="preserve"><value>Gambar ini ({0} MP) terlalu besar untuk dikonversi dengan memori yang tersedia di PC ini. Tutup aplikasi lain lalu coba lagi, atau pakai gambar yang lebih kecil.</value></data>
   <data name="Note.MediaIncomplete" xml:space="preserve"><value>File sumber tampak terpotong atau rusak, jadi hasilnya bisa berhenti lebih awal atau ada bagian yang hilang. Periksa hasilnya sebelum dipakai.</value></data>
+  <data name="Note.PicturesLeftOut" xml:space="preserve"><value>Gambar di PDF ini ({0}), misalnya logo atau foto, tidak ikut. File CAD hanya menyimpan garis, bentuk, dan teks.</value></data>
   <data name="Error.Media" xml:space="preserve"><value>Windows tidak bisa mengonversi file audio atau video ini. File mungkin rusak, atau codec-nya belum terpasang.</value></data>
   <data name="Progress.OpeningMedia" xml:space="preserve"><value>Membuka file</value></data>
   <data name="Media.AudioQualityHeader" xml:space="preserve"><value>Kualitas audio</value></data>

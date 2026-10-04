@@ -192,8 +192,11 @@ public static class CombinedCadBuilder
     /// <summary>Space between two pages, as a share of the page on the left. `[ASUMSI]`</summary>
     public const double GapShare = 0.1;
 
-    /// <summary>The drawing, and how many entities it holds. Throws when no page has anything to draw.</summary>
-    public static (CadDocument Cad, int EntityCount) Build(string pdfPath, CombinedCadOptions options, CancellationToken ct)
+    /// <summary>
+    /// The drawing, and how many entities it holds. Throws when no page has anything to draw. Pictures on the vector
+    /// pages are left out, and <paramref name="notes"/>, when given, says so.
+    /// </summary>
+    public static (CadDocument Cad, int EntityCount) Build(string pdfPath, CombinedCadOptions options, ConversionNotes? notes, CancellationToken ct)
     {
         if (options.Pages.Count == 0)
         {
@@ -209,6 +212,7 @@ public static class CombinedCadBuilder
         {
             var cursor = 0.0;
             var count = 0;
+            var pictures = 0;
             foreach (var part in options.Pages)
             {
                 ct.ThrowIfCancellationRequested();
@@ -227,7 +231,8 @@ public static class CombinedCadBuilder
                         // Same real size, written in the drawing's unit.
                         var inUnit = vector with { Unit = unit };
                         var page = pdf.GetPage(vector.PageNumber);
-                        var entities = PdfToCadConverter.ReadVectors(page, inUnit, ct);
+                        var entities = PdfToCadConverter.ReadVectors(pdf, page, inUnit, ct);
+                        pictures += PdfToCadConverter.CountPictures(page);
                         var shift = new XYZ(cursor, 0, 0);
                         var box = BoundingBox.Null;
                         foreach (var entity in entities)
@@ -269,6 +274,11 @@ public static class CombinedCadBuilder
                 throw new NothingToConvertException("None of the pages has anything to convert.");
             }
 
+            if (notes is not null)
+            {
+                PdfToCadConverter.AddPicturesNote(notes, pictures);
+            }
+
             PdfToCadConverter.SetExtents(cad);
             return (cad, count);
         }
@@ -303,7 +313,7 @@ public sealed class ArchitectureToCadConverter : IConverter
         var (cad, entityCount) = request.Options switch
         {
             ArchitectureCadOptions picture => await Task.Run(() => ArchitectureCadBuilder.Build(picture), ct).ConfigureAwait(false),
-            CombinedCadOptions pages => await Task.Run(() => CombinedCadBuilder.Build(request.SourcePath, pages, ct), ct).ConfigureAwait(false),
+            CombinedCadOptions pages => await Task.Run(() => CombinedCadBuilder.Build(request.SourcePath, pages, request.Notes, ct), ct).ConfigureAwait(false),
             _ => throw new ArgumentException("Converting a picture to CAD needs the analysis and the chosen objects.", nameof(request)),
         };
         progress.Report(new ConversionProgress(ConversionStage.Decode, 1));

@@ -35,6 +35,41 @@ public static class CadPdfWriter
     /// <summary>Cap height of Helvetica as a share of its font size; CAD text height is the cap height.</summary>
     private const double CapHeightRatio = 0.718;
 
+    /// <summary>
+    /// The letters of WinAnsiEncoding outside Latin 1, each mapped to the character whose Latin 1 byte is its code
+    /// (PDF 32000-1, Annex D.2).
+    /// </summary>
+    private static readonly Dictionary<char, char> WinAnsiExtras = new()
+    {
+        ['\u20AC'] = '\u0080', // euro sign
+        ['\u201A'] = '\u0082', // single low-9 quotation mark
+        ['\u0192'] = '\u0083', // f with hook
+        ['\u201E'] = '\u0084', // double low-9 quotation mark
+        ['\u2026'] = '\u0085', // ellipsis
+        ['\u2020'] = '\u0086', // dagger
+        ['\u2021'] = '\u0087', // double dagger
+        ['\u02C6'] = '\u0088', // circumflex accent
+        ['\u2030'] = '\u0089', // per mille sign
+        ['\u0160'] = '\u008A', // S with caron
+        ['\u2039'] = '\u008B', // single left angle quotation mark
+        ['\u0152'] = '\u008C', // OE ligature
+        ['\u017D'] = '\u008E', // Z with caron
+        ['\u2018'] = '\u0091', // left single quotation mark
+        ['\u2019'] = '\u0092', // right single quotation mark
+        ['\u201C'] = '\u0093', // left double quotation mark
+        ['\u201D'] = '\u0094', // right double quotation mark
+        ['\u2022'] = '\u0095', // bullet
+        ['\u2013'] = '\u0096', // en dash
+        ['\u2014'] = '\u0097', // em dash
+        ['\u02DC'] = '\u0098', // small tilde
+        ['\u2122'] = '\u0099', // trade mark sign
+        ['\u0161'] = '\u009A', // s with caron
+        ['\u203A'] = '\u009B', // single right angle quotation mark
+        ['\u0153'] = '\u009C', // oe ligature
+        ['\u017E'] = '\u009E', // z with caron
+        ['\u0178'] = '\u009F', // Y with diaeresis
+    };
+
     /// <summary>The sheet in millimeters, landscape: A3 is 420 × 297 and A4 297 × 210.</summary>
     public static (double Width, double Height) SheetMillimeters(PaperSize paper) => paper == PaperSize.A3 ? (420, 297) : (297, 210);
 
@@ -140,8 +175,12 @@ public static class CadPdfWriter
 
     private static string Number(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
-    /// <summary>The text as a PDF string in Windows Latin 1: what the font has. Letters it hasn't become "?".</summary>
-    private static string Escape(string text)
+    /// <summary>
+    /// The text as a PDF string in WinAnsiEncoding, the font's encoding: Latin 1, plus the curly quotes, dashes, euro
+    /// sign and other letters Windows-1252 keeps at 0x80 to 0x9F. Control characters become spaces; letters the
+    /// encoding hasn't become "?".
+    /// </summary>
+    internal static string Escape(string text)
     {
         var escaped = new StringBuilder(text.Length);
         foreach (var c in text)
@@ -151,14 +190,14 @@ public static class CadPdfWriter
                 case '\\' or '(' or ')':
                     escaped.Append('\\').Append(c);
                     break;
-                case < ' ':
+                case < ' ' or (>= '\u007F' and <= '\u009F'):
                     escaped.Append(' ');
                     break;
-                case > 'ÿ':
-                    escaped.Append('?');
+                case <= 'ÿ':
+                    escaped.Append(c);
                     break;
                 default:
-                    escaped.Append(c);
+                    escaped.Append(WinAnsiExtras.TryGetValue(c, out var code) ? code : '?');
                     break;
             }
         }

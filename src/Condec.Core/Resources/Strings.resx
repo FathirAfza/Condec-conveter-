@@ -264,6 +264,7 @@
   <data name="Note.FirstFrameOnly" xml:space="preserve"><value>This file holds {0} images (frames or pages). Only the first one was converted.</value></data>
   <data name="Error.ImageTooLarge" xml:space="preserve"><value>This picture ({0} MP) is too large to convert with the memory this PC has available. Close other apps and try again, or use a smaller picture.</value></data>
   <data name="Note.MediaIncomplete" xml:space="preserve"><value>The source file looks cut off or damaged, so the result may end early or have parts missing. Check the result before you use it.</value></data>
+  <data name="Note.PicturesLeftOut" xml:space="preserve"><value>Pictures in this PDF ({0}), such as logos or photos, were left out. The CAD file keeps the lines, shapes and text.</value></data>
   <data name="Error.Media" xml:space="preserve"><value>Windows couldn't convert this audio or video file. It may be damaged, or the codec for it isn't installed.</value></data>
   <data name="Progress.OpeningMedia" xml:space="preserve"><value>Opening the file</value></data>
   <data name="Media.AudioQualityHeader" xml:space="preserve"><value>Audio quality</value></data>

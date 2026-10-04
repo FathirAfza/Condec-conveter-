@@ -17,6 +17,8 @@ internal static class TestPdf
 
     /// <param name="content">The page content stream. Helvetica is available as /F1.</param>
     /// <param name="form">Optional form XObject content, available as /Fx with the given matrix.</param>
+    /// <param name="innerForm">Optional form XObject content with the identity matrix, available inside /Fx (not on the page) as /Fy.</param>
+    /// <param name="image">Adds a 1 × 1 pixel grey image XObject, available on the page as /Im.</param>
     public static string Write(
         string path,
         string content,
@@ -26,23 +28,44 @@ internal static class TestPdf
         string? mediaBox = null,
         string? cropBox = null,
         string? form = null,
-        string formMatrix = "1 0 0 1 0 0")
+        string formMatrix = "1 0 0 1 0 0",
+        string? innerForm = null,
+        bool image = false)
     {
         var media = mediaBox ?? Invariant($"0 0 {width} {height}");
         var crop = cropBox is null ? "" : $" /CropBox [{cropBox}]";
-        var xobjects = form is null ? "" : " /XObject << /Fx 6 0 R >>";
+
+        // 1 catalog, 2 page tree, 3 page (written last, once its XObjects are numbered), 4 content stream, 5 font.
         var objects = new List<string>
         {
             "<< /Type /Catalog /Pages 2 0 R >>",
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            $"<< /Type /Page /Parent 2 0 R /MediaBox [{media}]{crop} /Rotate {rotate} /Contents 4 0 R /Resources << /Font << /F1 5 0 R >>{xobjects} >> >>",
+            "",
             Stream("", content),
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
         };
+        var xobjects = new List<string>();
         if (form is not null)
         {
-            objects.Add(Stream($"/Type /XObject /Subtype /Form /BBox [-10000 -10000 10000 10000] /Matrix [{formMatrix}]", form));
+            var formResources = "";
+            if (innerForm is not null)
+            {
+                objects.Add(Stream("/Type /XObject /Subtype /Form /BBox [-10000 -10000 10000 10000]", innerForm));
+                formResources = Invariant($" /Resources << /XObject << /Fy {objects.Count} 0 R >> >>");
+            }
+
+            objects.Add(Stream($"/Type /XObject /Subtype /Form /BBox [-10000 -10000 10000 10000] /Matrix [{formMatrix}]{formResources}", form));
+            xobjects.Add(Invariant($"/Fx {objects.Count} 0 R"));
         }
+
+        if (image)
+        {
+            objects.Add(Stream("/Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8", "\u0080"));
+            xobjects.Add(Invariant($"/Im {objects.Count} 0 R"));
+        }
+
+        var xobjectEntry = xobjects.Count == 0 ? "" : $" /XObject << {string.Join(" ", xobjects)} >>";
+        objects[2] = $"<< /Type /Page /Parent 2 0 R /MediaBox [{media}]{crop} /Rotate {rotate} /Contents 4 0 R /Resources << /Font << /F1 5 0 R >>{xobjectEntry} >> >>";
 
         var output = new StringBuilder("%PDF-1.4\n");
         var offsets = new List<int>();
