@@ -576,6 +576,7 @@
                                 ItemsSource="{x:Bind ViewModel.Pdf.Scales}"
                                 SelectedItem="{x:Bind ViewModel.Pdf.SelectedScale, Mode=TwoWay}" />
                             <NumberBox
+                                x:Name="CustomScaleBox"
                                 local:L.AutomationName="Cad.CustomScaleSpoken"
                                 local:L.Header="Cad.CustomScaleHeader"
                                 Minimum="1"

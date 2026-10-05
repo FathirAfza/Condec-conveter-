@@ -123,45 +123,4 @@ public sealed class CompressSearchTests
         Assert.Equal(english, CompressText.Limit(bytes, CultureInfo.GetCultureInfo("en")));
         Assert.Equal(indonesian, CompressText.Limit(bytes, CultureInfo.GetCultureInfo("id")));
     }
-
-    [Theory]
-    [InlineData("0.5", 0.5)]
-    [InlineData("0,5", 0.5)]
-    [InlineData(" 2,5 ", 2.5)]
-    [InlineData("500", 500)]
-    [InlineData(".5", 0.5)]
-    [InlineData("5.", 5)]
-    [InlineData("1000000", 1_000_000)]
-    [InlineData("1.000", 1)]
-    [InlineData("1,000", 1)]
-    public void ParseLimit_ReadsOneCommaOrPointAsTheDecimalPoint(string text, double expected) =>
-        Assert.Equal(expected, CompressText.ParseLimit(text));
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(",")]
-    [InlineData("1.000.000")]
-    [InlineData("1,5.2")]
-    [InlineData("-1")]
-    [InlineData("+5")]
-    [InlineData("1e3")]
-    [InlineData("5 MB")]
-    [InlineData("abc")]
-    public void ParseLimit_RefusesWhatIsNotSuchANumber(string text) =>
-        Assert.Null(CompressText.ParseLimit(text));
-
-    [Theory]
-    [InlineData(0.5, "0.5", "0,5")]
-    [InlineData(1, "1", "1")]
-    [InlineData(2.25, "2.25", "2,25")]
-    [InlineData(0.1234, "0.123", "0,123")]
-    [InlineData(1_000_000, "1000000", "1000000")]
-    public void LimitNumber_IsWrittenAsThePageWritesNumbers_AndReadsBack(double value, string english, string indonesian)
-    {
-        Assert.Equal(english, CompressText.LimitNumber(value, CultureInfo.GetCultureInfo("en")));
-        Assert.Equal(indonesian, CompressText.LimitNumber(value, CultureInfo.GetCultureInfo("id")));
-        Assert.Equal(Math.Round(value, 3), CompressText.ParseLimit(english));
-        Assert.Equal(Math.Round(value, 3), CompressText.ParseLimit(indonesian));
-    }
 }

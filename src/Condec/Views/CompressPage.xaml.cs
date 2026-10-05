@@ -27,7 +27,7 @@ public sealed partial class CompressPage : Page
     {
         ViewModel = App.Current.Services.Compress;
         InitializeComponent();
-        TargetBox.NumberFormatter = new LimitNumberFormatter();
+        TargetBox.NumberFormatter = new TypedNumberFormatter();
         RunView.Run = ViewModel.Run;
         PageLayout.FitColumn(Scroller, Column);
 

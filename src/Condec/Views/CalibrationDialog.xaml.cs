@@ -46,6 +46,7 @@ public sealed partial class CalibrationDialog : ContentDialog
         Length.Header = Loc.Get("Architecture.Calibrate.Length");
 
         // Empty, not 0: the user types the distance, and the placeholder says where.
+        Length.NumberFormatter = new TypedNumberFormatter();
         Length.Value = double.NaN;
         Unit.Header = Loc.Get("Architecture.Calibrate.Unit");
         AutomationProperties.SetName(Focuser, Loc.Get("Architecture.Calibrate.Picture"));

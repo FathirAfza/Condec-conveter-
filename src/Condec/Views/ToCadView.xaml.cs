@@ -24,6 +24,7 @@ public sealed partial class ToCadView : UserControl
     {
         ViewModel = App.Current.Services.ToCad;
         InitializeComponent();
+        CustomScaleBox.NumberFormatter = new TypedNumberFormatter();
         RunView.Run = ViewModel.Run;
 
         _objects = new MultiSelectSync<ObjectRow>(ObjectList, ViewModel.Rows, row => row.IsChecked, (row, on) => row.IsChecked = on);
