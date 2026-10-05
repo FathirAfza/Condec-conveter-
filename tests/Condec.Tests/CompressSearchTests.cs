@@ -6,7 +6,7 @@ using Condec.Core.Compression;
 
 namespace Condec.Tests;
 
-/// <summary>The size-limit search of Compress Image (DESIGN §6.5), on a size model instead of a real encoder.</summary>
+/// <summary>The size-limit search of Compress (DESIGN §6.5), on a size model instead of a real encoder.</summary>
 public sealed class CompressSearchTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;

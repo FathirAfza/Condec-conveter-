@@ -129,7 +129,7 @@ public sealed class HistoryItemViewModel
 
     /// <summary>
     /// "PNG → JPG · Yesterday, 7:40 PM", "PNG → PNG · Upscale 2× · Yesterday, 7:40 PM" for an upscale, or
-    /// "HEIC → JPG · Compress · Yesterday, 7:40 PM" for Compress Image.
+    /// "HEIC → JPG · Compress · Yesterday, 7:40 PM" for Compress.
     /// </summary>
     public string Summary { get; }
 

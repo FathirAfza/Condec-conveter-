@@ -6,7 +6,7 @@ using Condec.Core.Conversion;
 namespace Condec.Core.Compression;
 
 /// <summary>
-/// How Compress Image makes one picture smaller (DESIGN §6.5): either a quality and a resolution chosen by hand, or a file
+/// How Compress makes one picture or PDF smaller (DESIGN §6.5): either a quality and a resolution chosen by hand, or a file
 /// size limit that the quality and resolution are found for.
 /// </summary>
 /// <param name="Quality">JPG or HEIC quality from 10 to 100; PNG has none and ignores it.</param>
@@ -35,8 +35,11 @@ public sealed record CompressSetting(int Quality, int ResolutionPercent);
 public sealed record CompressMeasure(CompressSetting Setting, long Bytes);
 
 /// <summary>The size limit can't be met, even at the smallest resolution.</summary>
-public sealed class CompressTargetTooSmallException(long targetBytes)
-    : Exception($"The picture can't be made {targetBytes:N0} bytes or smaller.")
+/// <param name="isPdf">A PDF, whose pictures were made as small as they go, not a picture.</param>
+public sealed class CompressTargetTooSmallException(long targetBytes, bool isPdf = false)
+    : Exception($"The file can't be made {targetBytes:N0} bytes or smaller.")
 {
     public long TargetBytes { get; } = targetBytes;
+
+    public bool IsPdf { get; } = isPdf;
 }

@@ -69,7 +69,7 @@ public sealed partial class ConversionRun : ObservableObject
     /// <summary>"Konversi file lain" on the finished card.</summary>
     public event EventHandler? AnotherRequested;
 
-    /// <summary>The page is Compress Image: its history entries say "Kompres" (DESIGN §6.5).</summary>
+    /// <summary>The page is Compress: its history entries say "Kompres" (DESIGN §6.5).</summary>
     public bool RecordsCompression { get; init; }
 
     [ObservableProperty]

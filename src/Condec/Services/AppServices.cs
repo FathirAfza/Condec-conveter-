@@ -56,7 +56,7 @@ public sealed class AppServices
 
     public UpscaleViewModel Upscale { get; }
 
-    /// <summary>Compress Image (DESIGN §6.5).</summary>
+    /// <summary>Compress (DESIGN §6.5).</summary>
     public CompressViewModel Compress { get; }
 
     public SettingsViewModel SettingsPage { get; }

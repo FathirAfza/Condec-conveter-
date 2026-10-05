@@ -14,7 +14,7 @@ public enum VerificationStatus
 
 /// <summary>One finished conversion or upscale. Only metadata: nothing of the file's content is stored.</summary>
 /// <param name="UpscaleScale">The scale of an upscale (the result's width over the source's); null for a conversion.</param>
-/// <param name="Compressed">Made in Compress Image (DESIGN §6.5); false in entries written before it existed.</param>
+/// <param name="Compressed">Made in Compress (DESIGN §6.5); false in entries written before it existed.</param>
 public sealed record HistoryEntry(
     string SourceFileName,
     string SourceExtension,

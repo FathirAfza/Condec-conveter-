@@ -12,8 +12,8 @@ using Windows.Storage.Streams;
 namespace Condec.Core.Imaging;
 
 /// <summary>
-/// Compress Image (DESIGN §6.5): any picture Windows can read, camera RAW included when its codec is installed, becomes a
-/// smaller JPG, PNG or HEIC. Its own registry and pipeline, so a JPG may become a JPG.
+/// Compress (DESIGN §6.5) for a picture: any picture Windows can read, camera RAW included when its codec is installed,
+/// becomes a smaller JPG, PNG or HEIC. Its own registry and pipeline, so a JPG may become a JPG.
 /// </summary>
 public sealed class ImageCompressor : IConverter
 {
@@ -42,7 +42,7 @@ public sealed class ImageCompressor : IConverter
     public async Task ConvertAsync(ConversionRequest request, IProgress<ConversionProgress> progress, CancellationToken ct)
     {
         var options = request.Options as CompressOptions
-            ?? throw new ArgumentException("Compress Image needs CompressOptions.", nameof(request));
+            ?? throw new ArgumentException("Compress needs CompressOptions.", nameof(request));
 
         progress.Report(new ConversionProgress(ConversionStage.Decode, 0));
         var source = await CompressSource.LoadAsync(request.SourcePath, ct).ConfigureAwait(false);
@@ -176,7 +176,7 @@ public sealed class CompressSource
     private static ImageFormats.Target Target(string extension) =>
         ImageFormats.FindTarget(FileExtension.Normalize(extension)) is { } target && ImageCompressor.TargetExtensions.Contains(target.Extension)
             ? target
-            : throw new NotSupportedException($"'{extension}' is not a Compress Image target.");
+            : throw new NotSupportedException($"'{extension}' is not a Compress picture target.");
 
     private async Task<byte[]> EncodeAsync(ImageFormats.Target target, int? quality, int width, int height, CancellationToken ct)
     {

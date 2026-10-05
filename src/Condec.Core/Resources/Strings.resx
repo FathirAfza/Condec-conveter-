@@ -585,15 +585,32 @@
   <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>The {0} model isn't in this copy of Condec. Choose {1} to upscale, or reinstall Condec (run tools\fetch-model.ps1 if you built it yourself).</value></data>
   <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>The {0} model file is damaged or isn't the one released with Condec, so it isn't used. Choose {1} to upscale, or reinstall Condec.</value></data>
   <data name="Value.NoneYet" xml:space="preserve"><value>None yet</value></data>
-  <data name="Nav.Compress" xml:space="preserve"><value>Compress Image</value></data>
-  <data name="Page.Compress.Title" xml:space="preserve"><value>Compress Image</value></data>
-  <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Make picture files smaller so they fit an upload limit, and save them as JPG, PNG or HEIC.</value></data>
-  <data name="Compress.Formats" xml:space="preserve"><value>JPG, PNG, HEIC, HEIF, WebP, camera RAW, and other picture formats Windows can open.</value></data>
+  <data name="Compress.DropHere" xml:space="preserve"><value>Drag one or more pictures or PDFs here</value></data>
+  <data name="Compress.Choose" xml:space="preserve"><value>Choose files…</value></data>
+  <data name="Compress.AddFiles" xml:space="preserve"><value>Add files…</value></data>
+  <data name="Compress.PdfPages" xml:space="preserve"><value>{0} pages</value></data>
+  <data name="Compress.PdfOnePage" xml:space="preserve"><value>1 page</value></data>
+  <data name="Compress.Format.Pdf" xml:space="preserve"><value>A PDF stays a PDF: the photos and scanned pages inside it are saved again as JPG. The format above is for pictures only.</value></data>
+  <data name="Compress.PdfKeeps" xml:space="preserve"><value>The PDF's text, bookmarks, links and form fields stay as they were.</value></data>
+  <data name="Compress.LargestPicture" xml:space="preserve"><value>Largest picture {0}</value></data>
+  <data name="Compress.PicturesCompressed" xml:space="preserve"><value>Pictures made smaller</value></data>
+  <data name="Compress.PicturesOf" xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="Compress.LargestCaption" xml:space="preserve"><value>Largest {0} · {1}</value></data>
+  <data name="Compress.InsidePdf" xml:space="preserve"><value>JPG inside the PDF</value></data>
+  <data name="Compress.PreviewCaptionPdf" xml:space="preserve"><value>The largest picture of the PDF, as it is in the compressed file. The numbers below are measured from that file, not estimated.</value></data>
+  <data name="Compress.PreviewNoneSmaller" xml:space="preserve"><value>No picture gets smaller with this setting, so they all stay as they were. Choose a lower quality or resolution.</value></data>
+  <data name="Compress.PreviewSpokenPdf" xml:space="preserve"><value>Largest picture after compressing, {0}, PDF {1}</value></data>
+  <data name="Error.PdfNoPictures" xml:space="preserve"><value>This PDF has no pictures that can be made smaller. Compress makes the photos and scanned pages inside a PDF smaller; its text and lines are already small.</value></data>
+  <data name="Error.PdfCompressTooSmall" xml:space="preserve"><value>This PDF can't be made as small as {0}, even with its pictures at the smallest resolution. Raise the size limit.</value></data>
+  <data name="Nav.Compress" xml:space="preserve"><value>Compress</value></data>
+  <data name="Page.Compress.Title" xml:space="preserve"><value>Compress</value></data>
+  <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Make pictures and PDFs smaller so they fit an upload limit. Pictures are saved as JPG, PNG or HEIC; a PDF stays a PDF.</value></data>
+  <data name="Compress.Formats" xml:space="preserve"><value>PDF, and pictures Windows can open: JPG, PNG, HEIC, HEIF, WebP, camera RAW and more.</value></data>
   <data name="Compress.ItemSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
-  <data name="Compress.ListTitle" xml:space="preserve"><value>{0} pictures · {1} in total</value></data>
-  <data name="Compress.ListSpoken" xml:space="preserve"><value>Pictures. The selected one is the one whose result is shown.</value></data>
-  <data name="Compress.Unsupported" xml:space="preserve"><value>A {0} file can't be compressed here. Choose a picture Windows can open, such as JPG, PNG, HEIC, WebP or camera RAW.</value></data>
-  <data name="Compress.UnsupportedNoExtension" xml:space="preserve"><value>A file without an extension can't be compressed. Choose a picture Windows can open, such as JPG, PNG, HEIC, WebP or camera RAW.</value></data>
+  <data name="Compress.ListTitle" xml:space="preserve"><value>{0} files · {1} in total</value></data>
+  <data name="Compress.ListSpoken" xml:space="preserve"><value>Files. The selected one is the one whose result is shown.</value></data>
+  <data name="Compress.Unsupported" xml:space="preserve"><value>A {0} file can't be compressed here. Choose a PDF or a picture Windows can open, such as JPG, PNG, HEIC, WebP or camera RAW.</value></data>
+  <data name="Compress.UnsupportedNoExtension" xml:space="preserve"><value>A file without an extension can't be compressed. Choose a PDF or a picture Windows can open, such as JPG, PNG, HEIC, WebP or camera RAW.</value></data>
   <data name="Compress.Format" xml:space="preserve"><value>Result format</value></data>
   <data name="Compress.Format.Jpg" xml:space="preserve"><value>Smallest for photos and accepted everywhere. Transparent parts become white.</value></data>
   <data name="Compress.Format.Png" xml:space="preserve"><value>No quality loss and keeps transparency, but photos stay large. Only the resolution makes it smaller.</value></data>
@@ -622,7 +639,7 @@
   <data name="Compress.PreviewCaption" xml:space="preserve"><value>Preview of the result. The numbers below are measured from the compressed file, not estimated.</value></data>
   <data name="Compress.PreviewSpoken" xml:space="preserve"><value>Result preview, {0}, {1}</value></data>
   <data name="Compress.Start" xml:space="preserve"><value>Compress and save…</value></data>
-  <data name="Compress.StartMany" xml:space="preserve"><value>Compress and save {0} pictures…</value></data>
+  <data name="Compress.StartMany" xml:space="preserve"><value>Compress and save {0} files…</value></data>
   <data name="Compress.NameSuffix" xml:space="preserve"><value> (compressed)</value></data>
   <data name="Error.CompressTooSmall" xml:space="preserve"><value>This picture can't be made as small as {0}, even at the smallest resolution. Raise the size limit.</value></data>
   <data name="History.CompressSummary" xml:space="preserve"><value>{0} → {1} · Compress · {2}</value></data>

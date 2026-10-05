@@ -73,8 +73,10 @@ public partial class App : Application
             [new CadOutputValidator(), new PdfOutputValidator(), new ImageOutputValidator()]);
         var architecturePipeline = new ConversionPipeline(architectureRegistry, journal);
 
-        // Compress Image's own: a JPG may become a smaller JPG here, which Convert File doesn't offer.
-        var compressPipeline = new ConversionPipeline(new ConverterRegistry([new ImageCompressor()], [new ImageOutputValidator()]), journal);
+        // Compress's own: a JPG may become a smaller JPG and a PDF a smaller PDF here, which Convert File doesn't offer.
+        var compressPipeline = new ConversionPipeline(
+            new ConverterRegistry([new ImageCompressor(), new PdfCompressor()], [new ImageOutputValidator(), new PdfOutputValidator()]),
+            journal);
         var history = new HistoryStore(CondecPaths.HistoryFile);
 
         // Leftovers from a conversion that was cut off by a crash or power loss. Best effort: the

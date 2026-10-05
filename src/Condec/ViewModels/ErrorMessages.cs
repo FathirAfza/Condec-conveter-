@@ -42,7 +42,9 @@ internal static class ErrorMessages
         ImageTooLargeException tooLarge =>
             Loc.Format("Error.ImageTooLarge", tooLarge.Megapixels),
         CompressTargetTooSmallException tooSmall =>
-            Loc.Format("Error.CompressTooSmall", CompressText.Limit(tooSmall.TargetBytes)),
+            Loc.Format(tooSmall.IsPdf ? "Error.PdfCompressTooSmall" : "Error.CompressTooSmall", CompressText.Limit(tooSmall.TargetBytes)),
+        PdfNothingToCompressException =>
+            Loc.Get("Error.PdfNoPictures"),
         UpscaleModelUnavailableException { Status: UpscaleModelStatus.Damaged } =>
             Loc.Get("Error.UpscaleModelDamaged"),
         UpscaleModelUnavailableException =>

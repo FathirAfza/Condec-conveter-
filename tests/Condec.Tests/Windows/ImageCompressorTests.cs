@@ -11,7 +11,7 @@ using Windows.Storage.Streams;
 
 namespace Condec.Tests.Imaging;
 
-/// <summary>Compress Image (DESIGN §6.5) on the real Windows Imaging Component.</summary>
+/// <summary>Compress (DESIGN §6.5) for pictures, on the real Windows Imaging Component.</summary>
 public sealed class ImageCompressorTests : IDisposable
 {
     private const int PhotoWidth = 400;

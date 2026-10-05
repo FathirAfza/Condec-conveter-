@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--  Compress Image (DESIGN §6.5): the pictures, how to make them smaller, the measured result of the one shown, then the progress and the results.  -->
+<!--  Compress (DESIGN §6.5): the pictures and PDFs, how to make them smaller, the measured result of the one shown, then the progress and the results.  -->
 <Page
     x:Class="Condec.Views.CompressPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -34,7 +34,7 @@
                     Severity="{x:Bind ViewModel.InputMessageSeverity, Mode=OneWay}"
                     Visibility="{x:Bind ViewModel.HasInputMessage, Mode=OneWay}" />
 
-                <!--  No picture yet: the drop target.  -->
+                <!--  No file yet: the drop target.  -->
                 <Border
                     Padding="24"
                     Style="{StaticResource CardBorderStyle}"
@@ -65,12 +65,12 @@
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 Style="{StaticResource BodyTextBlockStyle}"
-                                local:L.Text="Upscale.DropHere" />
+                                local:L.Text="Compress.DropHere" />
                             <Button
                                 x:Name="PickFileButton"
                                 HorizontalAlignment="Center"
                                 Command="{x:Bind ViewModel.PickSourceCommand}"
-                                local:L.Content="Upscale.Choose" />
+                                local:L.Content="Compress.Choose" />
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 Style="{StaticResource SecondaryCaptionTextStyle}"
@@ -81,7 +81,7 @@
                     </Grid>
                 </Border>
 
-                <!--  Pictures are chosen: the picture and its result next to the choices, then the result's numbers.  -->
+                <!--  Files are chosen: the file and its result next to the choices, then the result's numbers.  -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasSource, Mode=OneWay}">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions>
@@ -89,7 +89,7 @@
                             <ColumnDefinition Width="380" />
                         </Grid.ColumnDefinitions>
 
-                        <!--  Left card: the picture shown, the list, and the preview of its result  -->
+                        <!--  Left card: the file shown, the list, and the preview of its result  -->
                         <Border Padding="24" Style="{StaticResource CardBorderStyle}">
                             <Grid
                                 AllowDrop="True"
@@ -113,7 +113,7 @@
                                         AutomationProperties.AccessibilityView="Raw"
                                         FontSize="32"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Glyph="{x:Bind ViewModel.PhotoGlyph}" />
+                                        Glyph="{x:Bind ViewModel.SourceGlyph, Mode=OneWay}" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <TextBlock
                                             Style="{StaticResource BodyStrongTextBlockStyle}"
@@ -127,7 +127,7 @@
                                         Grid.Column="2"
                                         VerticalAlignment="Center"
                                         Orientation="Horizontal">
-                                        <HyperlinkButton Command="{x:Bind ViewModel.AddSourcesCommand}" local:L.Content="Upscale.AddFiles" />
+                                        <HyperlinkButton Command="{x:Bind ViewModel.AddSourcesCommand}" local:L.Content="Compress.AddFiles" />
                                         <HyperlinkButton
                                             x:Name="ChangeFileButton"
                                             local:L.AutomationName="Source.ChangeSpoken"
@@ -136,7 +136,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!--  Two pictures or more: the one selected is the one whose result is shown.  -->
+                                <!--  Two files or more: the one selected is the one whose result is shown.  -->
                                 <StackPanel
                                     Grid.Row="1"
                                     Spacing="8"
@@ -186,7 +186,7 @@
                                     </ListView>
                                 </StackPanel>
 
-                                <!--  The result itself, decoded from the bytes that were measured.  -->
+                                <!--  The result itself, decoded from the bytes that were measured: the picture, or the largest picture of the PDF.  -->
                                 <StackPanel Grid.Row="2" Spacing="8">
                                     <Grid
                                         MinHeight="220"
@@ -220,6 +220,7 @@
                                 <StackPanel Spacing="4">
                                     <RadioButtons
                                         x:Name="FormatButtons"
+                                        IsEnabled="{x:Bind ViewModel.HasPictures, Mode=OneWay}"
                                         ItemsSource="{x:Bind ViewModel.FormatChoices}"
                                         MaxColumns="3"
                                         SelectedIndex="{x:Bind ViewModel.FormatIndex, Mode=TwoWay}"
@@ -288,7 +289,7 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!--  A size limit: the quality and resolution are found for each picture  -->
+                                <!--  A size limit: the quality and resolution are found for each file  -->
                                 <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsTargetMode, Mode=OneWay}">
                                     <Grid ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
@@ -328,13 +329,13 @@
 
                                 <TextBlock
                                     Style="{StaticResource SecondaryCaptionTextStyle}"
-                                    local:L.Text="Compress.Metadata"
+                                    Text="{x:Bind ViewModel.KeepsNote, Mode=OneWay}"
                                     TextWrapping="WrapWholeWords" />
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <!--  The result of the picture shown: measured, not estimated  -->
+                    <!--  The result of the file shown: measured, not estimated  -->
                     <Border Padding="24,16" Style="{StaticResource CardBorderStyle}">
                         <Grid ColumnSpacing="24">
                             <Grid.ColumnDefinitions>
@@ -369,7 +370,7 @@
                                     Visibility="{x:Bind ViewModel.IsLarger, Mode=OneWay}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" local:L.Text="Compress.ResultResolution" />
+                                <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.ResultResolutionLabel, Mode=OneWay}" />
                                 <TextBlock Style="{StaticResource BodyLargeStrongTextBlockStyle}" Text="{x:Bind ViewModel.ResultResolutionValue, Mode=OneWay}" />
                                 <TextBlock Style="{StaticResource SecondaryCaptionTextStyle}" Text="{x:Bind ViewModel.ResultResolutionCaption, Mode=OneWay}" />
                             </StackPanel>
@@ -388,7 +389,7 @@
                         </Grid>
                     </Border>
 
-                    <!--  The picture shown can't be made that small, or can't be read.  -->
+                    <!--  The file shown can't be made that small, has nothing to make smaller, or can't be read.  -->
                     <InfoBar
                         IsClosable="False"
                         IsOpen="{x:Bind ViewModel.HasPreviewProblem, Mode=OneWay}"
@@ -410,7 +411,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <!--  Processing, done and failed, for one picture or several  -->
+            <!--  Processing, done and failed, for one file or several  -->
             <Border
                 Margin="0,20,0,0"
                 Padding="24"

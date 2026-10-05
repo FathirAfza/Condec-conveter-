@@ -11,15 +11,17 @@ using Condec.Core.Formats;
 using Condec.Core.Imaging;
 using Condec.Core.Localization;
 using Condec.Core.Logging;
+using Condec.Core.Pdf;
 using Condec.Core.Pipeline;
 using Condec.Services;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Condec.ViewModels;
 
-/// <summary>One picture in Compress Image's list, numbered in the order its results are made.</summary>
+/// <summary>One picture or PDF in Compress's list, numbered in the order its results are made.</summary>
 public sealed partial class CompressItem : ObservableObject
 {
+    /// <param name="width">For a picture; 0 for a PDF, whose pages are in <paramref name="file"/>.</param>
     public CompressItem(SourceFile file, int width, int height, Action<CompressItem> remove)
     {
         File = file;
@@ -34,6 +36,12 @@ public sealed partial class CompressItem : ObservableObject
 
     public int Height { get; }
 
+    /// <summary>A PDF stays a PDF; its pictures are made smaller.</summary>
+    public bool IsPdf => File.Extension == ".pdf";
+
+    /// <summary>The extension of this file's result: its own for a PDF, the chosen one for a picture.</summary>
+    public string ResultExtension(string pictureTarget) => IsPdf ? ".pdf" : pictureTarget;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NumberText), nameof(AutomationName))]
     public partial int Number { get; set; }
@@ -42,8 +50,11 @@ public sealed partial class CompressItem : ObservableObject
 
     public string Name => File.Name;
 
-    /// <summary>"4032 × 3024 · 3.1 MB".</summary>
-    public string Caption => $"{ScaleText.Dimensions(Width, Height)} · {DisplayFormat.FormatFileSize(File.Size)}";
+    /// <summary>"4032 × 3024 · 3.1 MB", or "12 pages · 3.1 MB" for a PDF.</summary>
+    public string Caption => $"{(IsPdf ? Pages : ScaleText.Dimensions(Width, Height))} · {DisplayFormat.FormatFileSize(File.Size)}";
+
+    /// <summary>"12 halaman" for a PDF.</summary>
+    public string Pages => File.PageCount == 1 ? Loc.Get("Compress.PdfOnePage") : Loc.Format("Compress.PdfPages", File.PageCount ?? 0);
 
     public string AutomationName => Loc.Format("Compress.ItemSpoken", Number, Name, Caption);
 
@@ -53,8 +64,8 @@ public sealed partial class CompressItem : ObservableObject
 }
 
 /// <summary>
-/// Compress Image (DESIGN §6.5): one or more pictures, one way to make them smaller for all of them, a result for the
-/// picture shown that is really encoded and measured, then the same progress and result cards as Architecture.
+/// Compress (DESIGN §6.5): one or more pictures and PDFs, one way to make them smaller for all of them, a result for the
+/// file shown that is really encoded and measured, then the same progress and result cards as Architecture.
 /// </summary>
 public sealed partial class CompressViewModel : ObservableObject
 {
@@ -66,6 +77,7 @@ public sealed partial class CompressViewModel : ObservableObject
     private readonly ActivityLog _log;
     private readonly IReadOnlyList<string> _targets = ImageCompressor.TargetExtensions;
     private CompressSource? _loaded;
+    private PdfCompressSource? _loadedPdf;
     private CompressItem? _loadedFor;
     private CancellationTokenSource? _preview;
     private bool _renumbering;
@@ -116,9 +128,9 @@ public sealed partial class CompressViewModel : ObservableObject
         InputMessage = message;
     }
 
-    // ---- Choosing pictures ----
+    // ---- Choosing files ----
 
-    /// <summary>"Pilih gambar…" and "Ganti": one or more pictures, which start a new list.</summary>
+    /// <summary>"Pilih file…" and "Ganti": one or more pictures and PDFs, which start a new list.</summary>
     [RelayCommand]
     private async Task PickSourceAsync()
     {
@@ -129,7 +141,7 @@ public sealed partial class CompressViewModel : ObservableObject
         }
     }
 
-    /// <summary>"Tambah gambar…": more pictures at the end of the list; the dialog opens in the folder of the first one.</summary>
+    /// <summary>"Tambah file…": more files at the end of the list; the dialog opens in the folder of the first one.</summary>
     [RelayCommand]
     private async Task AddSourcesAsync()
     {
@@ -140,9 +152,11 @@ public sealed partial class CompressViewModel : ObservableObject
         }
     }
 
-    private static List<string> PickerExtensions() => [.. ImageCompressor.SourceExtensions.Order(StringComparer.Ordinal)];
+    private static List<string> PickerExtensions() => [.. ImageCompressor.SourceExtensions.Append(".pdf").Distinct().Order(StringComparer.Ordinal)];
 
-    /// <summary>Drag and drop: one or more pictures start a new list, as "Pilih gambar…" does.</summary>
+    private static bool CanTake(string extension) => extension == ".pdf" || ImageCompressor.SourceExtensions.Contains(extension);
+
+    /// <summary>Drag and drop: one or more files start a new list, as "Pilih file…" does.</summary>
     /// <param name="filePaths">An empty path is a file with no place on disk, such as one inside a ZIP.</param>
     public async Task SelectDroppedAsync(IReadOnlyList<string> filePaths, int folderCount)
     {
@@ -173,7 +187,7 @@ public sealed partial class CompressViewModel : ObservableObject
     public void ReportUnreadableDrop() =>
         ShowInputMessage(Loc.Get("Input.DropUnreadable"), InfoBarSeverity.Warning);
 
-    /// <summary>Takes the pictures among <paramref name="paths"/>, and says which were left out and why.</summary>
+    /// <summary>Takes the pictures and PDFs among <paramref name="paths"/>, and says which were left out and why.</summary>
     /// <param name="add">At the end of the list ("Tambah gambar…"), or as a new list.</param>
     private async Task SelectSourcesAsync(IReadOnlyList<string> paths, bool add)
     {
@@ -189,7 +203,7 @@ public sealed partial class CompressViewModel : ObservableObject
         {
             var name = Path.GetFileName(path);
             var extension = FileExtension.FromPath(path);
-            if (!ImageCompressor.SourceExtensions.Contains(extension))
+            if (!CanTake(extension))
             {
                 skipped.Add(Loc.Format("Skip.Item", name, Loc.Get("Skip.Unsupported")));
                 onlyMessage = extension.Length == 0 ? Loc.Get("Compress.UnsupportedNoExtension") : Loc.Format("Compress.Unsupported", extension);
@@ -201,7 +215,7 @@ public sealed partial class CompressViewModel : ObservableObject
                 continue;
             }
 
-            var (item, reason, message) = await ReadPictureAsync(path, extension);
+            var (item, reason, message) = extension == ".pdf" ? await ReadPdfAsync(path, extension) : await ReadPictureAsync(path, extension);
             if (item is null)
             {
                 skipped.Add(Loc.Format("Skip.Item", name, Loc.Get(reason!)));
@@ -240,7 +254,7 @@ public sealed partial class CompressViewModel : ObservableObject
         }
 
         Renumber(add ? CurrentIndex : 0);
-        _log.Info($"Compress: {taken.Count} pictures added, {Items.Count} in the list");
+        _log.Info($"Compress: {taken.Count} files added ({taken.Count(i => i.IsPdf)} PDF), {Items.Count} in the list");
     }
 
     /// <summary>Reads the size of a picture from its header; a picture that can't be taken comes with its reasons.</summary>
@@ -272,14 +286,43 @@ public sealed partial class CompressViewModel : ObservableObject
         return (new CompressItem(new SourceFile(path, extension, size), (int)header.Width, (int)header.Height, Remove), null, null);
     }
 
+    /// <summary>Counts the pages of a PDF; a locked or damaged one comes with its reasons.</summary>
+    private async Task<(CompressItem? Item, string? SkipReason, string? Message)> ReadPdfAsync(string path, string extension)
+    {
+        long size;
+        int pages;
+        try
+        {
+            size = new FileInfo(path).Length;
+            pages = await Task.Run(() => PdfInspector.CountPages(path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return (null, "Skip.Unreadable", Loc.Get("Input.CannotOpen"));
+        }
+        catch (LockedPdfException)
+        {
+            return (null, "Skip.Locked", ErrorMessages.LockedPdf);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // PdfPig throws its own exception types for damaged files.
+            _log.Info($"Compress PDF not readable: {ex.GetType().Name}");
+            return (null, "Skip.Unreadable", Loc.Get("Input.PdfUnreadable"));
+        }
+
+        return (new CompressItem(new SourceFile(path, extension, size, pages), 0, 0, Remove), null, null);
+    }
+
     // ---- The list ----
 
-    /// <summary>The pictures, in the order their results are numbered.</summary>
+    /// <summary>The pictures and PDFs, in the order their results are numbered.</summary>
     public ObservableCollection<CompressItem> Items { get; } = [];
 
-    /// <summary>The picture whose result is shown, as the list's selected index.</summary>
+    /// <summary>The file whose result is shown, as the list's selected index.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Current), nameof(SourceName), nameof(SourceCaption), nameof(SourcePath))]
+    [NotifyPropertyChangedFor(nameof(Current), nameof(SourceName), nameof(SourceCaption), nameof(SourcePath), nameof(SourceGlyph))]
+    [NotifyPropertyChangedFor(nameof(IsPdfShown), nameof(HasQuality), nameof(HasNoQuality), nameof(QualityNote), nameof(FormatCaption), nameof(KeepsNote), nameof(LimitHelp))]
     public partial int CurrentIndex { get; set; } = -1;
 
     partial void OnCurrentIndexChanged(int value)
@@ -296,21 +339,30 @@ public sealed partial class CompressViewModel : ObservableObject
 
     public bool HasNoSource => Items.Count == 0;
 
-    /// <summary>Two pictures or more: the list is shown and the results go into a folder.</summary>
+    /// <summary>Two files or more: the list is shown and the results go into a folder.</summary>
     public bool HasSeveral => Items.Count > 1;
+
+    /// <summary>The file shown is a PDF: its pictures are measured, and the format choice is not its own.</summary>
+    public bool IsPdfShown => Current?.IsPdf == true;
+
+    /// <summary>Some file in the list is a picture, so the result format means something.</summary>
+    public bool HasPictures => Items.Any(i => !i.IsPdf);
 
     public string SourceName => Current?.Name ?? string.Empty;
 
-    public string PhotoGlyph => FileGlyphs.Photo;
+    public string SourceGlyph => IsPdfShown ? FileGlyphs.Document : FileGlyphs.Photo;
 
     public string SourcePath => Current?.File.Path ?? string.Empty;
 
-    /// <summary>"4032 × 3024 · 12.2 MP · 3.1 MB" for the picture shown.</summary>
-    public string SourceCaption => Current is { } item
-        ? $"{ScaleText.Dimensions(item.Width, item.Height)} · {ScaleText.Megapixels((long)item.Width * item.Height, Loc.Culture)} · {DisplayFormat.FormatFileSize(item.File.Size)}"
-        : string.Empty;
+    /// <summary>"4032 × 3024 · 12.2 MP · 3.1 MB" for the picture shown, "PDF · 12 halaman · 3.1 MB" for a PDF.</summary>
+    public string SourceCaption => Current switch
+    {
+        { IsPdf: true } pdf => $"PDF · {pdf.Pages} · {DisplayFormat.FormatFileSize(pdf.File.Size)}",
+        { } item => $"{ScaleText.Dimensions(item.Width, item.Height)} · {ScaleText.Megapixels((long)item.Width * item.Height, Loc.Culture)} · {DisplayFormat.FormatFileSize(item.File.Size)}",
+        null => string.Empty,
+    };
 
-    /// <summary>"3 gambar · total 12.4 MB", above the list.</summary>
+    /// <summary>"3 file · total 12.4 MB", above the list.</summary>
     public string ListTitle => Loc.Format("Compress.ListTitle", Items.Count, DisplayFormat.FormatFileSize(Items.Sum(i => i.File.Size)));
 
     private void Remove(CompressItem item)
@@ -324,7 +376,7 @@ public sealed partial class CompressViewModel : ObservableObject
         Items.RemoveAt(index);
         if (ReferenceEquals(_loadedFor, item))
         {
-            (_loaded, _loadedFor) = (null, null);
+            (_loaded, _loadedPdf, _loadedFor) = (null, null, null);
         }
 
         Renumber(Math.Min(CurrentIndex == index ? index : CurrentIndex > index ? CurrentIndex - 1 : CurrentIndex, Items.Count - 1));
@@ -345,17 +397,26 @@ public sealed partial class CompressViewModel : ObservableObject
         OnPropertyChanged(nameof(HasSource));
         OnPropertyChanged(nameof(HasNoSource));
         OnPropertyChanged(nameof(HasSeveral));
+        OnPropertyChanged(nameof(HasPictures));
         OnPropertyChanged(nameof(ListTitle));
         OnPropertyChanged(nameof(Current));
         OnPropertyChanged(nameof(SourceName));
         OnPropertyChanged(nameof(SourceCaption));
         OnPropertyChanged(nameof(SourcePath));
+        OnPropertyChanged(nameof(SourceGlyph));
+        OnPropertyChanged(nameof(IsPdfShown));
+        OnPropertyChanged(nameof(HasQuality));
+        OnPropertyChanged(nameof(HasNoQuality));
+        OnPropertyChanged(nameof(QualityNote));
+        OnPropertyChanged(nameof(FormatCaption));
+        OnPropertyChanged(nameof(KeepsNote));
+        OnPropertyChanged(nameof(LimitHelp));
         OnPropertyChanged(nameof(StartLabel));
         StartCommand.NotifyCanExecuteChanged();
         SchedulePreview();
     }
 
-    // ---- The choices (one set for every picture) ----
+    // ---- The choices (one set for every file) ----
 
     /// <summary>"JPG", "PNG", and "HEIC" when this PC can write it.</summary>
     public IReadOnlyList<string> FormatChoices { get; }
@@ -370,12 +431,12 @@ public sealed partial class CompressViewModel : ObservableObject
 
     public string TargetCode => FileExtension.ToCode(TargetExtension);
 
-    /// <summary>JPG and HEIC have a quality; PNG is lossless.</summary>
-    public bool HasQuality => ImageCompressor.HasQuality(TargetExtension);
+    /// <summary>JPG and HEIC have a quality; PNG is lossless. The pictures of a PDF become JPG.</summary>
+    public bool HasQuality => IsPdfShown || ImageCompressor.HasQuality(TargetExtension);
 
     public bool HasNoQuality => !HasQuality;
 
-    public string FormatCaption => Loc.Get(TargetExtension switch
+    public string FormatCaption => Loc.Get(IsPdfShown ? "Compress.Format.Pdf" : TargetExtension switch
     {
         ".png" => "Compress.Format.Png",
         ".heic" => "Compress.Format.Heic",
@@ -413,7 +474,7 @@ public sealed partial class CompressViewModel : ObservableObject
 
     public string ResolutionText => Percent((int)ResolutionPercent);
 
-    /// <summary>"2016 × 1512 · 3.0 MP" for the picture shown, under the resolution slider.</summary>
+    /// <summary>"2016 × 1512 · 3.0 MP" for the picture shown, under the resolution slider; for a PDF, its largest picture.</summary>
     public string ResolutionSizeText
     {
         get
@@ -423,9 +484,21 @@ public sealed partial class CompressViewModel : ObservableObject
                 return string.Empty;
             }
 
-            var (width, height) = CompressOptions.ScaledSize(item.Width, item.Height, (int)ResolutionPercent);
-            return $"{ScaleText.Dimensions(width, height)} · {ScaleText.Megapixels((long)width * height, Loc.Culture)}";
+            if (item.IsPdf)
+            {
+                return ReferenceEquals(_loadedFor, item) && _loadedPdf?.LargestPicture is { } largest
+                    ? Loc.Format("Compress.LargestPicture", Scaled(largest.Width, largest.Height))
+                    : string.Empty;
+            }
+
+            return Scaled(item.Width, item.Height);
         }
+    }
+
+    private string Scaled(int sourceWidth, int sourceHeight)
+    {
+        var (width, height) = CompressOptions.ScaledSize(sourceWidth, sourceHeight, (int)ResolutionPercent);
+        return $"{ScaleText.Dimensions(width, height)} · {ScaleText.Megapixels((long)width * height, Loc.Culture)}";
     }
 
     /// <summary>The size limit as typed; NaN when the box is empty.</summary>
@@ -467,11 +540,14 @@ public sealed partial class CompressViewModel : ObservableObject
     /// <summary>How a limit is met and counted, under the limit box.</summary>
     public string LimitHelp => Loc.Get(HasQuality ? "Compress.LimitHelp" : "Compress.LimitHelpPng");
 
+    /// <summary>What is not copied to a picture, or what a PDF keeps.</summary>
+    public string KeepsNote => Loc.Get(IsPdfShown ? "Compress.PdfKeeps" : "Compress.Metadata");
+
     private static string Percent(int value) => value.ToString(CultureInfo.InvariantCulture) + "%";
 
-    // ---- The result of the picture shown, really encoded ----
+    // ---- The result of the file shown, really encoded ----
 
-    /// <summary>The compressed file of the picture shown, for the preview; null while there is none.</summary>
+    /// <summary>The compressed picture shown, or the largest picture of the compressed PDF, for the preview; null while there is none.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PreviewCaption))]
     public partial byte[]? PreviewData { get; set; }
@@ -487,8 +563,17 @@ public sealed partial class CompressViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(MeasuringText), nameof(PreviewCaption))]
     public partial bool IsMeasuring { get; set; }
 
+    /// <summary>A result is shown, measured from a real file.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PreviewCaption))]
+    public partial bool HasResult { get; set; }
+
     /// <summary>Under the preview: what is happening, or that the numbers come from the real file.</summary>
-    public string PreviewCaption => IsMeasuring ? MeasuringText : PreviewData is null ? string.Empty : Loc.Get("Compress.PreviewCaption");
+    public string PreviewCaption => IsMeasuring ? MeasuringText
+        : !HasResult ? string.Empty
+        : !IsPdfShown ? Loc.Get("Compress.PreviewCaption")
+        : PreviewData is null ? Loc.Get("Compress.PreviewNoneSmaller")
+        : Loc.Get("Compress.PreviewCaptionPdf");
 
     /// <summary>"Mengompres…" or, for a limit, "Mencari ukuran yang pas…".</summary>
     public string MeasuringText => Loc.Get(IsTargetMode ? "Compress.Searching" : "Compress.Measuring");
@@ -520,6 +605,10 @@ public sealed partial class CompressViewModel : ObservableObject
 
     public bool IsSmaller => !IsLarger;
 
+    /// <summary>"Resolusi hasil" for a picture, "Foto diperkecil" for a PDF.</summary>
+    [ObservableProperty]
+    public partial string ResultResolutionLabel { get; set; } = Loc.Get("Compress.ResultResolution");
+
     [ObservableProperty]
     public partial string ResultResolutionValue { get; set; } = string.Empty;
 
@@ -532,7 +621,7 @@ public sealed partial class CompressViewModel : ObservableObject
     [ObservableProperty]
     public partial string ResultQualityCaption { get; set; } = string.Empty;
 
-    /// <summary>Starts a new measurement of the picture shown; the one before it is stopped.</summary>
+    /// <summary>Starts a new measurement of the file shown; the one before it is stopped.</summary>
     private void SchedulePreview()
     {
         _preview?.Cancel();
@@ -541,14 +630,14 @@ public sealed partial class CompressViewModel : ObservableObject
         OnPropertyChanged(nameof(MeasuringText));
         if (Current is not { } item)
         {
-            (_loaded, _loadedFor) = (null, null);
+            (_loaded, _loadedPdf, _loadedFor) = (null, null, null);
             ClearResult();
             IsMeasuring = false;
             return;
         }
 
         OriginalSizeValue = DisplayFormat.FormatFileSize(item.File.Size);
-        OriginalSizeCaption = $"{FileExtension.ToCode(item.File.Extension)} · {ScaleText.Dimensions(item.Width, item.Height)}";
+        OriginalSizeCaption = $"{FileExtension.ToCode(item.File.Extension)} · {(item.IsPdf ? item.Pages : ScaleText.Dimensions(item.Width, item.Height))}";
         if (IsTargetMode && TargetBytes is null)
         {
             ClearResult();
@@ -571,6 +660,12 @@ public sealed partial class CompressViewModel : ObservableObject
         try
         {
             await Task.Delay(PreviewDelay, ct);
+            if (item.IsPdf)
+            {
+                await MeasurePdfAsync(item, quality, percent, limit, ct);
+                return;
+            }
+
             CompressSource source;
             if (ReferenceEquals(_loadedFor, item) && _loaded is { } cached)
             {
@@ -579,7 +674,7 @@ public sealed partial class CompressViewModel : ObservableObject
             else
             {
                 // The picture before is let go first: two decoded photos at once is more memory than needed.
-                (_loaded, _loadedFor) = (null, null);
+                (_loaded, _loadedPdf, _loadedFor) = (null, null, null);
                 source = await Task.Run(() => CompressSource.LoadAsync(item.File.Path, ct), ct);
                 (_loaded, _loadedFor) = (source, item);
             }
@@ -602,17 +697,88 @@ public sealed partial class CompressViewModel : ObservableObject
             ClearResult();
             PreviewProblem = Loc.Format("Error.ImageTooLarge", ex.Megapixels);
         }
+        catch (LockedPdfException)
+        {
+            ClearResult();
+            PreviewProblem = ErrorMessages.LockedPdf;
+        }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             _log.Info($"Compress preview failed: {ex.GetType().Name}");
             ClearResult();
-            PreviewProblem = ex is IOException or UnauthorizedAccessException ? Loc.Get("Input.CannotOpen") : Loc.Get("Error.Decode");
+            PreviewProblem = ex is IOException or UnauthorizedAccessException ? Loc.Get("Input.CannotOpen")
+                : item.IsPdf ? Loc.Get("Input.PdfUnreadable")
+                : Loc.Get("Error.Decode");
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+            {
+                IsMeasuring = false;
+            }
+        }
+    }
+
+    /// <summary>Compresses the PDF shown, kept read between measurements; a PDF without pictures says so instead.</summary>
+    private async Task MeasurePdfAsync(CompressItem item, int quality, int percent, long? limit, CancellationToken ct)
+    {
+        PdfCompressSource source;
+        if (ReferenceEquals(_loadedFor, item) && _loadedPdf is { } cached)
+        {
+            source = cached;
+        }
+        else
+        {
+            (_loaded, _loadedPdf, _loadedFor) = (null, null, null);
+            source = await Task.Run(() => PdfCompressSource.Load(item.File.Path, new PdfPictureEncoder()), ct);
+            (_loadedPdf, _loadedFor) = (source, item);
+            OnPropertyChanged(nameof(ResolutionSizeText));
         }
 
-        if (!ct.IsCancellationRequested)
+        if (source.PictureCount == 0)
         {
-            IsMeasuring = false;
+            ClearResult();
+            PreviewProblem = Loc.Get("Error.PdfNoPictures");
+            return;
         }
+
+        var result = await Task.Run(
+            async () => limit is { } bytes
+                ? await source.FitAsync(bytes, ct)
+                : await source.EncodeAsync(quality, percent, ct),
+            ct);
+        ct.ThrowIfCancellationRequested();
+        if (result is null)
+        {
+            ClearResult();
+            PreviewProblem = Loc.Format("Error.PdfCompressTooSmall", CompressText.Limit(limit ?? 0));
+            return;
+        }
+
+        PreviewProblem = null;
+        PreviewWidth = result.Preview?.Width ?? 0;
+        PreviewData = result.Preview?.Jpeg;
+        ShowSize(item, result.Data.LongLength);
+        ResultResolutionLabel = Loc.Get("Compress.PicturesCompressed");
+        ResultResolutionValue = Loc.Format("Compress.PicturesOf", result.PicturesCompressed, result.PictureCount);
+        ResultResolutionCaption = result.Preview is { } largest
+            ? Loc.Format("Compress.LargestCaption", ScaleText.Dimensions(largest.Width, largest.Height), Percent(result.Setting.ResolutionPercent))
+            : Percent(result.Setting.ResolutionPercent);
+        ResultQualityValue = Percent(result.Setting.Quality);
+        var inside = Loc.Get("Compress.InsidePdf");
+        ResultQualityCaption = limit is null ? inside : Loc.Format("Compress.FoundFor", inside);
+        PreviewSpoken = result.Preview is { } shown
+            ? Loc.Format("Compress.PreviewSpokenPdf", ScaleText.Dimensions(shown.Width, shown.Height), ResultSizeValue)
+            : string.Empty;
+        HasResult = true;
+    }
+
+    private void ShowSize(CompressItem item, long length)
+    {
+        ResultSizeValue = DisplayFormat.FormatFileSize(length);
+        IsLarger = length >= item.File.Size;
+        var change = (int)Math.Round(Math.Abs(1 - ((double)length / Math.Max(1, item.File.Size))) * 100);
+        ResultSizeCaption = IsLarger ? Loc.Format("Compress.Larger", change) : Loc.Format("Compress.Saved", change);
     }
 
     private void ShowResult(CompressItem item, CompressedImage? result, long? limit)
@@ -627,26 +793,26 @@ public sealed partial class CompressViewModel : ObservableObject
         PreviewProblem = null;
         PreviewWidth = result.Width;
         PreviewData = result.Data;
-        var length = result.Data.LongLength;
-        ResultSizeValue = DisplayFormat.FormatFileSize(length);
-        IsLarger = length >= item.File.Size;
-        var change = (int)Math.Round(Math.Abs(1 - ((double)length / Math.Max(1, item.File.Size))) * 100);
-        ResultSizeCaption = IsLarger ? Loc.Format("Compress.Larger", change) : Loc.Format("Compress.Saved", change);
+        ShowSize(item, result.Data.LongLength);
+        ResultResolutionLabel = Loc.Get("Compress.ResultResolution");
         ResultResolutionValue = ScaleText.Dimensions(result.Width, result.Height);
         ResultResolutionCaption = $"{ScaleText.Megapixels((long)result.Width * result.Height, Loc.Culture)} · {Percent(result.Setting.ResolutionPercent)}";
         ResultQualityValue = HasQuality ? Percent(result.Setting.Quality) : Loc.Get("Compress.Lossless");
         ResultQualityCaption = limit is null ? TargetCode : Loc.Format("Compress.FoundFor", TargetCode);
         PreviewSpoken = Loc.Format("Compress.PreviewSpoken", ResultResolutionValue, ResultSizeValue);
+        HasResult = true;
     }
 
     private void ClearResult()
     {
+        HasResult = false;
         PreviewData = null;
         PreviewSpoken = string.Empty;
         PreviewProblem = null;
         ResultSizeValue = Loc.Get("Value.NoneYet");
         ResultSizeCaption = string.Empty;
         IsLarger = false;
+        ResultResolutionLabel = Loc.Get(IsPdfShown ? "Compress.PicturesCompressed" : "Compress.ResultResolution");
         ResultResolutionValue = Loc.Get("Value.NoneYet");
         ResultResolutionCaption = string.Empty;
         ResultQualityValue = Loc.Get("Value.NoneYet");
@@ -655,7 +821,7 @@ public sealed partial class CompressViewModel : ObservableObject
 
     // ---- Saving ----
 
-    /// <summary>"Kompres dan simpan…", or "Kompres dan simpan N gambar…" for several.</summary>
+    /// <summary>"Kompres dan simpan…", or "Kompres dan simpan N file…" for several.</summary>
     public string StartLabel => Items.Count > 1 ? Loc.Format("Compress.StartMany", Items.Count) : Loc.Get("Compress.Start");
 
     private bool CanStart() =>
@@ -663,26 +829,32 @@ public sealed partial class CompressViewModel : ObservableObject
         && !Run.IsActive
         && (!IsTargetMode || IsTargetValid)
 
-        // One picture that can't be made small enough can't be saved; in a list, that one fails on its own row.
+        // One file that can't be made small enough can't be saved; in a list, that one fails on its own row.
         && !(Items.Count == 1 && HasPreviewProblem);
 
     [RelayCommand(CanExecute = nameof(CanStart))]
     private async Task StartAsync()
     {
-        var extension = TargetExtension;
+        var pictureTarget = TargetExtension;
         var options = new CompressOptions((int)Quality, (int)ResolutionPercent, IsTargetMode ? TargetBytes : null);
-        var format = $"{string.Join(", ", Items.Select(i => FileExtension.ToCode(i.File.Extension)).Distinct())} → {TargetCode}";
+
+        // "JPG, PNG → JPG", and "JPG, PNG → JPG · PDF → PDF" for a list with PDFs.
+        var format = string.Join(" · ", Items
+            .GroupBy(i => i.ResultExtension(pictureTarget))
+            .Select(g => $"{string.Join(", ", g.Select(i => FileExtension.ToCode(i.File.Extension)).Distinct())} → {FileExtension.ToCode(g.Key)}"));
+        var targets = string.Join(", ", Items.Select(i => FileExtension.ToCode(i.ResultExtension(pictureTarget))).Distinct());
         var suffix = Loc.Get("Compress.NameSuffix");
         InputMessage = null;
-        _log.Info($"Compress started: {format}, {Items.Count} pictures, {(IsTargetMode ? "size limit" : "quality and resolution")}");
+        _log.Info($"Compress started: {format}, {Items.Count} files, {(IsTargetMode ? "size limit" : "quality and resolution")}");
 
         if (Items.Count == 1)
         {
             var only = Items[0];
+            var extension = only.ResultExtension(pictureTarget);
             var destination = await _desktop.PickDestinationAsync(
                 Path.GetFileNameWithoutExtension(only.File.Path) + suffix,
                 Path.GetDirectoryName(only.File.Path),
-                TargetCode,
+                FileExtension.ToCode(extension),
                 extension);
             if (destination is null)
             {
@@ -695,7 +867,7 @@ public sealed partial class CompressViewModel : ObservableObject
                 destination += extension;
             }
 
-            await Run.RunAsync(_pipeline, new ConversionJob(only.File.Path, extension, destination, options), format, TargetCode);
+            await Run.RunAsync(_pipeline, new ConversionJob(only.File.Path, extension, destination, options), format, targets);
             return;
         }
 
@@ -709,7 +881,7 @@ public sealed partial class CompressViewModel : ObservableObject
         try
         {
             names = OutputNames.PlanNamed(
-                [.. Items.Select(i => (i.File.Path, Path.GetFileNameWithoutExtension(i.File.Path) + suffix + extension))],
+                [.. Items.Select(i => (i.File.Path, Path.GetFileNameWithoutExtension(i.File.Path) + suffix + i.ResultExtension(pictureTarget)))],
                 folder,
                 path => File.Exists(path) || Directory.Exists(path));
         }
@@ -720,9 +892,9 @@ public sealed partial class CompressViewModel : ObservableObject
         }
 
         var entries = Items
-            .Select((item, i) => new BatchEntry(new BatchJob(new ConversionJob(item.File.Path, extension, names[i], options), _pipeline), item.Name))
+            .Select((item, i) => new BatchEntry(new BatchJob(new ConversionJob(item.File.Path, item.ResultExtension(pictureTarget), names[i], options), _pipeline), item.Name))
             .ToList();
-        await Run.RunBatchAsync(entries, folder, format, TargetCode);
+        await Run.RunBatchAsync(entries, folder, format, targets);
     }
 
     // ---- Starting over ----

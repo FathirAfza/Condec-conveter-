@@ -585,15 +585,32 @@
   <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>Model {0} tidak ada di salinan Condec ini. Pilih {1} untuk meng-upscale, atau pasang ulang Condec (jalankan tools\fetch-model.ps1 bila kamu membangunnya sendiri).</value></data>
   <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>File model {0} rusak atau bukan yang dirilis bersama Condec, jadi tidak dipakai. Pilih {1} untuk meng-upscale, atau pasang ulang Condec.</value></data>
   <data name="Value.NoneYet" xml:space="preserve"><value>Belum ada</value></data>
-  <data name="Nav.Compress" xml:space="preserve"><value>Compress Image</value></data>
-  <data name="Page.Compress.Title" xml:space="preserve"><value>Compress Image</value></data>
-  <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Perkecil ukuran file gambar supaya muat di batas unggah, lalu simpan sebagai JPG, PNG, atau HEIC.</value></data>
-  <data name="Compress.Formats" xml:space="preserve"><value>JPG, PNG, HEIC, HEIF, WebP, RAW kamera, dan format gambar lain yang bisa dibuka Windows.</value></data>
+  <data name="Compress.DropHere" xml:space="preserve"><value>Seret satu atau beberapa gambar atau PDF ke sini</value></data>
+  <data name="Compress.Choose" xml:space="preserve"><value>Pilih file…</value></data>
+  <data name="Compress.AddFiles" xml:space="preserve"><value>Tambah file…</value></data>
+  <data name="Compress.PdfPages" xml:space="preserve"><value>{0} halaman</value></data>
+  <data name="Compress.PdfOnePage" xml:space="preserve"><value>1 halaman</value></data>
+  <data name="Compress.Format.Pdf" xml:space="preserve"><value>PDF tetap PDF: foto dan hasil pindaian di dalamnya disimpan ulang sebagai JPG. Format di atas hanya untuk gambar.</value></data>
+  <data name="Compress.PdfKeeps" xml:space="preserve"><value>Teks, bookmark, tautan, dan isian formulir PDF tetap seperti aslinya.</value></data>
+  <data name="Compress.LargestPicture" xml:space="preserve"><value>Foto terbesar {0}</value></data>
+  <data name="Compress.PicturesCompressed" xml:space="preserve"><value>Foto diperkecil</value></data>
+  <data name="Compress.PicturesOf" xml:space="preserve"><value>{0} dari {1}</value></data>
+  <data name="Compress.LargestCaption" xml:space="preserve"><value>Terbesar {0} · {1}</value></data>
+  <data name="Compress.InsidePdf" xml:space="preserve"><value>JPG di dalam PDF</value></data>
+  <data name="Compress.PreviewCaptionPdf" xml:space="preserve"><value>Foto terbesar di PDF, seperti di file yang sudah dikompres. Angka di bawah diukur dari file itu, bukan perkiraan.</value></data>
+  <data name="Compress.PreviewNoneSmaller" xml:space="preserve"><value>Tidak ada foto yang menjadi lebih kecil dengan pengaturan ini, jadi semuanya tetap seperti aslinya. Pilih kualitas atau resolusi yang lebih rendah.</value></data>
+  <data name="Compress.PreviewSpokenPdf" xml:space="preserve"><value>Foto terbesar setelah dikompres, {0}, PDF {1}</value></data>
+  <data name="Error.PdfNoPictures" xml:space="preserve"><value>PDF ini tidak punya foto yang bisa diperkecil. Compress memperkecil foto dan hasil pindaian di dalam PDF; teks dan garisnya sudah kecil.</value></data>
+  <data name="Error.PdfCompressTooSmall" xml:space="preserve"><value>PDF ini tidak bisa dibuat sekecil {0}, bahkan dengan foto di dalamnya pada resolusi terkecil. Naikkan batas ukurannya.</value></data>
+  <data name="Nav.Compress" xml:space="preserve"><value>Compress</value></data>
+  <data name="Page.Compress.Title" xml:space="preserve"><value>Compress</value></data>
+  <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Perkecil ukuran gambar dan PDF supaya muat di batas unggah. Gambar disimpan sebagai JPG, PNG, atau HEIC; PDF tetap PDF.</value></data>
+  <data name="Compress.Formats" xml:space="preserve"><value>PDF, dan gambar yang bisa dibuka Windows: JPG, PNG, HEIC, HEIF, WebP, RAW kamera, dan lainnya.</value></data>
   <data name="Compress.ItemSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
-  <data name="Compress.ListTitle" xml:space="preserve"><value>{0} gambar · total {1}</value></data>
-  <data name="Compress.ListSpoken" xml:space="preserve"><value>Daftar gambar. Gambar yang dipilih adalah yang hasilnya ditampilkan.</value></data>
-  <data name="Compress.Unsupported" xml:space="preserve"><value>File {0} tidak bisa dikompres di sini. Pilih gambar yang bisa dibuka Windows, misalnya JPG, PNG, HEIC, WebP, atau RAW kamera.</value></data>
-  <data name="Compress.UnsupportedNoExtension" xml:space="preserve"><value>File tanpa ekstensi tidak bisa dikompres. Pilih gambar yang bisa dibuka Windows, misalnya JPG, PNG, HEIC, WebP, atau RAW kamera.</value></data>
+  <data name="Compress.ListTitle" xml:space="preserve"><value>{0} file · total {1}</value></data>
+  <data name="Compress.ListSpoken" xml:space="preserve"><value>Daftar file. File yang dipilih adalah yang hasilnya ditampilkan.</value></data>
+  <data name="Compress.Unsupported" xml:space="preserve"><value>File {0} tidak bisa dikompres di sini. Pilih PDF atau gambar yang bisa dibuka Windows, misalnya JPG, PNG, HEIC, WebP, atau RAW kamera.</value></data>
+  <data name="Compress.UnsupportedNoExtension" xml:space="preserve"><value>File tanpa ekstensi tidak bisa dikompres. Pilih PDF atau gambar yang bisa dibuka Windows, misalnya JPG, PNG, HEIC, WebP, atau RAW kamera.</value></data>
   <data name="Compress.Format" xml:space="preserve"><value>Format hasil</value></data>
   <data name="Compress.Format.Jpg" xml:space="preserve"><value>Paling kecil untuk foto dan diterima di mana saja. Bagian transparan menjadi putih.</value></data>
   <data name="Compress.Format.Png" xml:space="preserve"><value>Tanpa kehilangan kualitas dan menjaga transparansi, tetapi foto tetap besar. Ukurannya hanya turun lewat resolusi.</value></data>
@@ -622,7 +639,7 @@
   <data name="Compress.PreviewCaption" xml:space="preserve"><value>Pratinjau hasil. Angka di bawah diukur dari file yang sudah dikompres, bukan perkiraan.</value></data>
   <data name="Compress.PreviewSpoken" xml:space="preserve"><value>Pratinjau hasil, {0}, {1}</value></data>
   <data name="Compress.Start" xml:space="preserve"><value>Kompres dan simpan…</value></data>
-  <data name="Compress.StartMany" xml:space="preserve"><value>Kompres dan simpan {0} gambar…</value></data>
+  <data name="Compress.StartMany" xml:space="preserve"><value>Kompres dan simpan {0} file…</value></data>
   <data name="Compress.NameSuffix" xml:space="preserve"><value> (dikompres)</value></data>
   <data name="Error.CompressTooSmall" xml:space="preserve"><value>Gambar ini tidak bisa dibuat sekecil {0}, bahkan pada resolusi terkecil. Naikkan batas ukurannya.</value></data>
   <data name="History.CompressSummary" xml:space="preserve"><value>{0} → {1} · Kompres · {2}</value></data>
