@@ -644,12 +644,12 @@ public sealed partial class CompressViewModel : ObservableObject
         PreviewData = null;
         PreviewSpoken = string.Empty;
         PreviewProblem = null;
-        ResultSizeValue = "—";
+        ResultSizeValue = Loc.Get("Value.NoneYet");
         ResultSizeCaption = string.Empty;
         IsLarger = false;
-        ResultResolutionValue = "—";
+        ResultResolutionValue = Loc.Get("Value.NoneYet");
         ResultResolutionCaption = string.Empty;
-        ResultQualityValue = "—";
+        ResultQualityValue = Loc.Get("Value.NoneYet");
         ResultQualityCaption = string.Empty;
     }
 

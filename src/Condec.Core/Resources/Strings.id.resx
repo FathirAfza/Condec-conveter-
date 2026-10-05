@@ -584,6 +584,7 @@
   <data name="Upscale.Style.FaithfulCaption" xml:space="preserve"><value>Mengikuti bentuk aslinya, tanpa tekstur karangan. Cocok untuk gambar kecil, buram, atau berkompresi berat; hasilnya lebih lembut.</value></data>
   <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>Model {0} tidak ada di salinan Condec ini. Pilih {1} untuk meng-upscale, atau pasang ulang Condec (jalankan tools\fetch-model.ps1 bila kamu membangunnya sendiri).</value></data>
   <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>File model {0} rusak atau bukan yang dirilis bersama Condec, jadi tidak dipakai. Pilih {1} untuk meng-upscale, atau pasang ulang Condec.</value></data>
+  <data name="Value.NoneYet" xml:space="preserve"><value>Belum ada</value></data>
   <data name="Nav.Compress" xml:space="preserve"><value>Compress Image</value></data>
   <data name="Page.Compress.Title" xml:space="preserve"><value>Compress Image</value></data>
   <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Perkecil ukuran file gambar supaya muat di batas unggah, lalu simpan sebagai JPG, PNG, atau HEIC.</value></data>

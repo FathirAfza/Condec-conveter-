@@ -584,6 +584,7 @@
   <data name="Upscale.Style.FaithfulCaption" xml:space="preserve"><value>Keeps to the shapes in the picture, without invented texture. Suits small, blurry or heavily compressed pictures; the result is softer.</value></data>
   <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>The {0} model isn't in this copy of Condec. Choose {1} to upscale, or reinstall Condec (run tools\fetch-model.ps1 if you built it yourself).</value></data>
   <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>The {0} model file is damaged or isn't the one released with Condec, so it isn't used. Choose {1} to upscale, or reinstall Condec.</value></data>
+  <data name="Value.NoneYet" xml:space="preserve"><value>None yet</value></data>
   <data name="Nav.Compress" xml:space="preserve"><value>Compress Image</value></data>
   <data name="Page.Compress.Title" xml:space="preserve"><value>Compress Image</value></data>
   <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Make picture files smaller so they fit an upload limit, and save them as JPG, PNG or HEIC.</value></data>

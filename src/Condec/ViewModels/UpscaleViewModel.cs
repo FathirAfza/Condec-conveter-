@@ -894,7 +894,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         RaiseEstimates();
     }
 
-    public string ResolutionValue => HasSource ? ScaleText.Dimensions(OutputWidth, OutputHeight) : "—";
+    public string ResolutionValue => HasSource ? ScaleText.Dimensions(OutputWidth, OutputHeight) : Loc.Get("Value.NoneYet");
 
     /// <summary>"14,7 MP · 5K", or only the megapixels for a custom size.</summary>
     public string ResolutionCaption
@@ -914,7 +914,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public string FileSizeValue => HasSource
         ? ScaleText.Approximately(DisplayFormat.FormatFileSize(UpscaleEstimator.EstimatedFileBytes((long)OutputWidth * OutputHeight, Format), Loc.Culture))
-        : "—";
+        : Loc.Get("Value.NoneYet");
 
     public string FileSizeCaption => Format == UpscaleFormat.Jpg ? "JPG" : "PNG";
 
@@ -946,11 +946,16 @@ public sealed partial class UpscaleViewModel : ObservableObject
 
     public bool LongRenderVisible => EstimatedSeconds >= LongRenderSeconds && RamIsEnough;
 
-    /// <summary>"± 7 seconds", or "—" until the engine has been measured: the app never shows an invented speed.</summary>
-    public string TimeValue => EstimatedSeconds is { } seconds ? ScaleText.Approximately(ScaleText.Duration(seconds, Loc.Culture)) : "—";
+    /// <summary>A picture is shown and upscaling is possible, but the engine has no measured speed yet.</summary>
+    private bool IsTimeUnmeasured => EstimatedSeconds is null && HasSource && !IsLimitUnavailable;
 
+    /// <summary>"± 7 seconds", or "Not measured yet" until the engine has been measured: the app never shows an invented speed.</summary>
+    public string TimeValue => EstimatedSeconds is { } seconds ? ScaleText.Approximately(ScaleText.Duration(seconds, Loc.Culture))
+        : Loc.Get(IsTimeUnmeasured ? "Upscale.Estimate.NotMeasured" : "Value.NoneYet");
+
+    /// <summary>The engine, also while it is not measured yet: the value already says that.</summary>
     public string TimeCaption => EstimatedSeconds is null
-        ? Loc.Get("Upscale.Estimate.NotMeasured")
+        ? IsTimeUnmeasured ? DeviceText.Engine(_settings.Device, EffectiveEngine) : string.Empty
         : TileSize < TiledUpscaler.DefaultTileSize
             ? Loc.Format("Upscale.Estimate.TimeSmallTiles", DeviceText.Engine(_settings.Device, EffectiveEngine), TileSize)
             : DeviceText.Engine(_settings.Device, EffectiveEngine);
@@ -962,7 +967,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
     /// <summary>The installed RAM meets the tier of the result (§7.2) and the picture fits the memory limit in Settings (§7.5).</summary>
     private bool RamIsEnough => InstalledRamIsEnough && MemoryFits;
 
-    public string RamValue => RequiredRam is { } tier ? Loc.Format("Device.Gigabytes", tier.Gb) : "—";
+    public string RamValue => RequiredRam is { } tier ? Loc.Format("Device.Gigabytes", tier.Gb) : Loc.Get("Value.NoneYet");
 
     public string RamCaption => RequiredRam is null
         ? string.Empty
