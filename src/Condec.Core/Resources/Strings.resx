@@ -265,6 +265,7 @@
   <data name="Error.ImageTooLarge" xml:space="preserve"><value>This picture ({0} MP) is too large to convert with the memory this PC has available. Close other apps and try again, or use a smaller picture.</value></data>
   <data name="Note.MediaIncomplete" xml:space="preserve"><value>The source file looks cut off or damaged, so the result may end early or have parts missing. Check the result before you use it.</value></data>
   <data name="Note.PicturesLeftOut" xml:space="preserve"><value>Pictures in this PDF ({0}) were left out: their format can't be read, or they are the background of the whole page.</value></data>
+  <data name="Note.CompressNotSmaller" xml:space="preserve"><value>The result ({1}) is not smaller than the source file ({0}). Choose a lower quality or resolution, or keep the source.</value></data>
   <data name="Error.Media" xml:space="preserve"><value>Windows couldn't convert this audio or video file. It may be damaged, or the codec for it isn't installed.</value></data>
   <data name="Progress.OpeningMedia" xml:space="preserve"><value>Opening the file</value></data>
   <data name="Media.AudioQualityHeader" xml:space="preserve"><value>Audio quality</value></data>
@@ -583,4 +584,45 @@
   <data name="Upscale.Style.FaithfulCaption" xml:space="preserve"><value>Keeps to the shapes in the picture, without invented texture. Suits small, blurry or heavily compressed pictures; the result is softer.</value></data>
   <data name="Error.UpscaleStyleMissing" xml:space="preserve"><value>The {0} model isn't in this copy of Condec. Choose {1} to upscale, or reinstall Condec (run tools\fetch-model.ps1 if you built it yourself).</value></data>
   <data name="Error.UpscaleStyleDamaged" xml:space="preserve"><value>The {0} model file is damaged or isn't the one released with Condec, so it isn't used. Choose {1} to upscale, or reinstall Condec.</value></data>
+  <data name="Nav.Compress" xml:space="preserve"><value>Compress Image</value></data>
+  <data name="Page.Compress.Title" xml:space="preserve"><value>Compress Image</value></data>
+  <data name="Page.Compress.Subtitle" xml:space="preserve"><value>Make picture files smaller so they fit an upload limit, and save them as JPG, PNG or HEIC.</value></data>
+  <data name="Compress.Formats" xml:space="preserve"><value>JPG, PNG, HEIC, HEIF, WebP, camera RAW, and other picture formats Windows can open.</value></data>
+  <data name="Compress.ItemSpoken" xml:space="preserve"><value>{0}. {1}, {2}</value></data>
+  <data name="Compress.ListTitle" xml:space="preserve"><value>{0} pictures · {1} in total</value></data>
+  <data name="Compress.ListSpoken" xml:space="preserve"><value>Pictures. The selected one is the one whose result is shown.</value></data>
+  <data name="Compress.Unsupported" xml:space="preserve"><value>A {0} file can't be compressed here. Choose a picture Windows can open, such as JPG, PNG, HEIC, WebP or camera RAW.</value></data>
+  <data name="Compress.UnsupportedNoExtension" xml:space="preserve"><value>A file without an extension can't be compressed. Choose a picture Windows can open, such as JPG, PNG, HEIC, WebP or camera RAW.</value></data>
+  <data name="Compress.Format" xml:space="preserve"><value>Result format</value></data>
+  <data name="Compress.Format.Jpg" xml:space="preserve"><value>Smallest for photos and accepted everywhere. Transparent parts become white.</value></data>
+  <data name="Compress.Format.Png" xml:space="preserve"><value>No quality loss and keeps transparency, but photos stay large. Only the resolution makes it smaller.</value></data>
+  <data name="Compress.Format.Heic" xml:space="preserve"><value>The photo format of modern phones. Not every site or app accepts it, so JPG is safer for uploads. Transparent parts become white.</value></data>
+  <data name="Compress.Mode" xml:space="preserve"><value>How to compress</value></data>
+  <data name="Compress.Mode.Manual" xml:space="preserve"><value>Set quality and resolution</value></data>
+  <data name="Compress.Mode.Target" xml:space="preserve"><value>File size limit</value></data>
+  <data name="Compress.Quality" xml:space="preserve"><value>Quality</value></data>
+  <data name="Compress.QualityPng" xml:space="preserve"><value>PNG has no quality setting: its size goes down with the resolution.</value></data>
+  <data name="Compress.Resolution" xml:space="preserve"><value>Resolution</value></data>
+  <data name="Compress.Limit" xml:space="preserve"><value>Maximum size</value></data>
+  <data name="Compress.LimitUnit" xml:space="preserve"><value>Size unit</value></data>
+  <data name="Compress.LimitInvalid" xml:space="preserve"><value>Type a size limit, such as 1 MB or 500 KB. The smallest is 1 KB.</value></data>
+  <data name="Compress.LimitHelp" xml:space="preserve"><value>The quality goes down first, to 60% at the lowest. If that is not enough, the resolution goes down. 1 MB counts as 1,000,000 bytes, so the file also fits sites that count 1 MB as 1,048,576 bytes.</value></data>
+  <data name="Compress.LimitHelpPng" xml:space="preserve"><value>PNG only gets smaller with the resolution. 1 MB counts as 1,000,000 bytes, so the file also fits sites that count 1 MB as 1,048,576 bytes.</value></data>
+  <data name="Compress.Metadata" xml:space="preserve"><value>EXIF data and the GPS location are not copied to the result.</value></data>
+  <data name="Compress.Original" xml:space="preserve"><value>Original size</value></data>
+  <data name="Compress.ResultSize" xml:space="preserve"><value>Result size</value></data>
+  <data name="Compress.ResultResolution" xml:space="preserve"><value>Result resolution</value></data>
+  <data name="Compress.Saved" xml:space="preserve"><value>{0}% smaller</value></data>
+  <data name="Compress.Larger" xml:space="preserve"><value>{0}% larger</value></data>
+  <data name="Compress.Lossless" xml:space="preserve"><value>Lossless</value></data>
+  <data name="Compress.FoundFor" xml:space="preserve"><value>{0} · found automatically</value></data>
+  <data name="Compress.Measuring" xml:space="preserve"><value>Compressing…</value></data>
+  <data name="Compress.Searching" xml:space="preserve"><value>Finding the quality and resolution that fit…</value></data>
+  <data name="Compress.PreviewCaption" xml:space="preserve"><value>Preview of the result. The numbers below are measured from the compressed file, not estimated.</value></data>
+  <data name="Compress.PreviewSpoken" xml:space="preserve"><value>Result preview, {0}, {1}</value></data>
+  <data name="Compress.Start" xml:space="preserve"><value>Compress and save…</value></data>
+  <data name="Compress.StartMany" xml:space="preserve"><value>Compress and save {0} pictures…</value></data>
+  <data name="Compress.NameSuffix" xml:space="preserve"><value> (compressed)</value></data>
+  <data name="Error.CompressTooSmall" xml:space="preserve"><value>This picture can't be made as small as {0}, even at the smallest resolution. Raise the size limit.</value></data>
+  <data name="History.CompressSummary" xml:space="preserve"><value>{0} → {1} · Compress · {2}</value></data>
 </root>

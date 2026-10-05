@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Condec contributors
 
 using Condec.Core.Cad;
+using Condec.Core.Compression;
 using Condec.Core.Conversion;
 using Condec.Core.Imaging;
 using Condec.Core.Media;
@@ -40,6 +41,8 @@ internal static class ErrorMessages
         LockedPdfException => LockedPdf,
         ImageTooLargeException tooLarge =>
             Loc.Format("Error.ImageTooLarge", tooLarge.Megapixels),
+        CompressTargetTooSmallException tooSmall =>
+            Loc.Format("Error.CompressTooSmall", CompressText.Limit(tooSmall.TargetBytes)),
         UpscaleModelUnavailableException { Status: UpscaleModelStatus.Damaged } =>
             Loc.Get("Error.UpscaleModelDamaged"),
         UpscaleModelUnavailableException =>

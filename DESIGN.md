@@ -1,6 +1,6 @@
 # Condec — DESIGN.md
 
-Versi dokumen 0.2.26 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows App SDK) di Windows 11
+Versi dokumen 0.2.27 · diubah terakhir 2026-10-05 · target: WinUI 3 (Windows App SDK) di Windows 11
 
 ## 0. Cara memakai dokumen ini
 
@@ -19,12 +19,13 @@ Versi dokumen 0.2.26 · diubah terakhir 2026-10-04 · target: WinUI 3 (Windows A
 
 ## 1. Ringkasan produk
 
-Condec adalah aplikasi desktop Windows yang 100% offline dan open source (GPL-3.0-or-later). Empat bagian, dipilih lewat menu hamburger:
+Condec adalah aplikasi desktop Windows yang 100% offline dan open source (GPL-3.0-or-later). Lima bagian, dipilih lewat menu hamburger:
 
 | Menu | Fungsi |
 |---|---|
 | Convert File | Ubah format file (gambar, audio/video, dokumen, PDF) dengan verifikasi chunk dan integritas. |
 | Upscale Image | Perbesar resolusi gambar memakai GPU, CPU, atau NPU, dengan batas yang mengikuti kemampuan perangkat. |
+| Compress Image | Perkecil ukuran file gambar (JPG, PNG, HEIC, RAW kamera, dan lainnya) supaya muat di batas unggah, dan simpan sebagai JPG, PNG, atau HEIC. |
 | Architecture | Gambar, PDF, dan DXF menjadi DWG, atau sebaliknya. Ada pratinjau dan pilihan objek yang tidak dijadikan CAD. |
 | Settings | Render mode, batas upscale, batas memori, render dump (cache), tampilan, log. |
 
@@ -41,7 +42,7 @@ Prinsip:
 - WPF bawaan tidak punya NavigationView, InfoBar, ToggleSwitch, dan SelectorBar. Dokumen ini hanya valid untuk WinUI 3.
 - Warna dan style teks lewat `ThemeResource` dan style bawaan. Dilarang hardcode hex, kecuali tiga warna gambar pratinjau di §6.3.
 - Margin dan padding layout boleh angka literal.
-- Bahasa UI mengikuti daftar bahasa Windows: Indonesia dan Inggris, bahasa lain jatuh ke Inggris. Semua teks UI adalah resource di `Condec.Core/Resources`. Teks di dokumen ini adalah versi Indonesia dan jadi acuan terjemahan Inggrisnya. Sentence case. Nama menu sama di kedua bahasa: "Convert File", "Upscale Image", "Architecture", "Settings".
+- Bahasa UI mengikuti daftar bahasa Windows: Indonesia dan Inggris, bahasa lain jatuh ke Inggris. Semua teks UI adalah resource di `Condec.Core/Resources`. Teks di dokumen ini adalah versi Indonesia dan jadi acuan terjemahan Inggrisnya. Sentence case. Nama menu sama di kedua bahasa: "Convert File", "Upscale Image", "Compress Image", "Architecture", "Settings".
 - Format angka (versi Indonesia; versi Inggris memakai titik desimal): desimal pakai koma ("0,9 MP", "23,9 MB"), dimensi "1280 × 720" (spasi di kedua sisi ×), skala "4×", persen "400%", perkiraan diawali "± ".
 - Preview vektor DWG: coba `Canvas`/`Polyline`/`Path` stock dulu. Win2D hanya kalau performa tidak cukup, dan minta persetujuan dulu `[TERBUKA]`.
 
@@ -62,8 +63,8 @@ Prinsip:
 | CompactPaneLength | 48 (bawaan) `[SRC]` |
 | IsBackButtonVisible | Collapsed |
 | IsSettingsVisible | True (item Settings otomatis di bawah) |
-| Item | Convert File (terpilih awal), Upscale Image, Architecture |
-| Ikon item | `FontIcon` 16, glyph dari Segoe Fluent Icons. Pilih dari tabel resmi, jangan menebak codepoint. Dipakai (dari enum `Symbol` di `Microsoft.UI.Xaml.winmd`): Convert File `Switch` U+E13C, Upscale Image `FullScreen` U+E1D9, Architecture `Map` U+E1C4. |
+| Item | Convert File (terpilih awal), Upscale Image, Compress Image, Architecture |
+| Ikon item | `FontIcon` 16, glyph dari Segoe Fluent Icons. Pilih dari tabel resmi, jangan menebak codepoint. Dipakai (dari enum `Symbol` di `Microsoft.UI.Xaml.winmd`): Convert File `Switch` U+E13C, Upscale Image `FullScreen` U+E1D9, Compress Image `BackToWindow` U+E1D8 (nilai enum 57816, pasangan "perkecil" dari ikon Upscale; dicek di tabel resmi `Symbol` 2026-10-04), Architecture `Map` U+E1C4. |
 | Isi | `Frame`, navigasi dari `SelectionChanged`. Halaman di-cache (`NavigationCacheMode=Required`) supaya pilihan dan konversi yang sedang berjalan tidak hilang saat pindah halaman. |
 
 Dengan ukuran minimum 900 (§3.1), pane hanya bisa berpindah antara terbuka (≥ 1008) dan kompak (900–1007); mode minimal (≤ 640) tidak tercapai lewat pengubahan ukuran jendela. Nama item Settings diganti aplikasi supaya tetap "Settings" di kedua bahasa (§2).
@@ -80,6 +81,7 @@ Metrik bawaan yang dipakai mock `[SRC]`: tinggi item 36, tombol hamburger 40 × 
 |---|---|---|
 | Convert File | Convert File | Pilih file, tentukan format tujuan, lalu simpan. |
 | Upscale Image | Upscale Image | Perbesar resolusi gambar di perangkat ini dengan GPU, CPU, atau NPU. |
+| Compress Image | Compress Image | Perkecil ukuran file gambar supaya muat di batas unggah, lalu simpan sebagai JPG, PNG, atau HEIC. |
 | Architecture | Architecture | Ubah gambar, PDF, dan DXF menjadi DWG, atau sebaliknya. |
 | Settings | Settings | Atur mesin render, batas memori, tampilan, dan log. |
 
@@ -99,7 +101,7 @@ Selama tahap 3 sampai 6: halaman Upscale Image hanya memuat judul, subjudul, dan
 +------+------------------------------------------------------------+
  pane 280 (kompak 48)       konten: padding 40 / 28 / 40 / 32
 ```
-Urutan pane: hamburger, Convert File, Upscale Image, Architecture, (ruang kosong), Settings.
+Urutan pane: hamburger, Convert File, Upscale Image, Compress Image, Architecture, (ruang kosong), Settings.
 
 ## 4. Token warna dan tipografi
 
@@ -250,8 +252,8 @@ Struktur: kartu konverter (padding 24) dengan tiga keadaan, lalu kartu Riwayat.
 
 **Riwayat**
 - Header: "Riwayat" (BodyStrong), `CheckBox` "Catat riwayat" (nilai awal hidup; disimpan di `history.json`; saat mati konversi baru tidak dicatat, entri lama tetap sampai dihapus, daftar kosong menampilkan "Riwayat sedang tidak dicatat. Konversi berikutnya tidak akan muncul di sini."), `HyperlinkButton` "Hapus riwayat" (membuka `Flyout` konfirmasi: "Hapus semua riwayat? File hasil konversi tidak ikut terhapus.").
-- `ListView` (`SelectionMode=None`): kotak ikon 32, nama, Caption "ASAL → TUJUAN · waktu" ("ASAL → TUJUAN · Upscale 2× · waktu" untuk hasil Upscale Image, §6.2), status "Terverifikasi" (Caption, warna sukses, ikon centang 12), tombol ikon folder (`AutomationProperties.Name="Tampilkan di folder"`).
-- Kosong: "Belum ada riwayat konversi." (daftar ini memuat konversi Convert File, Architecture, dan Upscale Image; hanya tampil di Convert File)
+- `ListView` (`SelectionMode=None`): kotak ikon 32, nama, Caption "ASAL → TUJUAN · waktu" ("ASAL → TUJUAN · Upscale 2× · waktu" untuk hasil Upscale Image, §6.2; "ASAL → TUJUAN · Kompres · waktu" untuk hasil Compress Image, §6.5), status "Terverifikasi" (Caption, warna sukses, ikon centang 12), tombol ikon folder (`AutomationProperties.Name="Tampilkan di folder"`).
+- Kosong: "Belum ada riwayat konversi." (daftar ini memuat konversi Convert File, Architecture, Upscale Image, dan Compress Image; hanya tampil di Convert File)
 - Data: `%LOCALAPPDATA%\Condec\history.json` (nama, asal → tujuan, waktu, path, status verifikasi). Tanpa salinan isi file. Konversi baru masuk paling atas.
 
 #### 6.1.1 Konverter gambar (Windows Imaging Component)
@@ -585,6 +587,72 @@ Aturan:
 - Perubahan Render mode, Batas upscale, Batas memori, Mode performa, Adaptif, dan Hemat memori langsung berlaku di Upscale Image dan Architecture tanpa restart (render yang sedang berjalan memakai setelan saat dimulai).
 - `perf.mode` yang bukan salah satu mode dibaca sebagai Sangat tinggi.
 
+### 6.5 Compress Image
+
+Permintaan pemilik 2026-10-04 (§13 #71, §14 [0.2.27]): halaman untuk memperkecil file gambar, "apalagi buat yang ngirim dokumen tapi kena batas max ukuran", dengan format HEIC, HEIF, JPG, PNG, RAW, dan lainnya menjadi format umum, serta persentase kompres yang menunjukkan resolusi hasilnya.
+
+```
++-- Kartu kiri (fleksibel) ----------------------+  +-- Kartu kanan (lebar 380) ----------+
+| [ikon] foto.heic        Tambah gambar… Ganti   |  | Format hasil  (o) JPG ( ) PNG ( ) HEIC |
+| 4032 × 3024 · 12,2 MP · 3,1 MB                 |  | <keterangan format>                 |
+| 3 gambar · total 7,9 MB          (bila > 1)    |  | Cara mengompres                     |
+| [ daftar gambar, yang dipilih = yang tampil ]  |  |  (o) Atur kualitas dan resolusi     |
+| +------------------------------------------+   |  |  ( ) Batas ukuran file              |
+| |  pratinjau HASIL (file yang dikompres)    |  |  | Kualitas                       80%  |
+| +------------------------------------------+   |  | o-------------O                     |
+| Pratinjau hasil. Angka di bawah diukur ...     |  | Resolusi                       50%  |
++------------------------------------------------+  | o-------O         2016 × 1512 · 3,0 MP |
+                                                    | Data EXIF dan lokasi GPS tidak ikut |
+                                                    +-------------------------------------+
++-- Kartu hasil -------------------------------------------------------------------------+
+| Ukuran asli | Ukuran hasil  | Resolusi hasil | Kualitas      [Kompres dan simpan…]      |
+| 3,1 MB      | 412 KB        | 2016 × 1512    | 80%                                      |
+| HEIC · 4032 × 3024 | Hemat 87% | 3,0 MP · 50% | JPG                                     |
++----------------------------------------------------------------------------------------+
+(perisai) Diproses sepenuhnya di perangkat ini. Tidak ada file yang diunggah.
+```
+
+**Sumber.** Semua format yang bisa dibaca Windows Imaging Component di PC itu: daftar ekstensi diambil dari dekoder yang terpasang (`BitmapDecoder.GetDecoderInformationEnumerator`), bukan daftar tetap. Di laptop uji (2026-10-04) itu berarti JPG, PNG, BMP, GIF, TIFF, ICO, JPEG XR, DDS, HEIC/HEIF/AVIF (dekoder HEIF), WebP, JPEG XL, DNG, dan RAW kamera lewat Raw Image Extension (3FR, ARW, CR2, CR3, CRW, NEF, NRW, ORF, PEF, RAF, RW2, SRW, X3F, dan lainnya). Dekoder yang belum terpasang berarti format itu tidak ditawarkan. Gambar dibaca seperti §6.1.1: frame pertama, rotasi EXIF diterapkan, warna ke sRGB, batas ukuran dan pesan `Error.ImageTooLarge` yang sama. Sumber terpotong dan gambar berframe banyak mendapat catatan yang sama dengan Convert File.
+
+**Belum ada gambar:** kartu seret seperti §6.2: ikon, "Seret satu atau beberapa gambar ke sini", tombol "Pilih gambar…" (boleh banyak), dan Caption "JPG, PNG, HEIC, HEIF, WebP, RAW kamera, dan format gambar lain yang bisa dibuka Windows." Satu file yang bukan gambar ditolak dengan "File .pdf tidak bisa dikompres di sini. Pilih gambar yang bisa dibuka Windows, misalnya JPG, PNG, HEIC, WebP, atau RAW kamera." (tanpa ekstensi: "File tanpa ekstensi tidak bisa dikompres. …"). Beberapa file: yang tidak bisa diambil disebut dengan pesan §6.2 ("Beberapa file tidak diambil: a.pdf (format tidak didukung)"; alasan lain "tidak bisa dibaca", "terlalu besar"). Duplikat diabaikan, folder yang ikut diseret diabaikan dengan pesan. Jumlah gambar tidak dibatasi: tiap gambar dikerjakan sendiri-sendiri dan hanya gambar yang tampil yang disimpan di memori.
+
+**Kartu kiri**
+- Baris info gambar yang tampil: ikon gambar 32, nama (BodyStrong), Caption "W × H · X,X MP · ukuran file", `HyperlinkButton` "Tambah gambar…" (dialog dibuka di folder gambar pertama; gambar masuk ke akhir daftar) dan "Ganti" (daftar baru). Seret ke kartu ini juga memulai daftar baru.
+- Dua gambar atau lebih: judul BodyStrong "3 gambar · total 7,9 MB", lalu `ListView` (`SelectionMode=Single`, tinggi maksimal 220, nama terbaca "Daftar gambar. Gambar yang dipilih adalah yang hasilnya ditampilkan."): nomor "1.", nama, Caption "W × H · ukuran", tombol ikon hapus (`AutomationProperties.Name="Hapus a.png dari daftar"`). Gambar yang dipilih adalah yang ditampilkan dan diukur. Menghapus menomori ulang daftar; tersisa satu menyembunyikan daftar.
+- Pratinjau: area latar `CardBackgroundFillColorSecondaryBrush` (tinggi minimum 220, sudut 4) yang menampilkan **file hasil yang benar-benar dikompres** (`Image`, `Stretch=Uniform`, tinggi maksimal 340; hasil yang lebih lebar dari 1600 px didekode selebar 1600 px), dengan `ProgressRing` selama mengukur. Caption di bawahnya: "Mengompres…", "Mencari kualitas dan resolusi yang pas…" (mode batas ukuran), atau "Pratinjau hasil. Angka di bawah diukur dari file yang sudah dikompres, bukan perkiraan." Nama terbaca gambar: "Pratinjau hasil, 2016 × 1512, 412 KB".
+
+**Kartu kanan, berurutan.** Satu pengaturan untuk semua gambar di daftar; pilihan bertahan sampai aplikasi ditutup (tidak disimpan ke Settings).
+1. **Format hasil:** `RadioButtons` satu baris JPG | PNG | HEIC (`MaxColumns=3`; HEIC hanya bila Windows bisa menulisnya, dicek seperti §6.1.1), awal JPG. Lebar minimum tiap pilihan diturunkan ke 96 lewat style implisit berbasis `DefaultRadioButtonStyle`: bawaannya 120 dengan jarak kolom 7 `[SRC]` (WinUI 2.3.0 `generic.xaml`), sehingga tiga pilihan tidak muat satu baris di kartu 380 dan HEIC pindah ke kolom kedua (terlihat di uji 2026-10-04). Format sumber boleh sama dengan tujuan (JPG ke JPG yang lebih kecil); itu sebabnya halaman ini punya registry dan pipeline sendiri. Caption di bawahnya:
+   - JPG: "Paling kecil untuk foto dan diterima di mana saja. Bagian transparan menjadi putih."
+   - PNG: "Tanpa kehilangan kualitas dan menjaga transparansi, tetapi foto tetap besar. Ukurannya hanya turun lewat resolusi."
+   - HEIC: "Format foto ponsel modern. Tidak semua situs dan aplikasi menerimanya, jadi JPG lebih aman untuk diunggah. Bagian transparan menjadi putih." Tidak ada klaim "lebih kecil dari JPG": angka kualitas kedua encoder tidak setara (di gambar uji 12 MP, batas 300 KB tercapai JPG pada resolusi 67% dan HEIC pada 48%, keduanya kualitas 60%).
+2. **Cara mengompres:** `RadioButtons` "Atur kualitas dan resolusi" (awal) | "Batas ukuran file".
+3. **Atur kualitas dan resolusi:**
+   - "Kualitas" dengan nilai "80%" (BodyStrong) dan `Slider` 10–100, StepFrequency 5, TickFrequency 10, awal 80. JPG dan HEIC memakai opsi encoder `ImageQuality` (0–1). Dokumentasi WinRT hanya menyebut JPEG; dokumentasi WIC ("Encoding overview") menyebut JPEG, JPEG XL, HDPhoto, dan HEIF, dan di laptop uji HEIC 400 × 300 menjadi 7, 41, dan 95 KB pada 20, 50, dan 90%. PNG: slider nonaktif, nilainya disembunyikan, dan Caption "PNG tidak punya pengaturan kualitas: ukurannya turun lewat resolusi."
+   - "Resolusi" dengan nilai "50%" dan `Slider` 10–100, StepFrequency 5, TickFrequency 10, awal 100. Caption "2016 × 1512 · 3,0 MP" untuk gambar yang tampil. Sisi dibulatkan, paling kecil 1 px; bentuk gambar tetap. Gambar tidak pernah diperbesar.
+4. **Batas ukuran file:** `NumberBox` "Ukuran maksimal" (awal 1, tombol putar ringkas) dan `ComboBox` KB | MB (awal MB, nama terbaca "Satuan ukuran"). Batas dihitung **1 KB = 1.000 byte dan 1 MB = 1.000.000 byte**, tafsiran yang lebih ketat, jadi hasilnya juga lolos di situs yang menghitung 1 MB = 1.048.576 byte. Ukuran file di tempat lain tetap memakai 1 KB = 1024 byte seperti File Explorer, jadi batas 1 MB bisa tampil sebagai hasil "976,6 KB". Seperti `NumberBox` stock, angka yang diketik baru berlaku saat fokus pindah atau Enter ditekan; menekan tombol simpan memindahkan fokus lebih dulu, jadi angka terakhir yang dipakai (dicek 2026-10-05: 3 MB diterapkan, 1 diketik, tombol langsung diklik mouse, file disimpan 973.432 byte menurut batas 1 MB). Angka di kotak ditulis dan dibaca oleh `LimitNumberFormatter`, bukan formatter bawaan. Formatter bawaan mengikuti format angka regional Windows `[SRC]` (microsoft-ui-xaml, `NumberBox` memakai `GetRegionalSettingsAwareDecimalFormatter`), sedangkan halaman menulis angka menurut bahasa aplikasi; di laptop uji (tampilan Inggris, format angka Indonesia en-ID) "0.2" ditolak dan diam-diam kembali ke angka sebelumnya, jadi file disimpan dengan batas lama. Kini angka di kotak ditulis seperti angka lain di halaman ("0.5" dalam bahasa Inggris, "0,5" dalam bahasa Indonesia, tanpa pemisah ribuan), dan **satu koma atau satu titik selalu dibaca sebagai desimal**, dalam bahasa apa pun. Pemisah ribuan tidak dikenal: "1.000" dibaca 1. Itu hanya bisa membuat batas lebih kecil, tidak pernah meloloskan file yang terlalu besar. Teks lain (tanda, huruf, dua pemisah) tidak terbaca, dan kotak kembali ke angka sebelumnya seperti `NumberBox` stock. Bila batas sebelumnya tidak sah, tombol simpan nonaktif dan tidak bisa diklik, jadi angka baru berlaku setelah Enter atau pindah fokus. Kosong, nol, di bawah 1 KB, atau di atas 1.000.000: Caption warna kritis "Tulis batas ukuran, misalnya 1 MB atau 500 KB. Paling kecil 1 KB." dan tombol simpan nonaktif. Caption bantu: "Kualitas diturunkan dulu, paling rendah 60%. Bila belum cukup, resolusinya diperkecil. 1 MB dihitung 1.000.000 byte, …" (PNG: "PNG hanya bisa diperkecil lewat resolusi. …"). Cara mencarinya (`CompressSearch`, Core, portabel):
+   - JPG dan HEIC: kualitas 92% pada resolusi penuh; bila muat, itu hasilnya. Di atas 92% file membesar jauh lebih cepat daripada tampilannya membaik.
+   - Bila tidak muat: kualitas tertinggi antara 60% dan 92% yang muat (pencarian biner pada resolusi penuh).
+   - Bila 60% pun tidak muat: resolusi tertinggi (1–99%) yang muat pada kualitas 60%. Di bawah 60%, JPG mulai berkotak-kotak; resolusi yang lebih kecil tampak lebih baik.
+   - PNG: hanya resolusi, dari 100%.
+   - Setiap jawaban benar-benar dikompres dan diukur; pencarian tidak pernah menebak ukuran. Paling banyak 9 kali kompres per gambar (7 bila kualitas saja cukup). Bila 1% resolusi pun tidak muat: galat "Gambar ini tidak bisa dibuat sekecil 20 KB, bahkan pada resolusi terkecil. Naikkan batas ukurannya." (`Error.CompressTooSmall`).
+   - Tiap gambar di daftar dicari sendiri, jadi kualitas dan resolusinya bisa berbeda.
+5. Caption: "Data EXIF dan lokasi GPS tidak ikut ke file hasil." (metadata tidak dibawa, §13 #19).
+
+**Kartu hasil** (grid 4 kolom seperti kartu perkiraan §6.2, padding 24/16, nilai `BodyLargeStrongTextBlockStyle`) untuk gambar yang tampil. Semua angka berasal dari file yang benar-benar dikompres, bukan perkiraan:
+- "Ukuran asli": ukuran file / Caption "HEIC · 4032 × 3024".
+- "Ukuran hasil": ukuran file hasil / "Hemat 87%" (warna sukses), atau "Lebih besar 12%" (warna peringatan) bila hasilnya tidak lebih kecil.
+- "Resolusi hasil": "2016 × 1512" / "3,0 MP · 50%".
+- "Kualitas": "80%", atau "Tanpa kehilangan" untuk PNG / format ("JPG"), atau "JPG · dicari otomatis" dalam mode batas ukuran.
+- Sebelum ada hasil: "—".
+- Tombol aksen "Kompres dan simpan…" ("Kompres dan simpan 3 gambar…" untuk beberapa) di kanan. Nonaktif bila tidak ada gambar, batas ukuran tidak valid, atau (untuk satu gambar) hasilnya tidak bisa dibuat.
+
+**Mengukur.** Setiap perubahan (gambar yang tampil, format, cara, kualitas, resolusi, batas, satuan) memulai pengukuran baru 250 ms setelah perubahan terakhir; pengukuran sebelumnya dihentikan. Gambar yang tampil didekode sekali dan disimpan di memori selama tampil (4 byte per piksel; gambar sebelumnya dilepas dulu). Gambar transparan yang dijadikan JPG atau HEIC butuh satu salinan lagi (dilebur ke putih); foto tanpa transparansi tidak. Pengecilan memakai scaler Windows (`BitmapTransform`, interpolasi Fant) saat encode; scaler itu menimbang alfa sendiri, jadi tepi gambar transparan yang diperkecil tidak menggelap (diuji). Bila gambar yang tampil tidak bisa dibaca, terlalu besar, atau tidak bisa dibuat sekecil batasnya: `InfoBar` Warning di bawah kartu hasil dengan pesan galat yang sesuai (§6.1).
+
+**Menyimpan.** Satu gambar: `FileSavePicker` di folder sumber dengan nama `<nama> (dikompres).<ext>` (Inggris " (compressed)"). Beberapa gambar: `FolderPicker` (dibuka di folder gambar pertama), nama yang sama, dan nama yang terpakai di folder, oleh sumber, atau oleh hasil sebelumnya mendapat " (2)" (§6.1.3). Tidak pernah menimpa sumber (`Error.SameFile`). Isi file disimpan lewat pipeline yang sama dengan Convert File: chunk, SHA-256, dan dibuka ulang dengan dekoder formatnya.
+
+**Proses, Selesai, Gagal:** kartu yang sama dengan Architecture (§6.1 dan §6.1.3, satu file atau banyak): empat tahap, "Batal", daftar hasil per gambar, "Coba lagi gambar yang gagal", "Ubah pilihan", "Konversi file lain" (kembali ke halaman kosong; pilihan tetap). Batal sebelum ada yang tersimpan kembali ke pilihan dengan "Konversi dibatalkan. Tidak ada file yang disimpan." Catatan Informational baru: "Hasilnya (3,4 MB) tidak lebih kecil dari file sumber (3,1 MB). Pilih kualitas atau resolusi yang lebih rendah, atau pakai file sumbernya saja." (`Note.CompressNotSmaller`); file tetap disimpan. Riwayat: "HEIC → JPG · Kompres · waktu". Log aktivitas: jumlah gambar, jenis konversi, dan cara mengompres, tanpa path.
+
 ## 7. Aturan batas perangkat
 
 Sumber logika tunggal: kelas `CapabilityPolicy` di `Condec.Core`. UI hanya menampilkan hasilnya.
@@ -724,7 +792,7 @@ Turunan: RAM yang dibutuhkan untuk upscale 2× gambar 1600 × 1200 (3200 × 2400
 
 - Semua tombol ikon punya `AutomationProperties.Name` ("Tampilkan di folder", "Buka atau tutup menu navigasi", dll.). Tombol hamburger diberi nama ini lewat bagian template `TogglePaneButton`; tanpa itu NavigationView memakai nama bawaannya ("Close Navigation") dalam bahasa sistem.
 - Pilihan yang isinya dua baris teks (Render mode, daftar skala) punya nama gabungan yang dibacakan, mis. "NPU, Tidak terdeteksi" dan "4×, Di atas batas perangkat".
-- `ProgressBar` punya nama ("Kemajuan konversi", "Kemajuan upscale"). `Slider` punya nama ("Persentase upscale", "Batas memori dalam GB").
+- `ProgressBar` punya nama ("Kemajuan konversi", "Kemajuan upscale"). `Slider` punya nama ("Persentase upscale", "Batas memori dalam GB", "Kualitas", "Resolusi").
 - Navigasi keyboard penuh. Urutan fokus mengikuti urutan visual, kiri ke kanan, atas ke bawah.
 - Status tidak boleh hanya berupa warna: sukses/peringatan/galat selalu disertai ikon dan teks.
 - Mode high contrast didukung (otomatis bila hanya memakai ThemeResource).
@@ -737,6 +805,8 @@ Condec/                     WinUI 3
   MainWindow.xaml           TitleBar + NavigationView + Frame      (§3)
   Views/ConvertPage.xaml    (§6.1)
   Views/UpscalePage.xaml    (§6.2)
+  Views/CompressPage.xaml   (§6.5)
+  Views/LimitNumberFormatter.cs  angka kotak batas Compress (§6.5)
   Views/ArchitecturePage.xaml (§6.3)
   Views/SettingsPage.xaml   (§6.4)
   ViewModels/               satu per halaman
@@ -763,6 +833,7 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 8–12 | Architecture: kosong, objek tidak jelas, perangkat tidak memenuhi syarat, siap, DWG ke gambar | §6.3 |
 | 13–14 | Settings: render dan performa, umum (tema gelap) | §6.4 |
 | 15 | Peta kontrol WinUI 3 | §5 |
+| — | Compress Image belum punya board; tata letaknya mengikuti Upscale Image (§13 #71) | §6.5 |
 
 ## 13. Asumsi dan pertanyaan terbuka
 
@@ -835,6 +906,8 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 | 67 | Gambar raster (logo, foto) di PDF vektor: dulu tidak ikut ke CAD, hanya dicatat jumlahnya ([0.2.23]) | **Diputuskan 2026-10-04** ([0.2.25]): setelah ditawari, pemilik menjawab "Jalankan secara autonomus ya", jadi gambar kini menjadi HATCH berwarna seperti logo di gambar raster (§6.3.3, §13 #69). Catatan tinggal untuk gambar yang tidak terbaca atau latar. Gambar dihitung bila kotaknya mengenai halaman. Menyematkan gambar asli (entitas IMAGE dengan file gambar di samping DWG) tetap `[TERBUKA]` |
 | 69 | Ambang gambar PDF sebagai bidang warna (§6.3.3, [0.2.25]): piksel lebih terang dari abu-abu 230 dan tidak berwarna adalah kertas; gambar yang kotaknya menutup ≥ 95% halaman adalah latar dan tidak ikut; gambar dibaca paling banyak 4 juta piksel; JPEG CMYK tidak dibaca karena warnanya sering tersimpan terbalik; Flate dengan predictor di depan JPEG tidak dibuka. Ambang warna sama dengan §13 #68. **Belum ditangani:** clip pada gambar (gambar yang dipotong path clip tergambar utuh) dan /Decode pada JPEG | `[ASUMSI]`. Diukur 2026-10-04 dengan program uji sementara di luar repo pada 2 salinan PDF gambar kerja pemilik (5 halaman): semua gambar terbaca, tanpa catatan. Sampul 3 logo menjadi 20 HATCH (salinan lain: 4 logo, 33 HATCH). Halaman lain 2 logo pojok (JPEG dibungkus Flate) menjadi 16 HATCH. 5 halaman termasuk render ulang 13,6 detik. Render ulang dicek mata: letak, arah, dan warna logo sesuai halaman. Belum diuji: PDF dari produsen lain, gambar besar (foto satu halaman) di halaman vektor, AutoCAD membuka hasilnya |
 | 70 | Analisis objek dan geometri dengan ML (keinginan pemilik 2026-10-04: "nanti itu buat supaya bisa nganalisis objek yang pas dengan geometri yang tepat") | `[TERBUKA]`. Fondasinya, Windows ML, sudah terpasang (#28). Yang belum ada: model yang cocok dengan gambar pemilik. Gambar pemilik sejauh ini adalah gambar kerja jembatan (tampak dan potongan dengan kop) dan render, bukan denah, jadi model denah (dinding, pintu, jendela) tidak langsung berlaku. Kandidat yang pernah dilihat (FloorPlanNet, kode MIT, model 4,2 MB) dilatih hanya dengan denah buatan, dan model untuk denah nyata (CubiCasa5K) berlisensi CC BY-NC, tidak cocok dibundel dalam aplikasi GPL. Model itu sudah diunduh ke folder sementara di luar repo tetapi belum pernah dijalankan. Langkah berikutnya perlu pemilik: memilih jenis gambar yang ingin dianalisis (denah, tampak atau potongan, kop), lalu menguji satu model di luar repo sebelum ada yang masuk ke aplikasi |
+| 71 | Compress Image (§6.5, [0.2.27]) | **Diminta pemilik 2026-10-04:** "dibawahnya ada yang mananya compress file, ada khusus untuk format HEIC, HEIF, jpg, png, RAW --> format biasanya, dll, terus juga ada persentase compress hingga tahu berapa resolusi sebuah gambar", untuk "yang ngirim dokumen tapi kena batas max ukuran"; "kalau desainnya gak sesuai kayaknya aku harus calling claude design". Dibangun mandiri tanpa board desain, mengikuti tata letak Upscale Image. Pilihan yang dibuat Claude dan menunggu uji pemilik: (a) tujuan hanya JPG, PNG, dan HEIC (Windows tidak punya encoder WebP; JPEG XL bisa ditulis tetapi belum umum); (b) selain persentase kualitas dan resolusi, ada mode "Batas ukuran file" karena itulah masalah batas unggah; (c) batas dihitung 1 MB = 1.000.000 byte (lebih ketat); (d) urutan cari: kualitas 92% → 60%, lalu resolusi pada 60%; (e) satu pengaturan untuk semua gambar, tanpa batas jumlah gambar; (f) metadata (EXIF, GPS) tidak dibawa, sama dengan §13 #19. `[TERBUKA]`: apakah PDF juga perlu dikompres (permintaan menyebut "compress file" tetapi format yang disebut semuanya gambar), dan apakah tata letaknya perlu dirancang ulang lewat Claude Design. (g) Ditambah 2026-10-05 setelah uji langsung: angka kotak batas mengikuti bahasa aplikasi, dan satu koma atau satu titik selalu desimal (§6.5 langkah 4); menunggu uji pemilik |
+| 72 | `NumberBox` lain masih memakai formatter bawaan yang mengikuti format angka regional: skala kustom 1 : n PDF vektor (§6.3.1, §13 #34) dan jarak asli di dialog kalibrasi (§6.3.3) | `[TERBUKA]`, belum diuji. Di Compress Image terbukti 2026-10-05: di Windows berbahasa Inggris dengan format angka Indonesia, "0.2" ditolak dan diam-diam kembali ke angka sebelumnya ([0.2.27]). Skala kustom biasanya bilangan bulat, tetapi jarak kalibrasi bisa pecahan ("2.5" meter), dan bila ditolak diam-diam, skala gambar CAD salah. Belum dicek langsung, jadi belum diubah; perbaikannya bisa memakai cara yang sama dengan `LimitNumberFormatter` |
 | 68 | Ambang logo sebagai bidang warna (§6.3.3, [0.2.24]): paling banyak 8 warna; warna yang jaraknya di bawah 48 (RGB 0–255) digabung; warna di bawah 0,5% tinta logo dilebur ke warna terdekat; k-means paling banyak 8 putaran, lalu tiap piksel mengambil warna mayoritas 3 × 3 di sekitarnya; logo dibaca paling banyak 4 juta piksel; garis tepi boleh menyimpang 1 piksel; warna dengan selisih kanal terkuat dan terlemah di bawah 24 dianggap abu-abu | `[ASUMSI]`. Diukur 2026-10-04 dengan program uji sementara di luar repo pada render halaman 1 dan 2 gambar kerja pemilik: sebelumnya 118 dan 20 polyline magenta yang terputus, sekarang 18 dan 15 HATCH berwarna (indeks 40, 41, 53, 101, 113, 114, 142, 143, 145, 151, 175, 223, 250, 251, 252); render ulang dicek mata (perisai dan tulisan, burung hantu, roda gigi, lengkung, ombak, dan segi lima terbaca). Kasus berat: foto 1000 × 1500 px di lembar 2480 × 1754 px dianggap beberapa logo, menjadi 27 HATCH dengan 768 garis batas, DWG 147 KB, analisis 2,4 detik, memori puncak 217 MB. Belum diuji: AutoCAD dan program CAD lain membuka HATCH ini, logo bergradasi halus, logo yang hanya hitam (tidak dikenali sebagai logo, §13 #31) |
 | 14 | LibreOffice tetap dibundel di paket x64 (keputusan pemilik 2026-09-24, dikonfirmasi 2026-10-02) | diputuskan |
 | 15 | HEIC tetap boleh jadi format tujuan bila codec HEVC terpasang | diputuskan |
@@ -842,6 +915,34 @@ Kanvas: https://claude.ai/artifact/Hai2GMkLkn5Z8SwnWeXR75 (dibuka lewat akun pem
 ## 14. Changelog
 
 Format entri: `[versi] tanggal — Ditambah / Diubah / Dihapus`. Entri baru ditaruh paling atas.
+
+### [0.2.27] 2026-10-05 (Compress Image)
+- **Permintaan pemilik (2026-10-04):** halaman kompres gambar di bawah Upscale Image untuk HEIC, HEIF, JPG, PNG, RAW, dan lainnya, dengan persentase kompres dan resolusi hasil, untuk file yang kena batas ukuran unggah. Dicatat di §13 #71.
+- **Ditambah (§6.5, §1, §2, §3.2, §3.3, §3.4):** menu dan halaman **Compress Image** (ikon `BackToWindow` U+E1D8), antara Upscale Image dan Architecture.
+  - Sumber: semua format yang dekodernya terpasang di Windows, termasuk RAW kamera bila Raw Image Extension ada. Satu atau banyak gambar.
+  - Tujuan: JPG, PNG, atau HEIC (bila bisa ditulis). JPG ke JPG boleh.
+  - Dua cara: kualitas (10–100%) dan resolusi (10–100%), atau batas ukuran file dalam KB atau MB yang dicari otomatis per gambar.
+  - Kartu hasil dan pratinjau memakai file yang benar-benar dikompres: ukuran asli, ukuran hasil dan penghematannya, resolusi, kualitas.
+  - Simpan seperti Convert File: verifikasi chunk dan SHA-256, nama `<nama> (dikompres).<ext>`, banyak gambar ke satu folder.
+- **Ditambah (§6.1):** Riwayat menandai hasil Compress Image "Kompres"; catatan `Note.CompressNotSmaller` dan galat `Error.CompressTooSmall`.
+- **Ditemukan dan diperbaiki sebelum commit (uji langsung 2026-10-05):** di laptop uji (tampilan Inggris, format angka Indonesia) `NumberBox` menolak batas "0.2" tanpa pesan dan file disimpan dengan batas sebelumnya (973.432 byte, bukan paling banyak 200.000). Kotak batas kini memakai `LimitNumberFormatter` (§6.5 langkah 4). Dugaan pertama, bahwa `LostFocus` datang setelah perintah tombol simpan, dibantah uji pembanding dengan bilangan bulat di build tanpa perubahan apa pun: angka yang diketik sudah terpakai. `NumberBox` lain di Architecture dicatat di §13 #72.
+- **Kode:** `Compression/` (Core, portabel: `CompressOptions`, `CompressSearch`, `CompressText`), `ImageCompressor` dan `CompressSource` (WIC), `CompressViewModel`, `CompressPage`, `LimitNumberFormatter`; `HistoryEntry.Compressed`; registry dan pipeline sendiri.
+- **Dicek:**
+  - `dotnet build Condec.sln`: 0 warning, 0 error.
+  - `dotnet test`, per modul dengan pengawas RAM (laptop 8 GB): net10.0 799 lulus, net10.0-windows 979 lulus, total 1778, 0 gagal. Modul Windows dijalankan dalam 5 bagian, karena run utuh pertama dihentikan pengawas saat RAM tersedia turun ke 148 MB (aplikasi lain sedang terbuka); RAM tersedia terendah di run bagian 1078 MB.
+  - Mutation check, 14 mutasi, semuanya tertangkap test. Pembacaan batas (5): koma bukan pemisah; bahasa halaman diabaikan; dua pemisah diterima; teks tanpa angka diterima; koma dibaca sebagai pemisah ribuan. Kompresi (9): PNG diberi kualitas; catatan "tidak lebih kecil" dibalik; JPG tanpa latar putih; jalan pintas gambar tanpa transparansi dipakai untuk semua gambar; skala diabaikan; batas terlalu kecil tidak ditolak; resolusi diturunkan pada kualitas tertinggi; pencarian berhenti pada hasil pas pertama; batas dihitung 1 KB = 1024 byte. Kode premultiply dibuang karena mutasinya tidak tertangkap: WIC terbukti menimbang alpha lurus dengan benar, dan test tepi transparan tetap ada sebagai penjaga.
+  - Uji langsung build portabel lewat UI Automation, tanpa keystroke (foto sintetis 4000 × 3000 5,5 MB dan logo PNG transparan 800 × 400):
+    - JPG kualitas 80%: 2,0 MB (64% lebih kecil). Kualitas 50% dan resolusi 50%: 106 KB.
+    - Batas 1 MB: 951 KB pada kualitas 60%, resolusi 100%. Batas 300 KB: 292 KB pada 67%. HEIC batas 300 KB: 276 KB pada 48%. HEIC batas 1 KB: ditolak dengan pesan, tombol nonaktif.
+    - Simpan satu gambar dengan batas 500 KB: 487.537 byte, 3240 × 2430, tanpa EXIF. Simpan dua gambar ke PNG 50%: keduanya lolos verifikasi, transparansi logo tetap. Riwayat menulis "JPG → PNG · Compress".
+    - Baris format JPG | PNG | HEIC muat satu baris setelah lebar minimum 96.
+    - Kotak batas di laptop uji (tampilan Inggris, format angka en-ID). Sebelum perbaikan, "0.2" ditolak tanpa pesan: kotak kembali ke 1 dan file 973.432 byte. Sesudahnya "0.5" menjadi 476 KB, dan "0,2" tampil "0.2" dengan hasil 189 KB. "1.000.000" ditolak dan kotak kembali ke angka sebelumnya.
+    - Batas 1 MB diganti "0.2" lalu tombol simpan langsung diklik mouse: 193.977 byte, 2280 × 1710, tanpa EXIF, SHA-256 cocok. Mengetik "0" lalu klik: tombol nonaktif, Caption merah, tidak ada yang disimpan.
+- **Belum dicoba langsung:**
+  - File RAW kamera, AVIF, dan JPEG XL sungguhan (tidak ada contoh di laptop uji; daftar dekodernya dicek).
+  - MSIX, dan Windows 10.
+  - Tata letak di jendela sempit (900 px).
+  - Kotak batas dalam tampilan bahasa Indonesia ("0,5" ditulis dengan koma): hanya unit test, karena Windows laptop uji berbahasa Inggris.
 
 ### [0.2.26] 2026-10-04 (Windows ML)
 - **Keputusan pemilik (2026-10-04):** "tetap ya kamu integrasikan dengan windows ML, karena foundasi yang paling enak untuk geometri yang pas, nanti itu buat supaya bisa nganalisis objek yang pas dengan geometri yang tepat". Dicatat di §13 #28. Analisis objek dengan ML menjadi §13 #70.

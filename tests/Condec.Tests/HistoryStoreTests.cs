@@ -65,6 +65,20 @@ public sealed class HistoryStoreTests : IDisposable
         await old.LoadAsync(Ct);
         Assert.Equal("a.docx", Assert.Single(old.Entries).SourceFileName);
         Assert.Null(old.Entries[0].UpscaleScale);
+        Assert.False(old.Entries[0].Compressed);
+    }
+
+    [Fact]
+    public async Task ACompression_IsMarked()
+    {
+        var store = new HistoryStore(_file);
+        var compressed = Entry("foto.heic", ".heic", ".jpg", 1) with { Compressed = true };
+        await store.AddAsync(compressed, Ct);
+
+        var reloaded = new HistoryStore(_file);
+        await reloaded.LoadAsync(Ct);
+        Assert.True(reloaded.Entries[0].Compressed);
+        Assert.Equal(compressed, reloaded.Entries[0]);
     }
 
     [Fact]

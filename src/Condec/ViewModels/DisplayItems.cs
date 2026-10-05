@@ -112,6 +112,8 @@ public sealed class HistoryItemViewModel
         var when = DisplayFormat.FormatTimestamp(entry.CompletedAt.LocalDateTime, nowLocal);
         Summary = entry.UpscaleScale is { } scale
             ? Loc.Format("History.UpscaleSummary", FileExtension.ToCode(entry.SourceExtension), FileExtension.ToCode(entry.TargetExtension), ScaleText.Format(scale), when)
+            : entry.Compressed
+            ? Loc.Format("History.CompressSummary", FileExtension.ToCode(entry.SourceExtension), FileExtension.ToCode(entry.TargetExtension), when)
             : string.Concat(
                 FileExtension.ToCode(entry.SourceExtension),
                 " → ",
@@ -125,7 +127,10 @@ public sealed class HistoryItemViewModel
 
     public string Name => Entry.SourceFileName;
 
-    /// <summary>"PNG → JPG · Yesterday, 7:40 PM", or "PNG → PNG · Upscale 2× · Yesterday, 7:40 PM" for an upscale.</summary>
+    /// <summary>
+    /// "PNG → JPG · Yesterday, 7:40 PM", "PNG → PNG · Upscale 2× · Yesterday, 7:40 PM" for an upscale, or
+    /// "HEIC → JPG · Compress · Yesterday, 7:40 PM" for Compress Image.
+    /// </summary>
     public string Summary { get; }
 
     public bool IsVerified => Entry.Verification == VerificationStatus.Verified;

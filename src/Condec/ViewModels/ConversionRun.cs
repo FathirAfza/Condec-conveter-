@@ -69,6 +69,9 @@ public sealed partial class ConversionRun : ObservableObject
     /// <summary>"Konversi file lain" on the finished card.</summary>
     public event EventHandler? AnotherRequested;
 
+    /// <summary>The page is Compress Image: its history entries say "Kompres" (DESIGN §6.5).</summary>
+    public bool RecordsCompression { get; init; }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsActive), nameof(IsProcessing), nameof(IsDone), nameof(IsFailed), nameof(IsSingleDone), nameof(IsBatchDone))]
     public partial RunState State { get; set; }
@@ -536,7 +539,8 @@ public sealed partial class ConversionRun : ObservableObject
                 FileExtension.Normalize(job.TargetExtension),
                 DateTimeOffset.Now,
                 result.OutputPath,
-                VerificationStatus.Verified));
+                VerificationStatus.Verified,
+                Compressed: RecordsCompression));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

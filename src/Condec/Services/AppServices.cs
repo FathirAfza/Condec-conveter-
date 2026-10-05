@@ -26,6 +26,7 @@ public sealed class AppServices
         ConverterRegistry upscaleRegistry,
         ConversionPipeline upscalePipeline,
         ConversionPipeline architecturePipeline,
+        ConversionPipeline compressPipeline,
         string version)
     {
         Settings = settings;
@@ -35,6 +36,7 @@ public sealed class AppServices
         ToCad = new ToCadViewModel(settings, pipeline, architecturePipeline, upscalePipeline, new ConversionRun(history, desktop, log), desktop, log);
         FromCad = new FromCadViewModel(architecturePipeline, new ConversionRun(history, desktop, log), desktop, log);
         Upscale = new UpscaleViewModel(settings, upscaleRegistry, upscalePipeline, history, desktop, log);
+        Compress = new CompressViewModel(compressPipeline, new ConversionRun(history, desktop, log) { RecordsCompression = true }, desktop, log);
         SettingsPage = new SettingsViewModel(settings, log, desktop, version);
     }
 
@@ -53,6 +55,9 @@ public sealed class AppServices
     public FromCadViewModel FromCad { get; }
 
     public UpscaleViewModel Upscale { get; }
+
+    /// <summary>Compress Image (DESIGN §6.5).</summary>
+    public CompressViewModel Compress { get; }
 
     public SettingsViewModel SettingsPage { get; }
 }

@@ -72,6 +72,9 @@ public partial class App : Application
             [new ArchitectureToCadConverter(new WindowsPictureDecoder()), new CadRenderConverter()],
             [new CadOutputValidator(), new PdfOutputValidator(), new ImageOutputValidator()]);
         var architecturePipeline = new ConversionPipeline(architectureRegistry, journal);
+
+        // Compress Image's own: a JPG may become a smaller JPG here, which Convert File doesn't offer.
+        var compressPipeline = new ConversionPipeline(new ConverterRegistry([new ImageCompressor()], [new ImageOutputValidator()]), journal);
         var history = new HistoryStore(CondecPaths.HistoryFile);
 
         // Leftovers from a conversion that was cut off by a crash or power loss. Best effort: the
@@ -79,7 +82,7 @@ public partial class App : Application
         _ = Task.Run(journal.CleanupStale);
 
         _window = new MainWindow();
-        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), upscaleRegistry, upscalePipeline, architecturePipeline, version);
+        Services = new AppServices(settings, log, registry, pipeline, history, new DesktopServices(_window.AppWindow.Id), upscaleRegistry, upscalePipeline, architecturePipeline, compressPipeline, version);
         _window.Start(Services);
         _window.Activate();
         _ = Services.Upscale.InitializeAsync();

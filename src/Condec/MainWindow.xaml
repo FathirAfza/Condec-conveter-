@@ -42,7 +42,7 @@
             PaneDisplayMode="Auto"
             SelectionChanged="OnNavigationSelectionChanged">
             <NavigationView.MenuItems>
-                <!--  Glyphs from the Symbol enumeration in Microsoft.UI.Xaml.winmd: Switch, FullScreen, Map.  -->
+                <!--  Glyphs from the Symbol enumeration in Microsoft.UI.Xaml.winmd: Switch, FullScreen, BackToWindow, Map.  -->
                 <NavigationViewItem x:Name="ConvertItem" local:L.Content="Nav.Convert">
                     <NavigationViewItem.Icon>
                         <FontIcon FontSize="16" Glyph="&#xE13C;" />
@@ -51,6 +51,11 @@
                 <NavigationViewItem x:Name="UpscaleItem" local:L.Content="Nav.Upscale">
                     <NavigationViewItem.Icon>
                         <FontIcon FontSize="16" Glyph="&#xE1D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="CompressItem" local:L.Content="Nav.Compress">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontSize="16" Glyph="&#xE1D8;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem x:Name="ArchitectureItem" local:L.Content="Nav.Architecture">

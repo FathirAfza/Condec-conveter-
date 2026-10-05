@@ -116,6 +116,7 @@ public sealed partial class MainWindow : Window
     {
         var page = args.IsSettingsSelected ? typeof(SettingsPage)
             : ReferenceEquals(args.SelectedItem, UpscaleItem) ? typeof(UpscalePage)
+            : ReferenceEquals(args.SelectedItem, CompressItem) ? typeof(CompressPage)
             : ReferenceEquals(args.SelectedItem, ArchitectureItem) ? typeof(ArchitecturePage)
             : typeof(ConvertPage);
         if (ContentFrame.CurrentSourcePageType != page)
