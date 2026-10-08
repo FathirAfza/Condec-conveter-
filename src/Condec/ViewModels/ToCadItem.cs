@@ -4,7 +4,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Condec.Core.Architecture;
 using Condec.Core.Localization;
-using Condec.Core.Upscale;
 
 namespace Condec.ViewModels;
 

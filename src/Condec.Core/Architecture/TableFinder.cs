@@ -74,7 +74,7 @@ public static class TableFinder
                 continue;
             }
 
-            var cells = FindCells(ruling, ink, blob.Bounds);
+            var cells = FindCells(ruling, blob.Bounds);
             if (cells.Count == 0)
             {
                 continue;
@@ -100,7 +100,7 @@ public static class TableFinder
     }
 
     /// <summary>The closed white areas inside the ruling of <paramref name="bounds"/>: the ones that don't reach its edge.</summary>
-    private static List<PixelRect> FindCells(BitMask ruling, BitMask ink, PixelRect bounds)
+    private static List<PixelRect> FindCells(BitMask ruling, PixelRect bounds)
     {
         var area = bounds.Clamp(ruling.Width, ruling.Height);
         var open = new BitMask(area.Width, area.Height);

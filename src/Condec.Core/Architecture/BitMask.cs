@@ -82,13 +82,6 @@ public readonly record struct PixelRect(int Left, int Top, int Right, int Bottom
 
     public bool Intersects(PixelRect other) => Left < other.Right && other.Left < Right && Top < other.Bottom && other.Top < Bottom;
 
-    /// <summary>The share of this rectangle that <paramref name="other"/> covers, 0 to 1.</summary>
-    public double CoveredBy(PixelRect other)
-    {
-        var overlap = new PixelRect(Math.Max(Left, other.Left), Math.Max(Top, other.Top), Math.Min(Right, other.Right), Math.Min(Bottom, other.Bottom));
-        return Area == 0 ? 0 : (double)overlap.Area / Area;
-    }
-
     public PixelRect Grow(int margin) => new(Left - margin, Top - margin, Right + margin, Bottom + margin);
 
     public PixelRect Union(PixelRect other) => new(Math.Min(Left, other.Left), Math.Min(Top, other.Top), Math.Max(Right, other.Right), Math.Max(Bottom, other.Bottom));

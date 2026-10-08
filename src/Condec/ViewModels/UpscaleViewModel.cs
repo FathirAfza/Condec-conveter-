@@ -1493,7 +1493,7 @@ public sealed partial class UpscaleViewModel : ObservableObject
         // The step now running, and how far along the bar is (rounded down, so 100% only shows once the file is really saved).
         int current;
         double percent;
-        string? detail = null;
+        string? detail;
         var allDone = false;
         switch (progress.Stage)
         {

@@ -3,7 +3,6 @@
 
 using ACadSharp;
 using ACadSharp.Entities;
-using ACadSharp.IO;
 using ACadSharp.Types.Units;
 using Condec.Core.Conversion;
 using Condec.Core.Formats;

@@ -7,7 +7,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Condec.Core.Architecture;
 using Condec.Core.Batch;
-using Condec.Core.Conversion;
 using Condec.Core.Formats;
 using Condec.Core.Localization;
 using Condec.Core.Logging;

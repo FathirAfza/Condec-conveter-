@@ -7,7 +7,6 @@ using Condec.Core.Formats;
 using Condec.Core.Imaging;
 using Condec.Core.Localization;
 using Windows.Graphics.Imaging;
-using Windows.Storage.Streams;
 
 namespace Condec.Core.Upscale;
 

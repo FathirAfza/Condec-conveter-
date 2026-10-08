@@ -3,7 +3,6 @@
 
 using Windows.Media.Core;
 using Windows.Media.MediaProperties;
-using Windows.Storage.Streams;
 
 namespace Condec.Core.Media;
 

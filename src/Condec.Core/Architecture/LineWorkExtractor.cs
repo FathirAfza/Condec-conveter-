@@ -70,7 +70,7 @@ public static class LineWorkExtractor
         var primitives = new List<DrawingPrimitive>();
         if (meanWidth > SolidStrokePixels)
         {
-            primitives.AddRange(Outline(local, width, height, blob, ink.Height, tolerance, ct));
+            primitives.AddRange(Outline(local, width, blob, ink.Height, tolerance, ct));
             return primitives;
         }
 
@@ -87,7 +87,7 @@ public static class LineWorkExtractor
         return primitives;
     }
 
-    private static IEnumerable<DrawingPrimitive> Outline(bool[] local, int width, int height, Blob blob, int pictureHeight, double tolerance, CancellationToken ct)
+    private static IEnumerable<DrawingPrimitive> Outline(bool[] local, int width, Blob blob, int pictureHeight, double tolerance, CancellationToken ct)
     {
         // The blob as a picture of its own (ink is dark), traced the way a scanned page is.
         var inner = new bool[blob.Width * blob.Height];

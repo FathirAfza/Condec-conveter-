@@ -3,7 +3,6 @@
 
 using System.Collections.Specialized;
 using System.ComponentModel;
-using Condec.Core.Architecture;
 using Condec.ViewModels;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;

@@ -7,7 +7,6 @@ using Condec.Core.Formats;
 using Condec.Core.Imaging;
 using Condec.Core.Localization;
 using Condec.Core.Pdf;
-using Windows.Storage.Streams;
 
 namespace Condec.Core.Architecture;
 
